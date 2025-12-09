@@ -1,0 +1,289 @@
+
+
+$phi-inverse-fifth: 0.090170; // 1/φ⁵
+$phi-inverse-sixth: 0.05572809000084249; // 1/φ⁴
+$background: #FFFCF6;
+$primary: #222222;
+$border: #22222256;
+$c: 0.25rem;
+
+// Mobile Navigation - Hidden on desktop
+.mobile-navigation {
+  display: none;
+
+  // Show only on mobile
+  @media (max-width: 768px) {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: $background;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  // Hamburger button
+  .hamburger {
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    height: 3.5rem;
+    width: 3.5rem;
+    background-color: #F8F4E8;
+    border: none;
+    border: 1px solid $border;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    overflow: hidden;
+
+  .dot1,
+  .dot2,
+  .dot3,
+  .dot4 {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    min-width: 5px;
+    min-height: 5px;
+    max-width: 5px;
+    max-height: 5px;
+    border: 1px solid $border;
+    background-color: #8C8A84;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 0.25s;
+    border-radius: 50%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    z-index: 2;
+  }
+
+  .dot1 {
+    top: 1rem;
+    left: 1rem;
+
+    &.open {
+      transform: translate(-$c, -$c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0s;
+    }
+  }
+
+  .dot2 {
+    top: 1rem;
+    right: 1rem;
+
+    &.open {
+      transform: translate($c, -$c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0.1s;
+    }
+  }
+
+  .dot3 {
+    bottom: 1rem;
+    left: 1rem;
+
+    &.open {
+      transform: translate(-$c, $c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0.05s;
+    }
+  }
+
+  .dot4 {
+    bottom: 1rem;
+    right: 1rem;
+
+    &.open {
+      transform: translate($c, $c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0.075s;
+    }
+  }
+
+  .x-lines {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    overflow: visible;
+    z-index: 3;
+
+    .line1 {
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0.0s;
+    }
+
+    .line2{
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0s;
+    }
+
+    .line1-outline{
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0.0s;
+    }
+
+    .line2-outline {
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0s;
+    }
+
+    &.open {
+      .line1 {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.45s;
+      }
+      .line2 {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.5s;
+      }
+      .line1-outline {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.45s;
+      }
+      .line2-outline {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.5s;
+      }
+    }
+  }
+
+
+
+  }
+
+  // Mobile menu overlay
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    background-color: $background;
+    z-index: 999;
+
+    // Hidden by default
+    visibility: hidden;
+    transform: translate(-100%, 0);
+    transition: all 0.5s cubic-bezier(1,-0.01,0.61,0.99);
+
+    // Open state
+    &.open {
+      visibility: visible;
+      transform: translate(0, 0);
+    }
+
+    .menu-content {
+      position: absolute;
+      top: 6.5rem;
+      left: 50%;
+      transform: translate(-50%, 0);
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      width: 90%;
+      height: clamp(10rem, 35%, 18rem);
+
+      .logo{
+        position: relative;
+        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+        font-weight: bold;
+        text-align: center;
+        color: $primary;
+        width: 60%;
+        height: 100%;
+        border-radius: 2px;
+      }
+
+      .links{
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        width: 40%;
+        height: 100%;
+      }
+
+    // Links styling for mobile overlay
+      .local-links {
+        padding-top: 0.2rem;
+        width: 100%;
+        ul {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 0.8rem;
+          margin: 0;
+          padding-left: 0.5rem;
+          li {
+            a {
+              color: #222222c6;
+              text-decoration: none;
+              font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+              font-size: 0.85rem;
+              font-weight: 600;
+              transition: color 0.3s ease;
+              &:hover {
+                color: #222222a6;
+              }
+            }
+          }
+    }
+      }
+      .external-links{
+        width: 100%;
+        padding-bottom: 0.5rem;
+       ul {
+
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 0.1rem;
+          margin: 0;
+          padding-left: 0.5rem;
+
+          li {
+            a {
+              color: $primary;
+              text-decoration: none;
+              font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+              font-size: 0.65rem;
+              font-weight: 400;
+              transition: color 0.3s ease;
+
+              &:hover {
+                color: #222222;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

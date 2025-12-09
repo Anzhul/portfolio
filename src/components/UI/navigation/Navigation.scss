@@ -1,0 +1,12 @@
+// Shared styles for Vase canvas (if needed)
+.vase-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  //background-color: blue;
+}

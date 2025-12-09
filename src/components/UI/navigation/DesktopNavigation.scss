@@ -1,0 +1,114 @@
+// Golden Ratio Calculations to the Fifth Degree
+$phi: 1.618034; // φ (phi) - the golden ratio
+$phi-squared: 2.618034; // φ² = φ + 1
+$phi-cubed: 4.236068; // φ³ = φ² + φ
+$phi-fourth: 6.854102; // φ⁴ = φ³ + φ²
+$phi-fifth: 11.090170; // φ⁵ = φ⁴ + φ³
+
+// Inverse golden ratio calculations
+$phi-inverse: 0.618034; // 1/φ
+$phi-inverse-squared: 0.381966; // 1/φ²
+$phi-inverse-cubed: 0.236068; // 1/φ³
+$phi-inverse-fourth: 0.145898; // 1/φ⁴
+$phi-inverse-fifth: 0.090170; // 1/φ⁵
+
+$background: #F8F4E8;
+$primary: #222222;
+$border: #22222233;
+
+// Desktop Navigation - Hidden on mobile
+.desktop-navigation {
+  position: fixed;
+  top: calc(100vh / $phi-fifth);
+  left: 20px;
+  z-index: 1000;
+  background: $background;
+  border: 1px solid $border;
+  width: 8.5rem;
+  height: 24rem;
+  border-radius: 5px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  // Hide on mobile
+  @media (max-width: 768px) {
+    display: none;
+  }
+
+  .logo {
+    position: relative;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-weight: bold;
+    text-align: center;
+    color: $primary;
+    width: 8.5rem;
+    height: 8.5rem;
+    border-radius: 2px;
+  }
+
+  .local-links {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0.5rem;
+    width: 7rem;
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      margin: 0;
+      padding: 0;
+
+      li {
+        a {
+          color: #222222e4;
+          text-decoration: none;
+          font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+          font-size: 0.8rem;
+          font-weight: 500;
+          transition: color 0.3s ease;
+
+          &:hover {
+            color: #222222;
+          }
+        }
+      }
+    }
+  }
+
+  .external-links {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 7rem;
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.085rem;
+      margin: 0;
+      padding: 0;
+
+      li {
+        a {
+          color: $primary;
+          text-decoration: none;
+          font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+          font-size: 0.65rem;
+          font-weight: 400;
+          transition: color 0.3s ease;
+
+          &:hover {
+            color: #222222;
+          }
+        }
+      }
+    }
+  }
+}
