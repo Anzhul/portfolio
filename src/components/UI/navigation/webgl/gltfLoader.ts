@@ -1,4 +1,9 @@
 export interface GLTFGeometry {
+
+  //Uint16 = 16 bits = 2 bytes (can store 0 to 65,535)
+  //Float32 = 32 bits = 4 bytes (can store decimal numbers)
+  //Uint32 = 32 bits = 4 bytes (can store 0 to 4,294,967,295)
+
   vertices: Float32Array
   normals: Float32Array
   indices: Uint16Array | Uint32Array

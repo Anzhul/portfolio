@@ -7,6 +7,9 @@ interface MobileNavigationProps {
 }
 
 function MobileNavigation({ vase }: MobileNavigationProps) {
+  //const menuStuff = useMenu()
+  //const isMenuOpen = menuStuff.isMenuOpen
+  //const setIsMenuOpen = menuStuff.setIsMenuOpen
   const { isMenuOpen, setIsMenuOpen } = useMenu()
 
   const toggleMenu = () => {

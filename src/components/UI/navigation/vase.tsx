@@ -1,7 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useTicker } from '../../../hooks/useAnimation'
 import { compileShader, createProgram, createPerspectiveMatrix, createModelViewMatrix, createNormalMatrix } from './webgl/utils'
-//import { createVaseGeometry } from './webgl/vaseGeometry'
 import vertexShaderSource from './shaders/vertex.glsl?raw'
 import fragmentShaderSource from './shaders/fragment.glsl?raw'
 import { loadAllGLTF } from './webgl/gltfLoader'
@@ -21,6 +20,26 @@ function Vase() {
     let normalBuffer: WebGLBuffer | null = null
     let indexBuffer: WebGLBuffer | null = null
     let program: WebGLProgram | null = null
+    let resizeObserver: ResizeObserver | null = null
+
+    const handleResize = () => {
+      const canvas = canvasRef.current
+      const gl = glRef.current
+      const program = programRef.current
+      if (!canvas || !gl || !program) return
+
+      const dpr = window.devicePixelRatio || 1
+      const rect = canvas.getBoundingClientRect()
+      canvas.width = rect.width * dpr
+      canvas.height = rect.height * dpr
+      gl.viewport(0, 0, canvas.width, canvas.height)
+
+      // Update projection matrix with new aspect ratio
+      const aspect = canvas.width / canvas.height
+      const projectionMatrix = createPerspectiveMatrix(Math.PI / 64, aspect, 0.1, 10000)
+      const projectionMatrixLocation = gl.getUniformLocation(program, 'uProjectionMatrix')
+      gl.uniformMatrix4fv(projectionMatrixLocation, false, projectionMatrix)
+    }
 
     const initWebGL = async () => {
       const canvas = canvasRef.current
@@ -40,6 +59,7 @@ function Vase() {
       const rect = canvas.getBoundingClientRect()
       canvas.width = rect.width * dpr
       canvas.height = rect.height * dpr
+      //(x, y, width, height)
       gl.viewport(0, 0, canvas.width, canvas.height)
 
       // Compile shaders
@@ -75,10 +95,8 @@ function Vase() {
           rotationX: Math.PI / 2,  // Z-up (Blender) → Y-up (GLTF)
           scale: 0.01              // Scale down from ~66 units to ~0.66 units
         })
-        console.log('Loaded all GLTF meshes:', {
-          totalVertices: geometry.vertices.length / 3,
-          totalTriangles: geometry.indices.length / 3
-        })
+        console.log(geometry);
+        
       } catch (error) {
         console.error('Failed to load GLTF:', error)
         return
@@ -140,6 +158,12 @@ function Vase() {
 
       // Initial render
       render()
+
+      // Set up ResizeObserver
+      resizeObserver = new ResizeObserver(() => {
+        handleResize()
+      })
+      resizeObserver.observe(canvas)
     }
 
     initWebGL()
@@ -147,6 +171,9 @@ function Vase() {
     // Cleanup function
     return () => {
       cancelled = true
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
       const gl = glRef.current
       if (gl) {
         if (positionBuffer) gl.deleteBuffer(positionBuffer)

@@ -1,0 +1,1 @@
+// Section with lazy loading

@@ -3,11 +3,11 @@ export function compileShader(
   source: string,
   type: number
 ): WebGLShader | null {
-  //Creates an empty shader object and compiles the source code into it.
+  //Creates an empty shader object
   const shader = gl.createShader(type)
   if (!shader) return null
 
-  // Attach the source code to the shader, send from js heap to gpu memory, and compile it.
+  // Attach the source code to the shader, send from js heap to gpu memory.
   gl.shaderSource(shader, source)
   // Converts the GLSL code into a binary format that the GPU can understand.
   gl.compileShader(shader)
