@@ -4,6 +4,8 @@ import { MenuProvider } from './context/MenuContext'
 import { CameraProvider } from './context/CameraContext'
 import { WorldProvider } from './context/WorldContext'
 import Navigation from './components/UI/navigation/Navigation'
+import { World } from './components/world/World'
+import { HomeIsland } from './island/home/home'
 
 function App() {
   return (
@@ -15,7 +17,11 @@ function App() {
               {/* Navigation menu */}
               <Navigation />
 
-              {/* Content plate wraps all page content */}
+              {/* World canvas with zoom and pan */}
+              <World dimensions={[10000, 10000]}>
+                {/* Demo content - replace with your islands/sections */}
+                <HomeIsland />
+              </World>
             </div>
           </CameraProvider>
         </WorldProvider>

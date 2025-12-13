@@ -1,0 +1,24 @@
+.camera-viewport {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  background: #f0f0f0;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.camera-content {
+  transform-origin: center center;
+  transition: none;
+  will-change: transform;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}

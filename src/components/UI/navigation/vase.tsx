@@ -133,7 +133,9 @@ function Vase() {
 
       // Set up WebGL state
       gl.enable(gl.DEPTH_TEST)
-      gl.enable(gl.CULL_FACE)
+      gl.disable(gl.CULL_FACE) // Disable culling to see both sides of edges
+      gl.enable(gl.BLEND)
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
       gl.clearColor(0.0, 0.0, 0.0, 0.0)
 
       // Set projection matrix

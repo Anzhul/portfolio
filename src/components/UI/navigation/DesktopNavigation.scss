@@ -22,10 +22,10 @@ $border: #22222233;
   top: calc(100vh / $phi-fifth);
   left: 20px;
   z-index: 1000;
-  background: $background;
+  background-color: $background;
   border: 1px solid $border;
-  width: 8.5rem;
-  height: 24rem;
+  width: 10rem;
+  height: 26rem;
   border-radius: 5px;
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -36,15 +36,15 @@ $border: #22222233;
 
   .logo {
     position: relative;
-    top: 0;
+    top: 0.25rem;
     left: 50%;
     transform: translateX(-50%);
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
     font-weight: bold;
     text-align: center;
     color: $primary;
-    width: 8.5rem;
-    height: 8.5rem;
+    width: 10rem;
+    height: 10rem;
     border-radius: 2px;
   }
 
@@ -52,8 +52,8 @@ $border: #22222233;
     position: relative;
     left: 50%;
     transform: translateX(-50%);
-    top: 0.5rem;
-    width: 7rem;
+    top: 1rem;
+    width: 8rem;
 
     ul {
       list-style: none;
@@ -68,7 +68,7 @@ $border: #22222233;
           color: #222222e4;
           text-decoration: none;
           font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-          font-size: 0.8rem;
+          font-size: 0.85rem;
           font-weight: 500;
           transition: color 0.3s ease;
 
@@ -85,7 +85,7 @@ $border: #22222233;
     bottom: 1.25rem;
     left: 50%;
     transform: translateX(-50%);
-    width: 7rem;
+    width: 8rem;
 
     ul {
       list-style: none;
