@@ -200,7 +200,7 @@ function Vase() {
       15,                   // Distance from origin
       0,                    // X-axis rotation
       0,                    // Z-axis rotation
-      { x: -0.3, y: -3.25, z: -125 }  // Camera position (translate camera up by 2 units)
+      { x: 0, y: -3.2, z: -120 }  // Camera position (translate camera up by 2 units)
     )
     const normalMatrix = createNormalMatrix(modelViewMatrix)
 

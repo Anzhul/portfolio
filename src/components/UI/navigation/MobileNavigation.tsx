@@ -49,7 +49,7 @@ function MobileNavigation({ vase }: MobileNavigationProps) {
           <div className="logo">
             {vase}
           </div>
-          <div className="links">
+          <div className="menu-links">
             <div className="local-links">
               <ul>
                 <li>

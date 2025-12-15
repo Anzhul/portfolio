@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import DesktopNavigation from './DesktopNavigation'
 import MobileNavigation from './MobileNavigation'
-import Vase from './vase'
+import VaseR3F from './VaseR3F'
 
 function Navigation() {
   // Initialize with correct value immediately to avoid flash
@@ -25,8 +25,8 @@ function Navigation() {
 
   return (
     <>
-      <DesktopNavigation vase={!isMobile ? <Vase /> : null} />
-      <MobileNavigation vase={isMobile ? <Vase /> : null} />
+      <DesktopNavigation vase={!isMobile ? <VaseR3F /> : null} />
+      <MobileNavigation vase={isMobile ? <VaseR3F /> : null} />
     </>
   )
 }

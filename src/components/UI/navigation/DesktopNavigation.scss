@@ -4,6 +4,7 @@ $phi-squared: 2.618034; // φ² = φ + 1
 $phi-cubed: 4.236068; // φ³ = φ² + φ
 $phi-fourth: 6.854102; // φ⁴ = φ³ + φ²
 $phi-fifth: 11.090170; // φ⁵ = φ⁴ + φ³
+$phi-sixth: 17.944271909999159; // φ⁶ = φ⁵ + φ⁴
 
 // Inverse golden ratio calculations
 $phi-inverse: 0.618034; // 1/φ
@@ -12,40 +13,504 @@ $phi-inverse-cubed: 0.236068; // 1/φ³
 $phi-inverse-fourth: 0.145898; // 1/φ⁴
 $phi-inverse-fifth: 0.090170; // 1/φ⁵
 
-$background: #F8F4E8;
+$background: #FDFCF9;
 $primary: #222222;
-$border: #22222233;
+$border: #c6c6c6;
+
+$c: 0.25rem;
 
 // Desktop Navigation - Hidden on mobile
 .desktop-navigation {
   position: fixed;
-  top: calc(100vh / $phi-fifth);
-  left: 20px;
+  top: calc(100vh / $phi-sixth);
+  left: calc(100vh / $phi-sixth);
   z-index: 1000;
-  background-color: $background;
-  border: 1px solid $border;
-  width: 10rem;
-  height: 26rem;
   border-radius: 5px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   // Hide on mobile
   @media (max-width: 768px) {
     display: none;
   }
 
+  .navigation-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 7rem;
+    height: 10rem;
+    display: flex;
+  }
+
   .logo {
     position: relative;
-    top: 0.25rem;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
     font-weight: bold;
     text-align: center;
     color: $primary;
+    width: 8rem;
+    height: 8.5rem;
+    border-radius: 5px;
+    border: solid 1px $border;
+    background-color: $background;
+    box-shadow: #22222233 0px 2px 6px;
+  }
+
+  .logo-text {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 1.75rem;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .navigation-menu{
+    position: absolute;
+    top: 0;
+    left: 8.5rem;
+    height: 12.5rem;
+    width: 40rem;
+    background-color: $background;
+    border: solid 1px $border;
+    border-radius: 5px;
+    box-shadow: #22222233 0px 2px 6px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0 1.25rem;
+    transform: translate(0, -150%);
+    transition:cubic-bezier(0.65,0.05,0.36,1) 0.35s;
+    transition-delay: 0.6s;
+    opacity: 0;
+    overflow: hidden;
+
+    // Remove all link decoration
+    a {
+      text-decoration: none;
+      color: inherit;
+
+      &:hover {
+        text-decoration: none;
+      }
+
+      &:visited {
+        color: inherit;
+      }
+    }
+
+    &.open{
+      transition:cubic-bezier(0.65,0.05,0.36,1) 0.4s;
+      transform: translate(0,0);
+      transition-delay: 0.2s;
+      opacity: 1;
+    }
+  }
+
+  .about-box {
+    width: 12.5rem;
+    height: 10rem;
+    border: 1px solid $border;
+    border-radius: 5px;
+    background-color: #B9CCBF;
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
+    transform: translate(0, 50%);
+    transition-delay: 0s;
+    opacity: 0;
+
+    &::-webkit-scrollbar {
+      width: 0.5rem;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #8C8A84;
+      border-radius: 5px;
+      border: 2px solid #B9CCBF;
+
+      &:hover {
+        background: #6B6964;
+      }
+    }
+
+    // Remove scrollbar arrows
+    &::-webkit-scrollbar-button {
+      display: none;
+    }
+
+    &.open {
+      transform: translate(0, 0);
+      opacity: 1;
+      transition-delay: 0.45s;
+    }
+
+    // Firefox scrollbar
+    scrollbar-width: thin;
+    scrollbar-color: #8C8A84 transparent;
+  }
+
+  .about-header {
+    position: relative;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    width: 9rem;
+    top: 0.9rem;
+    left: 1rem;
+    color: $primary;
+  }
+
+  .about-text {
+    position: relative;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 400;
+    width: 9rem;
+    top: 2rem;
+    left: 1rem;
+    color: $primary;
+    line-height: 1.3;
+  }
+
+  .projects-box {
+    width: 12.5rem;
+    height: 10rem;
+    border: 1px solid $border;
+    border-radius: 5px;
+    background-color: #F0E0C8;
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
+    transform: translate(0, 50%);
+    transition-delay: 0.15s;
+    opacity: 0;
+
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 0.5rem;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #8C8A84;
+      border-radius: 5px;
+      border: 2px solid #D6E4E1;
+
+      &:hover {
+        background: #6B6964;
+      }
+    }
+
+    // Remove scrollbar arrows
+    &::-webkit-scrollbar-button {
+      display: none;
+    }
+
+    &.open {
+      transform: translate(0, 0);
+      opacity: 1;
+      transition-delay: 0.6s;
+    }
+
+    // Firefox scrollbar
+    scrollbar-width: thin;
+    scrollbar-color: #8C8A84 transparent;
+
+  }
+
+  .project-header {
+    position: relative;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    width: 9rem;
+    top: 0.9rem;
+    left: 1rem;
+    color: $primary;
+  }
+
+  .project-text {
+    position: relative;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 400;
+    width: 9rem;
+    top: 2rem;
+    left: 1rem;
+    color: $primary;
+    line-height: 1.3;
+  }
+
+  .project-links {
+    position: relative;
+    top: 1.5rem;
+    left: 1rem;
+    width: 10.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+
+    .year{
+      font-size: 0.6rem;
+      color: #555555;
+    }
+
+    li {
+      a {
+        color: $primary;
+        text-decoration: none;
+        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+        font-size: 0.75rem;
+        font-weight: 400;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: #222222;
+        }
+      }
+    }
+  }
+
+  .miscellaneous-box {
     width: 10rem;
     height: 10rem;
-    border-radius: 2px;
+    overflow-y: display;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
+    transform: translate(0, 50%);
+    transition-delay: 0.3s;
+    opacity: 0;
+
+    &.open{
+      transform: translate(0, 0);
+      opacity: 1;
+      transition-delay: 0.75s;
+    }
+  }
+
+  .personal-box {
+    width: 10rem;
+    height: 4rem;
+    border: 1px solid $border;
+    border-radius: 5px;
+    background-color: #C7776F;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .personal-header {
+    position: relative;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    width: 8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 1rem;
+    color: $primary;
+  }
+
+  .external-links {
+    position: relative;
+    bottom: 0.8rem;
+    left: 0.5rem;
+    width: 8rem;
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.085rem;
+      margin: 0;
+      padding: 0;
+    
+      li {
+        a {
+          color: $primary;
+          text-decoration: none;
+          font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+          font-size: 0.65rem;
+          font-weight: 400;
+          transition: color 0.3s ease;
+
+          &:hover {
+            color: #222222;
+          }
+        }
+      }
+    }
+  }
+
+  // Hamburger button
+  .hamburger {
+    position: absolute;
+    top: 9rem;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 3.5rem;
+    width: 3.5rem;
+    background-color: #FDFCF9;
+    border: none;
+    border: 1px solid $border;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    overflow: hidden;
+
+  .dot1,
+  .dot2,
+  .dot3,
+  .dot4 {
+    position: absolute;
+    width: 0.3rem;
+    height: 0.3rem;
+    min-width: 0.3rem;
+    min-height: 0.3rem;
+    max-width: 0.3rem;
+    max-height: 0.3rem;
+    border: 1px solid #5b5b5b;
+    background-color: #8C8A84;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition-delay: 0.25s;
+    border-radius: 50%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    z-index: 2;
+    will-change: transform;
+  }
+
+  .dot1 {
+    top: 1.075rem;
+    left: 1.075rem;
+
+    &.open {
+      transform: translate(-$c, -$c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0s;
+    }
+  }
+
+  .dot2 {
+    top: 1.075rem;
+    right: 1.075rem;
+
+    &.open {
+      transform: translate($c, -$c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0.1s;
+    }
+  }
+
+  .dot3 {
+    bottom: 1.075rem;
+    left: 1.075rem;
+
+    &.open {
+      transform: translate(-$c, $c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0.05s;
+    }
+  }
+
+  .dot4 {
+    bottom: 1.075rem;
+    right: 1.075rem;
+
+    &.open {
+      transform: translate($c, $c);
+      //background-color: #FF711E;
+      //border: 1px solid #FF711E;
+      transition-delay: 0.075s;
+    }
+  }
+
+  .x-lines {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    overflow: visible;
+    z-index: 3;
+
+    .line1 {
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0.0s;
+    }
+
+    .line2{
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0s;
+    }
+
+    .line1-outline{
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0.0s;
+    }
+
+    .line2-outline {
+      stroke-dasharray: 42;
+      stroke-dashoffset: 42;
+      transition: 0;
+      transition-delay: 0s;
+    }
+
+    &.open {
+      .line1 {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.45s;
+      }
+      .line2 {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.5s;
+      }
+      .line1-outline {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.45s;
+      }
+      .line2-outline {
+        transition: stroke-dashoffset 0.2s ease-out;
+        stroke-dashoffset: 0;
+        transition-delay: 0.5s;
+      }
+    }
+  }
   }
 
   .local-links {
@@ -59,7 +524,7 @@ $border: #22222233;
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 0.15rem;
+      gap: 0.2rem;
       margin: 0;
       padding: 0;
 
@@ -70,38 +535,6 @@ $border: #22222233;
           font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
           font-size: 0.85rem;
           font-weight: 500;
-          transition: color 0.3s ease;
-
-          &:hover {
-            color: #222222;
-          }
-        }
-      }
-    }
-  }
-
-  .external-links {
-    position: absolute;
-    bottom: 1.25rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 8rem;
-
-    ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.085rem;
-      margin: 0;
-      padding: 0;
-
-      li {
-        a {
-          color: $primary;
-          text-decoration: none;
-          font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-          font-size: 0.65rem;
-          font-weight: 400;
           transition: color 0.3s ease;
 
           &:hover {
