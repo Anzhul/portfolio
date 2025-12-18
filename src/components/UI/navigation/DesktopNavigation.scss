@@ -32,6 +32,18 @@ $c: 0.25rem;
     display: none;
   }
 
+  // Vase canvas styles for desktop navigation
+  .vase-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 6.75rem !important;
+    object-fit: contain;
+    margin: 0 auto;
+    //background-color: blue;
+  }
+
   .navigation-header {
     position: absolute;
     top: 0;

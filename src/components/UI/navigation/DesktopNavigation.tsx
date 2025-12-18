@@ -67,6 +67,7 @@ function DesktopNavigation({ vase }: DesktopNavigationProps) {
             <li>
               <Link to="/project3">Project 3</Link>
             </li>
+            
           </ul>
         </div>
         <div className={`miscellaneous-box ${isMenuOpen ? 'open' : ''}`}>
