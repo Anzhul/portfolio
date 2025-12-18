@@ -1,10 +1,11 @@
 .home{
-    background-color: blue;
+    //background-color: blue;
     width: 100rem;
     height: 100rem;
     position: absolute;
     top: 0;
     left: 0;
+    z-index: 0;
 }
 
 .home-content{
