@@ -1,6 +1,8 @@
-import { useRef, useEffect, type ReactNode, type MouseEvent } from 'react'
+import { useRef, useEffect, useMemo, type ReactNode, type MouseEvent } from 'react'
 import { useCamera } from '../../context/CameraContext'
+import { useScene } from '../../context/SceneContext'
 import { ticker } from '../../utils/AnimationTicker'
+import R3FCanvas from './R3FCanvas'
 import './CameraViewport.scss'
 
 interface CameraViewportProps {
@@ -9,6 +11,7 @@ interface CameraViewportProps {
 
 export function CameraViewport({ children }: CameraViewportProps) {
   const camera = useCamera()
+  const { objects } = useScene()
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const isPanningRef = useRef(false)
@@ -21,6 +24,12 @@ export function CameraViewport({ children }: CameraViewportProps) {
   // Current interpolated values
   const currentZoomRef = useRef(1)
   const currentPositionRef = useRef<[number, number, number]>([0, 0, 5])
+
+  // Sort objects by zIndex for proper render order
+  const sortedObjects = useMemo(
+    () => [...objects].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)),
+    [objects]
+  )
 
   // Handle mouse wheel for zooming - using native event listener to prevent passive scroll
   useEffect(() => {
@@ -136,6 +145,16 @@ export function CameraViewport({ children }: CameraViewportProps) {
       className="camera-viewport"
       onMouseDown={handleMouseDown}
     >
+      {/* R3F Canvas - renders 3D objects */}
+      <R3FCanvas>
+        {/* Render all 3D objects in sorted order */}
+        {sortedObjects.map(({ id, component }) => (
+          <group key={id}>
+            {component}
+          </group>
+        ))}
+      </R3FCanvas>
+
       <div
         ref={contentRef}
         className="camera-content"

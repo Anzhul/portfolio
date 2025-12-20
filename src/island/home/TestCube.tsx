@@ -19,7 +19,6 @@ export function TestCube({
 
   useEffect(() => {
     // Create the 3D cube mesh
-    console.log('Adding TestCube to scene with id:', cubeId);
     const cube = (
       <mesh position={position}>
         <boxGeometry args={[size, size, size]} />
@@ -37,7 +36,10 @@ export function TestCube({
     return () => {
       removeObject(cubeId)
     }
-  }, [position, size, color, zIndex, cubeId, addObject, removeObject])
+    // Only re-run if position, size, color, or zIndex change
+    // Don't include addObject/removeObject as they're stable callbacks
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position, size, color, zIndex])
 
   // This component doesn't render HTML - it only adds to the 3D scene
   return null

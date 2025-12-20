@@ -1,7 +1,7 @@
 import { Island } from '../../components/world/Island'
 import { HomeSection1 } from './section1'
-import { TestCube } from './TestCube'
 import './home.scss'
+import { TestCube } from './TestCube'
 
 export function HomeIsland() {
   return (
@@ -10,7 +10,7 @@ export function HomeIsland() {
       <HomeSection1 />
 
       {/* Test cube to verify R3F camera sync */}
-      <TestCube position={[200, -100, 0]} size={150} color="#4ecdc4" />
+    <TestCube position={[0, 1, -5]} />
     </Island>
   )
 }

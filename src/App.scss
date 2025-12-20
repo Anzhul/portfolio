@@ -3,9 +3,7 @@ $primary: #222222;
 $border: #22222267;
 
 .app {
-  position: fixed;
-  top: 0;
-  left: 0;  
+  position: relative;
   width: 100%;
   min-height: 100vh;
   background: $background;

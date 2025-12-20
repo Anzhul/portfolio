@@ -7,7 +7,7 @@
   overflow: hidden;
   cursor: grab;
   user-select: none;
-  background: white;
+  pointer-events: auto; // Capture pointer events for dragging
 
   &:active {
     cursor: grabbing;
@@ -21,4 +21,5 @@
   position: relative;
   width: 100%;
   height: 100%;
+  pointer-events: none; // Let events pass through, re-enable on specific children
 }

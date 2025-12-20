@@ -24,9 +24,10 @@ $c: 0.25rem;
   position: fixed;
   top: calc(100vh / $phi-sixth);
   left: calc(100vh / $phi-sixth);
-  z-index: 1000;
+  z-index: 1000; // Above R3F canvas (z:1) and all content
   border-radius: 5px;
   backdrop-filter: blur(10px);
+  pointer-events: auto; // Re-enable pointer events for navigation
   // Hide on mobile
   @media (max-width: 768px) {
     display: none;

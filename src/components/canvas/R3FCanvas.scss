@@ -1,11 +1,11 @@
 .r3f-canvas-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none; // Allow clicks to pass through to 2D content below
-  z-index: 1; // Below 2D content but above background
+  z-index: 1; // Layer between world content (z:0) and navigation (z:1000)
 
   .r3f-canvas {
     width: 100%;
