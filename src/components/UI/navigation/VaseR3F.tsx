@@ -6,15 +6,15 @@ import { EffectComposer, Outline } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { ticker } from '../../../utils/AnimationTicker'
 import { Animation, Easing } from '../../../utils/Animation'
-import './Navigation.scss'
+import { useMenu } from '../../../context/MenuContext'
 
-function VaseMesh({ composerRef }: { composerRef: React.MutableRefObject<any> }) {
+function VaseMesh({ composerRef, isMobile, isMenuOpen }: { composerRef: React.MutableRefObject<any>, isMobile: boolean, isMenuOpen: boolean }) {
   const groupRef = useRef<THREE.Group>(null!)
   const { gl, scene: threeScene, camera } = useThree()
   const [meshes, setMeshes] = useState<THREE.Object3D[]>([])
 
   // Load GLTF model - get the entire scene
-  const { scene } = useGLTF('/Vase.glb')
+  const { scene } = useGLTF('/vase.glb')
 
   // Load texture
   const texture = useLoader(THREE.TextureLoader, '/texture.png')
@@ -99,6 +99,7 @@ function VaseMesh({ composerRef }: { composerRef: React.MutableRefObject<any> })
 
     // Render loop - still needed for rendering
     const render = () => {
+      console.log('Rendering vase R3F');
       if (composerRef.current) {
         composerRef.current.render()
       } else {
@@ -106,7 +107,7 @@ function VaseMesh({ composerRef }: { composerRef: React.MutableRefObject<any> })
       }
     }
 
-    ticker.add(render)
+    ticker.add(render);
 
     return () => {
       ticker.remove(render)
@@ -123,10 +124,10 @@ function VaseMesh({ composerRef }: { composerRef: React.MutableRefObject<any> })
     <>
       <ambientLight intensity={1.5} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
-      <group ref={groupRef} position={[0, -2.5, -5]}>
+      <group ref={groupRef} position={isMobile ? [0, -2.5, -5] : [0, -2.5, -5]}>
         <primitive
           object={scene}
-          position={[0, 0, 0]}
+          position={isMobile ? [0, 0, 0] : [0, 0, 0]}
           rotation={[0, Math.PI/2, 0]}
           scale={1.6}
         />
@@ -148,6 +149,28 @@ function VaseMesh({ composerRef }: { composerRef: React.MutableRefObject<any> })
 
 function VaseR3F() {
   const composerRef = useRef<any>(null)
+  const { isMobile, isMenuOpen } = useMenu()
+  const [shouldShow, setShouldShow] = useState(true)
+
+  // Handle delayed hide on mobile when menu closes
+  useEffect(() => {
+    if (isMobile && !isMenuOpen) {
+      // Delay hiding the vase when menu closes on mobile
+      const timeout = setTimeout(() => {
+        setShouldShow(false)
+      }, 500) // 500ms delay
+
+      return () => clearTimeout(timeout)
+    } else {
+      // Show immediately when menu opens or on desktop
+      setShouldShow(true)
+    }
+  }, [isMobile, isMenuOpen])
+
+  // Don't render on mobile when menu is closed (with delay)
+  if (isMobile && !shouldShow) {
+    return null
+  }
 
   return (
     <Canvas
@@ -157,15 +180,15 @@ function VaseR3F() {
       orthographic
       camera={{
         position: [0, 0, 0],
-        zoom: 20,
+        zoom: isMobile ? 25  : 20,
       }}
     >
-      <VaseMesh composerRef={composerRef} />
+      <VaseMesh composerRef={composerRef} isMobile={isMobile} isMenuOpen={isMenuOpen} />
     </Canvas >
   )
 }
 
 // Preload the GLTF model
-useGLTF.preload('/Vase.glb')
+useGLTF.preload('/vase.glb')
 
 export default VaseR3F
