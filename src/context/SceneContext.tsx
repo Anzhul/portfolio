@@ -18,13 +18,13 @@ const SceneContext = createContext<SceneContextType | null>(null)
 export function SceneProvider({ children }: { children: ReactNode }) {
   const [objects, setObjects] = useState<SceneObject[]>([])
 
-  const addObject = useCallback((id: string, component: ReactNode, zIndex: number = 0) => {
+  const addObject = useCallback((id: string, component: ReactNode, zIndex: number = 0, layer: 'background' | 'foreground' = 'foreground') => {
     setObjects((prev) => {
       // Prevent duplicates
       if (prev.some(obj => obj.id === id)) {
         return prev
       }
-      return [...prev, { id, component, zIndex }]
+      return [...prev, { id, component, zIndex, layer }]
     })
   }, [])
 

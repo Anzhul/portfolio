@@ -39,8 +39,33 @@ export function CameraViewport({ children }: CameraViewportProps) {
     const handleWheel = (e: globalThis.WheelEvent) => {
       e.preventDefault()
 
-      const delta = e.deltaY * -0.001
-      const newTargetZoom = Math.max(0.1, Math.min(5, targetZoomRef.current + delta))
+      const delta = e.deltaY * -0.00075
+      const newTargetZoom = Math.max(0.1, Math.min(2, targetZoomRef.current + delta))
+
+      // Calculate cursor position relative to the container
+      const rect = container.getBoundingClientRect()
+      const cursorX = e.clientX - rect.left
+      const cursorY = e.clientY - rect.top
+
+      // Get center of viewport
+      const centerX = rect.width / 2
+      const centerY = rect.height / 2
+
+      // Calculate the point in world space that's currently under the cursor
+      // We need to reverse the transform: point = (cursor - center - position) / zoom
+      const [camX, camY, camZ] = targetPositionRef.current
+      const currentZoom = targetZoomRef.current
+
+      const worldX = (cursorX - centerX - camX) / currentZoom
+      const worldY = (cursorY - centerY - camY) / currentZoom
+
+      // After zooming, we want the same world point to be under the cursor
+      // newPosition = cursor - center - (worldPoint * newZoom)
+      targetPositionRef.current = [
+        cursorX - centerX - worldX * newTargetZoom,
+        cursorY - centerY - worldY * newTargetZoom,
+        camZ
+      ]
 
       targetZoomRef.current = newTargetZoom
     }

@@ -20,7 +20,7 @@ export function TestCube({
   useEffect(() => {
     // Create the 3D cube mesh
     const cube = (
-      <mesh position={position}>
+      <mesh position={position} castShadow>
         <boxGeometry args={[size, size, size]} />
         <meshStandardMaterial
           color={color}

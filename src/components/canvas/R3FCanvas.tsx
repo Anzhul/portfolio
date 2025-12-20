@@ -35,14 +35,15 @@ function R3FCanvas({ children }: R3FCanvasProps) {
           alpha: true,
           antialias: true,
         }}
+        shadows
       >
         {/* Camera sync component updates R3F camera to match CameraContext */}
         <CameraSync />
 
         {/* Ambient light for basic visibility */}
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-
+        <ambientLight intensity={1} />
+        <directionalLight position={[10, 10, 5]} intensity={2} castShadow />
+        
         {/* User can add 3D content here */}
         {children}
       </Canvas>
