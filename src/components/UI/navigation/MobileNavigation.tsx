@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useMenu } from '../../../context/MenuContext'
+import MobileNavigationName from './MobileNavName'
 import './MobileNavigation.scss'
 
 interface MobileNavigationProps {
@@ -44,6 +45,7 @@ function MobileNavigation({ vase }: MobileNavigationProps) {
       </button>
 
       {/* Mobile Menu Overlay */}
+      <MobileNavigationName name="Anzhu Ling" />
       <div className={`mobile-menu-overlay ${isMenuOpen ? 'open' : ''}`}>
         <div className="menu-content">
           <div className="left-section">
