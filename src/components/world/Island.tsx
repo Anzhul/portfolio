@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useWorld } from '../../context/WorldContext'
 import { useBoundary } from '../../context/BoundaryContext'
+import { BoundaryVisualizer } from '../boundary/BoundaryVisualizer'
 import type { BoundaryConfig } from '../boundary/boundary'
 
 interface IslandProps {
@@ -36,18 +37,29 @@ export function Island({ id, position, name, boundaries, children }: IslandProps
 
   // Apply position to DOM element to match 3D space position
   return (
-    <div
-      data-island-id={id}
-      className={name}
-      style={{
-        position: 'absolute',
-        left: `${position[0]}px`,
-        top: `${position[1]}px`,
-        transform: 'translate(-50%, -50%)',
-        // z-index could be derived from position[2] if needed for layering
-      }}
-    >
-      {children}
-    </div>
+    <>
+      {/* Render boundary visualizer circles if boundaries are defined */}
+      {boundaries && (
+        <BoundaryVisualizer
+          position={position}
+          boundaries={boundaries}
+          islandId={id}
+        />
+      )}
+
+      <div
+        data-island-id={id}
+        className={name}
+        style={{
+          position: 'absolute',
+          left: `${position[0]}px`,
+          top: `${position[1]}px`,
+          transform: 'translate(-50%, -50%)',
+          // z-index could be derived from position[2] if needed for layering
+        }}
+      >
+        {children}
+      </div>
+    </>
   )
 }

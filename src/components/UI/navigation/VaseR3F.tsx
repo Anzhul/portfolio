@@ -99,7 +99,7 @@ function VaseMesh({ composerRef, isMobile, isMenuOpen }: { composerRef: React.Mu
 
     // Render loop - still needed for rendering
     const render = () => {
-      console.log('Rendering vase R3F');
+      //console.log('Rendering vase R3F');
       if (composerRef.current) {
         composerRef.current.render()
       } else {

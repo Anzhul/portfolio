@@ -12,16 +12,27 @@ const BoundaryContext = createContext<BoundaryContextType | undefined>(undefined
 
 export function BoundaryProvider({ children }: { children: ReactNode }) {
   const camera = useCamera();
+  const [manager, setManager] = useState<BoundaryManager | null>(null);
 
-  // Create BoundaryManager instance once
-  const manager = useMemo(() => new BoundaryManager(camera), [camera]);
-
-  // Cleanup on unmount
+  // Create manager in useEffect to ensure proper cleanup
   useEffect(() => {
-    return () => manager.destroy();
-  }, [manager]);
+    const newManager = new BoundaryManager(camera);
+    setManager(newManager);
 
-  const contextValue = useMemo(() => ({ manager }), [manager]);
+    return () => {
+      newManager.destroy();
+    };
+  }, [camera]);
+
+  const contextValue = useMemo(() =>
+    manager ? { manager } : null,
+    [manager]
+  );
+
+  // Don't render children until manager is ready
+  if (!contextValue) {
+    return null;
+  }
 
   return (
     <BoundaryContext.Provider value={contextValue}>

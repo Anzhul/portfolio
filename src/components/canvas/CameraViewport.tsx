@@ -166,7 +166,9 @@ export function CameraViewport({ children }: CameraViewportProps) {
         currentZ + (targetZ - currentZ) * trailingSpeed,
       ]
 
+
       // Update camera state
+
       camera.setZoom(currentZoomRef.current)
       camera.setPosition(currentPositionRef.current)
 
