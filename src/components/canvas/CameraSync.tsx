@@ -38,8 +38,9 @@ function CameraSync() {
       // We want: visibleHeight (in Three.js units) = viewport height (in pixels)
       const fovRadians = camera instanceof THREE.PerspectiveCamera ? (camera.fov * Math.PI) / 180 : state.fov
       const viewportHeight = gl.domElement.clientHeight
-      const visibleHeightAtZ0 = 2 * Math.tan(fovRadians / 2) * baseCameraZ
+      const visibleHeightAtZ0 = 2 * Math.tan(fovRadians / 2) * baseCameraZ;
       const pixelToUnit = visibleHeightAtZ0 / viewportHeight
+      
 
       // Instead of moving the camera, we move and scale the scene
       // This matches the CSS transform behavior: translate(x, y) scale(zoom)

@@ -5,14 +5,14 @@ import type { ReactNode } from 'react'
 // Uses ref-based storage to avoid re-renders on frequent updates (dragging/panning)
 // Components can subscribe to throttled updates if they need reactivity
 
-interface CameraState {
+export interface CameraState {
   position: [number, number, number]
   rotation: [number, number, number]
   fov: number
   zoom: number
 }
 
-interface CameraContextType {
+export interface CameraContextType {
   // Get current state (non-reactive, doesn't cause re-renders)
   getState: () => CameraState
 

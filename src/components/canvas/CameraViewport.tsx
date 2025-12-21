@@ -31,49 +31,70 @@ export function CameraViewport({ children }: CameraViewportProps) {
     [objects]
   )
 
-  // Handle mouse wheel for zooming - using native event listener to prevent passive scroll
+  // Handle mouse wheel for custom zooming - prevent browser zoom but keep our scroll zoom
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
     const handleWheel = (e: globalThis.WheelEvent) => {
-      e.preventDefault()
+      e.preventDefault() // Always prevent default to block browser zoom
 
-      const delta = e.deltaY * -0.00075
-      const newTargetZoom = Math.max(0.1, Math.min(2, targetZoomRef.current + delta))
+      // Only apply custom zoom if NOT a browser zoom gesture (Ctrl/Cmd not pressed)
+      if (!e.ctrlKey && !e.metaKey) {
+        const delta = e.deltaY * -0.00075
+        const newTargetZoom = Math.max(0.1, Math.min(2, targetZoomRef.current + delta))
 
-      // Calculate cursor position relative to the container
-      const rect = container.getBoundingClientRect()
-      const cursorX = e.clientX - rect.left
-      const cursorY = e.clientY - rect.top
+        // Calculate cursor position relative to the container
+        const rect = container.getBoundingClientRect()
+        const cursorX = e.clientX - rect.left
+        const cursorY = e.clientY - rect.top
 
-      // Get center of viewport
-      const centerX = rect.width / 2
-      const centerY = rect.height / 2
+        // Get center of viewport
+        const centerX = rect.width / 2
+        const centerY = rect.height / 2
 
-      // Calculate the point in world space that's currently under the cursor
-      // We need to reverse the transform: point = (cursor - center - position) / zoom
-      const [camX, camY, camZ] = targetPositionRef.current
-      const currentZoom = targetZoomRef.current
+        // Calculate the point in world space that's currently under the cursor
+        // We need to reverse the transform: point = (cursor - center - position) / zoom
+        const [camX, camY, camZ] = targetPositionRef.current
+        const currentZoom = targetZoomRef.current
 
-      const worldX = (cursorX - centerX - camX) / currentZoom
-      const worldY = (cursorY - centerY - camY) / currentZoom
+        const worldX = (cursorX - centerX - camX) / currentZoom
+        const worldY = (cursorY - centerY - camY) / currentZoom
 
-      // After zooming, we want the same world point to be under the cursor
-      // newPosition = cursor - center - (worldPoint * newZoom)
-      targetPositionRef.current = [
-        cursorX - centerX - worldX * newTargetZoom,
-        cursorY - centerY - worldY * newTargetZoom,
-        camZ
-      ]
+        // After zooming, we want the same world point to be under the cursor
+        // newPosition = cursor - center - (worldPoint * newZoom)
+        targetPositionRef.current = [
+          cursorX - centerX - worldX * newTargetZoom,
+          cursorY - centerY - worldY * newTargetZoom,
+          camZ
+        ]
 
-      targetZoomRef.current = newTargetZoom
+        targetZoomRef.current = newTargetZoom
+      }
+    }
+
+    // Prevent keyboard zoom shortcuts (Ctrl+Plus, Ctrl+Minus, Ctrl+0)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+        e.preventDefault()
+      }
+    }
+
+    // Prevent pinch-to-zoom on touch devices
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault()
+      }
     }
 
     container.addEventListener('wheel', handleWheel, { passive: false })
+    window.addEventListener('keydown', handleKeyDown)
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
 
     return () => {
       container.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('keydown', handleKeyDown)
+      container.removeEventListener('touchmove', handleTouchMove)
     }
   }, [])
 

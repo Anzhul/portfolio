@@ -2,11 +2,10 @@
     //background-color: blue;
     width: 100rem;
     height: 100rem;
-    position: absolute;
-    top: 0;
-    left: 0;
+    // position, top, left now handled by Island component inline styles
     z-index: 6; // Behind R3F canvas (z:1)
     pointer-events: auto; // Re-enable pointer events for island content
+    background-color: red;
 }
 
 .home-content{
@@ -14,5 +13,4 @@
     font-size: 3rem;
     text-align: center;
     padding-top: 20vh;
-    background-color: red;
 }

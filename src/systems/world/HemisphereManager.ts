@@ -1,1 +1,0 @@
-// Manages hemisphere groupings

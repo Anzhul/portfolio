@@ -5,12 +5,20 @@ import { TestCube } from './TestCube'
 
 export function HomeIsland() {
   return (
-    <Island id="home" position={[0, 0, 0]} name="home">
+    <Island
+      id="home"
+      position={[0, 0, 0]}
+      name="home"
+      boundaries={{
+        loadRadius: 2000,   // Load content when camera is within 2000px
+        activeRadius: 1000, // Activate when camera is within 1000px
+      }}
+    >
       <div className="home-content">Home Island Content</div>
       <HomeSection1 />
 
       {/* Test cube to verify R3F camera sync */}
-    <TestCube position={[0, 1, -5]} />
+    <TestCube position={[0, 600, -5]} />
     </Island>
   )
 }

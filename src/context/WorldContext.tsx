@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import type { BoundaryConfig } from '../components/boundary/boundary'
 
 // World state provider - manages 3D world state, islands, sections, pages, and navigation
 // URL structure: /island/section or /island/page or /island (when zoomed out)
@@ -25,6 +26,7 @@ export interface IslandData {
   id: string
   position: [number, number, number]
   name: string
+  boundaries?: BoundaryConfig  // Optional boundary configuration for loading/activation
 }
 
 type ViewMode = 'world' | 'island' | 'section' | 'page'
