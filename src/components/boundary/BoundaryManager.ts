@@ -1,21 +1,27 @@
 import type { BoundaryConfig, BoundaryState } from './boundary'
 import type { CameraContextType } from '../../context/CameraContext'
 import type { IslandData } from '../../context/WorldContext'
+import { findClosestEntity, type EntityPosition } from '../../utils/routing'
 
-interface IslandBoundaryData {
+interface BoundaryData {
   position: [number, number, number];
   config: BoundaryConfig;
   state: BoundaryState;
 }
 
 type PreloadCallback = () => void;
+type RouteChangeCallback = (entity: EntityPosition | null) => void;
 
 export class BoundaryManager {
-  private islands: Map<string, IslandBoundaryData> = new Map();
+  private islands: Map<string, BoundaryData> = new Map();
+  private sections: Map<string, BoundaryData> = new Map();
+  private sectionIslandMap: Map<string, string> = new Map();  // Maps section ID to island ID
   private camera: CameraContextType;
   private unsubscribe?: () => void;
   private preloadCallbacks: Map<string, PreloadCallback> = new Map();
-  private preloadedIslands: Set<string> = new Set();
+  private preloadedEntities: Set<string> = new Set();
+  private routeChangeCallbacks: Set<RouteChangeCallback> = new Set();
+  private currentClosestEntity: EntityPosition | null = null;
 
   constructor(camera: CameraContextType) {
     this.camera = camera;
@@ -46,7 +52,39 @@ export class BoundaryManager {
   unregisterIsland(islandId: string) {
     this.islands.delete(islandId);
     this.preloadCallbacks.delete(islandId);
-    this.preloadedIslands.delete(islandId);
+    this.preloadedEntities.delete(islandId);
+  }
+
+  // Register a section with its boundary configuration
+  registerSection(
+    section: { id: string; position: [number, number, number]; islandId?: string },
+    config: BoundaryConfig
+  ) {
+    this.sections.set(section.id, {
+      position: section.position,
+      config,
+      state: {
+        isLoaded: false,
+        isActive: false,
+        distanceToCamera: Infinity,
+      },
+    });
+
+    // Track section-to-island mapping for routing
+    if (section.islandId) {
+      this.sectionIslandMap.set(section.id, section.islandId);
+    }
+
+    // Check immediately in case camera is already within boundaries
+    this.checkSectionBoundary(section.id);
+  }
+
+  // Unregister a section
+  unregisterSection(sectionId: string) {
+    this.sections.delete(sectionId);
+    this.preloadCallbacks.delete(sectionId);
+    this.preloadedEntities.delete(sectionId);
+    this.sectionIslandMap.delete(sectionId);
   }
 
   // Get current boundary state for an island
@@ -55,21 +93,105 @@ export class BoundaryManager {
     return island ? { ...island.state } : null;
   }
 
-  // Register a preload callback for an island (triggered at 2x loadRadius)
-  registerPreload(islandId: string, callback: PreloadCallback) {
-    this.preloadCallbacks.set(islandId, callback);
+  // Get current boundary state for a section
+  getSectionState(sectionId: string): BoundaryState | null {
+    const section = this.sections.get(sectionId);
+    return section ? { ...section.state } : null;
   }
 
-  // Check if an island has been preloaded
-  isPreloaded(islandId: string): boolean {
-    return this.preloadedIslands.has(islandId);
+  // Register a preload callback for an island or section (triggered at 2x loadRadius)
+  registerPreload(entityId: string, callback: PreloadCallback) {
+    this.preloadCallbacks.set(entityId, callback);
   }
 
-  // Check all islands against current camera position
+  // Check if an entity (island or section) has been preloaded
+  isPreloaded(entityId: string): boolean {
+    return this.preloadedEntities.has(entityId);
+  }
+
+  // Subscribe to route changes (when closest entity changes)
+  onRouteChange(callback: RouteChangeCallback): () => void {
+    this.routeChangeCallbacks.add(callback);
+    return () => {
+      this.routeChangeCallbacks.delete(callback);
+    };
+  }
+
+  // Get the section-to-island mapping
+  getSectionIslandMap(): Map<string, string> {
+    return this.sectionIslandMap;
+  }
+
+  // Check all islands and sections against current camera position
   private checkAllBoundaries() {
     this.islands.forEach((_, islandId) => {
       this.checkIslandBoundary(islandId);
     });
+    this.sections.forEach((_, sectionId) => {
+      this.checkSectionBoundary(sectionId);
+    });
+
+    // Update current route based on closest entity to viewport top-left
+    this.updateCurrentRoute();
+  }
+
+  // Update the current route based on viewport position
+  private updateCurrentRoute() {
+    const cameraPos = this.camera.getState().position;
+    const cameraZoom = this.camera.getState().zoom;
+
+    // Calculate viewport center in world space
+    const zoomoffsetX = (window.innerWidth / 2) - (window.innerWidth * cameraZoom / 2);
+    const zoomoffsetY = (window.innerHeight / 2) - (window.innerHeight * cameraZoom / 2);
+
+    const screenLeft = -cameraPos[0] - zoomoffsetX;
+    const screenTop = -cameraPos[1] - zoomoffsetY;
+    const screenRight = screenLeft + window.innerWidth;
+    const screenBottom = screenTop + window.innerHeight;
+
+    const viewportLeft = screenLeft / cameraZoom;
+    const viewportTop = screenTop / cameraZoom;
+    const viewportRight = screenRight / cameraZoom;
+    const viewportBottom = screenBottom / cameraZoom;
+
+    // Calculate center of viewport
+    const viewportCenterX = (viewportLeft + viewportRight) / 2;
+    const viewportCenterY = (viewportTop + viewportBottom) / 2;
+    const viewportCenter: [number, number] = [viewportCenterX, viewportCenterY];
+
+    // Find active islands (within activeRadius)
+    const activeIslands = new Map<string, BoundaryData>();
+    this.islands.forEach((island, id) => {
+      if (island.state.isActive) {
+        activeIslands.set(id, island);
+      }
+    });
+
+    let closestEntity: EntityPosition | null = null;
+
+    if (activeIslands.size > 0) {
+      // Find the closest active island to viewport center
+      closestEntity = findClosestEntity(
+        activeIslands,
+        new Map(),  // Sections are not used for routing
+        viewportCenter
+      );
+    }
+    // If no active islands, closestEntity stays null (route to /)
+
+    // Check if route changed
+    const routeChanged =
+      !this.currentClosestEntity && closestEntity !== null ||
+      this.currentClosestEntity && closestEntity === null ||
+      (this.currentClosestEntity && closestEntity &&
+        (this.currentClosestEntity.id !== closestEntity.id ||
+         this.currentClosestEntity.type !== closestEntity.type));
+
+    if (routeChanged) {
+      this.currentClosestEntity = closestEntity;
+      // Notify all subscribers
+      this.routeChangeCallbacks.forEach(callback => callback(closestEntity));
+    }
   }
 
   // Check a specific island's boundaries
@@ -137,12 +259,12 @@ export class BoundaryManager {
       viewportBottom
     );
 
-    if (shouldPreload && !this.preloadedIslands.has(islandId)) {
+    if (shouldPreload && !this.preloadedEntities.has(islandId)) {
       const callback = this.preloadCallbacks.get(islandId);
       if (callback) {
         console.log(`✨ Preloading island "${islandId}" (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
         callback();
-        this.preloadedIslands.add(islandId);
+        this.preloadedEntities.add(islandId);
         this.preloadCallbacks.delete(islandId); // Only preload once
       }
     }
@@ -178,7 +300,7 @@ export class BoundaryManager {
       console.log(`🌴 Island "${islandId}" LOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
     }
     if (wasLoaded && !isLoaded) {
-      console.log(`🌴 Island "${islandId}" UNLOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+      //console.log(`🌴 Island "${islandId}" UNLOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
     }
 
     if (!wasActive && isActive) {
@@ -186,6 +308,108 @@ export class BoundaryManager {
     }
     if (wasActive && !isActive) {
       console.log(`💤 Island "${islandId}" INACTIVE (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+    }
+  }
+
+  // Check a specific section's boundaries (same logic as islands)
+  private checkSectionBoundary(sectionId: string) {
+    const section = this.sections.get(sectionId);
+    if (!section) return;
+
+    // Camera position and zoom
+    const cameraPos = this.camera.getState().position;
+    const cameraZoom = this.camera.getState().zoom;
+
+    // Calculate viewport bounds in world space
+    const zoomoffsetX = (window.innerWidth / 2) - (window.innerWidth * cameraZoom / 2);
+    const zoomoffsetY = (window.innerHeight / 2) - (window.innerHeight * cameraZoom / 2);
+
+    const screenLeft = -cameraPos[0] - zoomoffsetX;
+    const screenTop = -cameraPos[1] - zoomoffsetY;
+    const screenRight = screenLeft + window.innerWidth
+    const screenBottom = screenTop + window.innerHeight
+
+    const viewportLeft = screenLeft / cameraZoom;
+    const viewportTop = screenTop / cameraZoom;
+    const viewportRight = screenRight / cameraZoom;
+    const viewportBottom = screenBottom / cameraZoom;
+
+    // Boundaries are defined in world space
+    const scaledLoadRadius = section.config.loadRadius;
+    const scaledActiveRadius = section.config.activeRadius;
+
+    const previousState = { ...section.state };
+
+    // Calculate distance
+    const viewportCenterX = cameraPos[0];
+    const viewportCenterY = cameraPos[1];
+    const distance = Math.sqrt(
+      Math.pow(viewportCenterX - section.position[0], 2) +
+      Math.pow(viewportCenterY - section.position[1], 2)
+    );
+    section.state.distanceToCamera = distance;
+
+    // Check preload zone (2x loadRadius)
+    const preloadRadius = scaledLoadRadius * 2;
+    const shouldPreload = this.circleIntersectsRect(
+      section.position[0],
+      section.position[1],
+      preloadRadius,
+      viewportLeft,
+      viewportTop,
+      viewportRight,
+      viewportBottom
+    );
+
+    if (shouldPreload && !this.preloadedEntities.has(sectionId)) {
+      const callback = this.preloadCallbacks.get(sectionId);
+      if (callback) {
+        console.log(`✨ Preloading section "${sectionId}" (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+        callback();
+        this.preloadedEntities.add(sectionId);
+        this.preloadCallbacks.delete(sectionId);
+      }
+    }
+
+    // Check load boundary
+    const wasLoaded = previousState.isLoaded;
+    const isLoaded = this.circleIntersectsRect(
+      section.position[0],
+      section.position[1],
+      scaledLoadRadius,
+      viewportLeft,
+      viewportTop,
+      viewportRight,
+      viewportBottom
+    );
+    section.state.isLoaded = isLoaded;
+
+    // Check active boundary
+    const wasActive = previousState.isActive;
+    const isActive = this.circleIntersectsRect(
+      section.position[0],
+      section.position[1],
+      scaledActiveRadius,
+      viewportLeft,
+      viewportTop,
+      viewportRight,
+      viewportBottom
+    );
+    section.state.isActive = isActive;
+
+    // Fire events on state changes
+    if (!wasLoaded && isLoaded) {
+      //console.log(`📄 Section "${sectionId}" LOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+    }
+    if (wasLoaded && !isLoaded) {
+      //console.log(`📄 Section "${sectionId}" UNLOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+    }
+
+    if (!wasActive && isActive) {
+      //console.log(`✨ Section "${sectionId}" ACTIVE (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+    }
+    if (wasActive && !isActive) {
+      //console.log(`💤 Section "${sectionId}" INACTIVE (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
     }
   }
 

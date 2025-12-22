@@ -77,3 +77,32 @@ export function useBoundaryState(islandId: string): BoundaryState {
 
   return state;
 }
+
+// Hook to get reactive boundary state for a section
+export function useSectionBoundaryState(sectionId: string): BoundaryState {
+  const { manager } = useBoundary();
+  const camera = useCamera();
+
+  // Initialize with current state
+  const [state, setState] = useState<BoundaryState>(() =>
+    manager.getSectionState(sectionId) || {
+      isLoaded: false,
+      isActive: false,
+      distanceToCamera: Infinity,
+    }
+  );
+
+  useEffect(() => {
+    // Subscribe to camera updates to reactively update state
+    const unsubscribe = camera.subscribe(() => {
+      const newState = manager.getSectionState(sectionId);
+      if (newState) {
+        setState(newState);
+      }
+    });
+
+    return unsubscribe;
+  }, [camera, manager, sectionId]);
+
+  return state;
+}

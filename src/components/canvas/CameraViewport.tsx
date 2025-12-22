@@ -42,7 +42,7 @@ export function CameraViewport({ children }: CameraViewportProps) {
       // Only apply custom zoom if NOT a browser zoom gesture (Ctrl/Cmd not pressed)
       if (!e.ctrlKey && !e.metaKey) {
         const delta = e.deltaY * -0.00075
-        const newTargetZoom = Math.max(0.1, Math.min(2, targetZoomRef.current + delta))
+        const newTargetZoom = Math.max(0.25, Math.min(2, targetZoomRef.current + delta))
 
         // Calculate cursor position relative to the container
         const rect = container.getBoundingClientRect()

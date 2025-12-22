@@ -11,6 +11,7 @@ import { CameraViewport } from './components/canvas/CameraViewport'
 import { Plane } from './components/canvas/3DObjects/Plane'
 import { IslandLoader } from './components/loading/IslandLoader'
 import { ISLAND_REGISTRY } from './config/islandRegistry'
+import { RouteSync } from './components/routing/RouteSync'
 
 function App() {
   return (
@@ -20,6 +21,9 @@ function App() {
           <SceneProvider>
             <CameraProvider>
               <BoundaryProvider>
+                {/* Route synchronization - updates URL based on viewport position */}
+                <RouteSync />
+
                 {/* Navigation - fixed position, separate from camera transforms */}
                 <Navigation />
                 {/* Camera viewport wraps world for pan/zoom control */}
