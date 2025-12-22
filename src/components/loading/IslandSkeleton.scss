@@ -1,0 +1,62 @@
+.island-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 800px;
+  min-height: 600px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.skeleton-content {
+  padding: 40px;
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-text {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s linear infinite;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.skeleton-title {
+  height: 32px;
+  width: 60%;
+}
+
+.skeleton-subtitle {
+  height: 20px;
+  width: 80%;
+  margin-bottom: 32px;
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s linear infinite;
+  height: 300px;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

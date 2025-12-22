@@ -8,10 +8,14 @@ interface IslandBoundaryData {
   state: BoundaryState;
 }
 
+type PreloadCallback = () => void;
+
 export class BoundaryManager {
   private islands: Map<string, IslandBoundaryData> = new Map();
   private camera: CameraContextType;
   private unsubscribe?: () => void;
+  private preloadCallbacks: Map<string, PreloadCallback> = new Map();
+  private preloadedIslands: Set<string> = new Set();
 
   constructor(camera: CameraContextType) {
     this.camera = camera;
@@ -41,12 +45,24 @@ export class BoundaryManager {
   // Unregister an island
   unregisterIsland(islandId: string) {
     this.islands.delete(islandId);
+    this.preloadCallbacks.delete(islandId);
+    this.preloadedIslands.delete(islandId);
   }
 
   // Get current boundary state for an island
   getIslandState(islandId: string): BoundaryState | null {
     const island = this.islands.get(islandId);
     return island ? { ...island.state } : null;
+  }
+
+  // Register a preload callback for an island (triggered at 2x loadRadius)
+  registerPreload(islandId: string, callback: PreloadCallback) {
+    this.preloadCallbacks.set(islandId, callback);
+  }
+
+  // Check if an island has been preloaded
+  isPreloaded(islandId: string): boolean {
+    return this.preloadedIslands.has(islandId);
   }
 
   // Check all islands against current camera position
@@ -108,6 +124,28 @@ export class BoundaryManager {
       Math.pow(viewportCenterY - island.position[1], 2)
     );
     island.state.distanceToCamera = distance;
+
+    // Check preload zone (2x loadRadius) and trigger preload callback
+    const preloadRadius = scaledLoadRadius * 2;
+    const shouldPreload = this.circleIntersectsRect(
+      island.position[0],
+      island.position[1],
+      preloadRadius,
+      viewportLeft,
+      viewportTop,
+      viewportRight,
+      viewportBottom
+    );
+
+    if (shouldPreload && !this.preloadedIslands.has(islandId)) {
+      const callback = this.preloadCallbacks.get(islandId);
+      if (callback) {
+        console.log(`✨ Preloading island "${islandId}" (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+        callback();
+        this.preloadedIslands.add(islandId);
+        this.preloadCallbacks.delete(islandId); // Only preload once
+      }
+    }
 
     // Check load boundary (outer circle) intersection with viewport
     const wasLoaded = previousState.isLoaded;

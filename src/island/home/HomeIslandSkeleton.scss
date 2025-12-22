@@ -1,0 +1,112 @@
+.home-island-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1000px;
+  min-height: 800px;
+  pointer-events: none;
+}
+
+.home-skeleton-content {
+  padding: 60px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+/* Shared shimmer animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s linear infinite;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+/* Hero section */
+.skeleton-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.skeleton-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s linear infinite;
+  margin-bottom: 8px;
+}
+
+.skeleton-name {
+  height: 40px;
+  width: 300px;
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 400px;
+}
+
+.skeleton-subtitle {
+  height: 20px;
+  width: 350px;
+}
+
+/* Section skeleton */
+.skeleton-section {
+  max-width: 600px;
+}
+
+.skeleton-heading {
+  height: 28px;
+  width: 200px;
+  margin-bottom: 24px;
+}
+
+.skeleton-line {
+  height: 16px;
+  width: 100%;
+
+  &.short {
+    width: 70%;
+  }
+}
+
+/* 3D cube placeholder */
+.skeleton-cube {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 200%;
+  animation: skeleton-shimmer 2s linear infinite;
+  border-radius: 8px;
+  margin: 0 auto;
+  opacity: 0.5;
+}
+
+/* Pulse animation overlay */
+.home-skeleton-content {
+  animation: skeleton-pulse 2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}

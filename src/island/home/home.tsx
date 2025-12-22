@@ -10,8 +10,8 @@ export function HomeIsland() {
       position={[0, 0, 0]}
       name="home"
       boundaries={{
-        loadRadius: 2000,   // Load content when camera is within 2000px
-        activeRadius: 1000, // Activate when camera is within 1000px
+        loadRadius: 3000,
+        activeRadius: 1600,
       }}
     >
       <div className="home-content">Home Island Content</div>
