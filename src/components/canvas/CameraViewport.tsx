@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, type ReactNode, type MouseEvent } from 'react'
+import { useRef, useEffect, useMemo, useImperativeHandle, forwardRef, type ReactNode, type MouseEvent } from 'react'
 import { useCamera } from '../../context/CameraContext'
 import { useScene } from '../../context/SceneContext'
 import { ticker } from '../../utils/AnimationTicker'
@@ -9,7 +9,12 @@ interface CameraViewportProps {
   children?: ReactNode
 }
 
-export function CameraViewport({ children }: CameraViewportProps) {
+export interface CameraViewportHandle {
+  moveTo: (x: number, y: number, z?: number, zoom?: number, smooth?: boolean) => void
+}
+
+export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportProps>(
+  ({ children }, ref) => {
   const camera = useCamera()
   const { objects } = useScene()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -18,18 +23,77 @@ export function CameraViewport({ children }: CameraViewportProps) {
   const lastMousePosRef = useRef({ x: 0, y: 0 })
 
   // Target values for trailing
-  const targetZoomRef = useRef(1)
+  const targetZoomRef = useRef(0.45)
   const targetPositionRef = useRef<[number, number, number]>([0, 0, 5])
 
   // Current interpolated values
-  const currentZoomRef = useRef(1)
+  const currentZoomRef = useRef(0.45)
   const currentPositionRef = useRef<[number, number, number]>([0, 0, 5])
+
+  /**
+   * Comprehensive camera movement function
+   * Moves both HTML content (CSS transforms) and R3F camera
+   *
+   * @param x - X position for CSS transform (viewport position in pixels)
+   * @param y - Y position for CSS transform (viewport position in pixels)
+   * @param z - Z position (currently unused, reserved for future 3D features)
+   * @param zoom - Optional zoom level (default: current zoom)
+   * @param smooth - If true, smoothly interpolate to position. If false, jump immediately (default: false)
+   * @param sceneX - Optional independent X position for 3D scene (if undefined, uses x)
+   * @param sceneY - Optional independent Y position for 3D scene (if undefined, uses y)
+   */
+  const moveTo = (
+    x: number,
+    y: number,
+    z: number = 0,
+    zoom?: number,
+    smooth: boolean = false,
+    sceneX?: number,
+    sceneY?: number
+  ) => {
+    // Use independent scene position if provided, otherwise use viewport position
+    const actualSceneX = sceneX !== undefined ? sceneX : x
+    const actualSceneY = sceneY !== undefined ? sceneY : y
+
+    const targetPos: [number, number, number] = [actualSceneX, actualSceneY, z]
+    const targetZoom = zoom ?? currentZoomRef.current
+
+    if (smooth) {
+      // Smooth transition: update target refs and let animation loop interpolate
+      targetPositionRef.current = targetPos
+      targetZoomRef.current = targetZoom
+      console.log(`🎯 CameraViewport.moveTo: Smooth transition to [${x}, ${y}, ${z}], zoom: ${targetZoom}`)
+    } else {
+      // Immediate jump: update both target and current refs
+      targetPositionRef.current = targetPos
+      currentPositionRef.current = targetPos
+      targetZoomRef.current = targetZoom
+      currentZoomRef.current = targetZoom
+
+      // Update camera context immediately (this triggers R3F CameraSync)
+      camera.setPosition(targetPos)
+      camera.setZoom(targetZoom)
+
+      // Update CSS transform immediately
+      if (contentRef.current) {
+        contentRef.current.style.transform = `translate(${x}px, ${y}px) scale(${targetZoom})`
+      }
+
+      //console.log(`⚡ CameraViewport.moveTo: Instant jump to [${x}, ${y}, ${z}], zoom: ${targetZoom}`)
+    }
+  }
+
+  // Expose moveTo function via ref for external access
+  useImperativeHandle(ref, () => ({
+    moveTo
+  }))
 
   // Sort objects by zIndex for proper render order
   const sortedObjects = useMemo(
     () => [...objects].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)),
     [objects]
   )
+
 
   // Handle mouse wheel for custom zooming - prevent browser zoom but keep our scroll zoom
   useEffect(() => {
@@ -42,7 +106,7 @@ export function CameraViewport({ children }: CameraViewportProps) {
       // Only apply custom zoom if NOT a browser zoom gesture (Ctrl/Cmd not pressed)
       if (!e.ctrlKey && !e.metaKey) {
         const delta = e.deltaY * -0.00075
-        const newTargetZoom = Math.max(0.25, Math.min(2, targetZoomRef.current + delta))
+        const newTargetZoom = Math.max(0.15, Math.min(1, targetZoomRef.current + delta))
 
         // Calculate cursor position relative to the container
         const rect = container.getBoundingClientRect()
@@ -166,9 +230,7 @@ export function CameraViewport({ children }: CameraViewportProps) {
         currentZ + (targetZ - currentZ) * trailingSpeed,
       ]
 
-
       // Update camera state
-
       camera.setZoom(currentZoomRef.current)
       camera.setPosition(currentPositionRef.current)
 
@@ -211,4 +273,6 @@ export function CameraViewport({ children }: CameraViewportProps) {
       </div>
     </div>
   )
-}
+})
+
+CameraViewport.displayName = 'CameraViewport'

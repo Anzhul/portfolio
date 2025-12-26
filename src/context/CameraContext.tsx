@@ -61,8 +61,8 @@ export function CameraProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef<CameraState>({
     position: [0, 0, 5],
     rotation: [0, 0, 0],
-    fov: 75,
-    zoom: 1,
+    fov: (75 * Math.PI) / 180,  // Convert 75 degrees to radians
+    zoom: 0.45,
   })
 
   // Store subscribers (components that want to be notified of changes vis callbacks)

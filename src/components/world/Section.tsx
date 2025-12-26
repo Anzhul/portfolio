@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useWorld } from '../../context/WorldContext'
-import type { BoundaryConfig } from '../boundary/boundary'
+import type { BoundaryConfig } from '../../context/BoundaryContext'
 import { SectionBoundaryVisualizer } from '../boundary/SectionBoundaryVisualizer'
 
 interface SectionProps {

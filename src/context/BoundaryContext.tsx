@@ -2,7 +2,27 @@ import { createContext, useContext, useMemo, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { BoundaryManager } from '../components/boundary/BoundaryManager'
 import { useCamera } from './CameraContext'
-import type { BoundaryState } from '../components/boundary/boundary'
+import { ISLAND_REGISTRY } from '../config/islandRegistry'
+
+// Boundary system types for island loading and activation
+
+export interface BoundaryConfig {
+  loadRadius: number;    // Outer boundary - triggers content loading
+  activeRadius: number;  // Inner boundary - triggers render loop activation
+}
+
+export interface BoundaryState {
+  isLoaded: boolean;      // Camera is within load boundary
+  isActive: boolean;      // Camera is within active boundary
+  distanceToCamera: number;
+}
+
+export interface BoundaryEvents {
+  onEnterLoad?: (islandId: string) => void;
+  onExitLoad?: (islandId: string) => void;
+  onEnterActive?: (islandId: string) => void;
+  onExitActive?: (islandId: string) => void;
+}
 
 interface BoundaryContextType {
   manager: BoundaryManager;
@@ -17,6 +37,20 @@ export function BoundaryProvider({ children }: { children: ReactNode }) {
   // Create manager in useEffect to ensure proper cleanup
   useEffect(() => {
     const newManager = new BoundaryManager(camera);
+
+    // Pre-register all islands from registry for routing
+    Object.values(ISLAND_REGISTRY).forEach((config) => {
+      newManager.registerIsland(
+        {
+          id: config.id,
+          position: config.position,
+          name: config.name,
+        },
+        config.boundaries
+      );
+      console.log(`🏝️ Pre-registered island "${config.id}" for routing`);
+    });
+
     setManager(newManager);
 
     return () => {

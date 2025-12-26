@@ -1,4 +1,5 @@
 import { BrowserRouter} from 'react-router-dom'
+import { useRef } from 'react'
 import './App.scss'
 import { MenuProvider } from './context/MenuContext'
 import { CameraProvider } from './context/CameraContext'
@@ -7,13 +8,15 @@ import { BoundaryProvider } from './context/BoundaryContext'
 import Navigation from './components/UI/navigation/Navigation'
 import { World } from './components/world/World'
 import { SceneProvider } from './context/SceneContext'
-import { CameraViewport } from './components/canvas/CameraViewport'
+import { CameraViewport, type CameraViewportHandle } from './components/canvas/CameraViewport'
 import { Plane } from './components/canvas/3DObjects/Plane'
 import { IslandLoader } from './components/loading/IslandLoader'
 import { ISLAND_REGISTRY } from './config/islandRegistry'
 import { RouteSync } from './components/routing/RouteSync'
+import { Map } from './components/UI/map/Map'
 
 function App() {
+  const cameraViewportRef = useRef<CameraViewportHandle>(null)
   return (
     <BrowserRouter>
       <MenuProvider>
@@ -22,16 +25,20 @@ function App() {
             <CameraProvider>
               <BoundaryProvider>
                 {/* Route synchronization - updates URL based on viewport position */}
-                <RouteSync />
+                <RouteSync cameraViewportRef={cameraViewportRef} />
 
                 {/* Navigation - fixed position, separate from camera transforms */}
                 <Navigation />
+
+                {/* Map - fixed position navigation to islands */}
+                <Map cameraViewportRef={cameraViewportRef} />
+
                 {/* Camera viewport wraps world for pan/zoom control */}
-                <CameraViewport>
+                <CameraViewport ref={cameraViewportRef}>
                   {/* World with 2D content */}
                   <World dimensions={[10000, 10000]}>
                     {/* Background plane */}
-                    <Plane position={[0, 0, 0]} height={10000} width={10000} emmissive={1.0} color="#ffffff" />
+                    <Plane position={[0, 0, 0]} height={10000} width={10000} emmissive={1.0} color="#ff00ff" />
 
                     {/* Dynamically loaded islands */}
                     {Object.values(ISLAND_REGISTRY).map((config) => (

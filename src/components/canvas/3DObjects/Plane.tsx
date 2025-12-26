@@ -33,12 +33,14 @@ export function Plane({
             emissiveIntensity={emmissive}
             roughness={0.3}
             metalness={0.7}
+            side={2}  // DoubleSide - visible from both sides
           />
         ) : (
           <meshStandardMaterial
             color={color}
             roughness={0.3}
             metalness={0.7}
+            side={2}  // DoubleSide - visible from both sides
           />
         )}
       </mesh>

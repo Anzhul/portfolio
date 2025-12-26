@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
-import type { BoundaryConfig } from '../components/boundary/boundary'
+import type { BoundaryConfig } from './BoundaryContext'
 
 // World state provider - manages 3D world state, islands, sections, pages, and navigation
 // URL structure: /island/section or /island/page or /island (when zoomed out)
@@ -227,9 +227,13 @@ export function WorldProvider({ children }: { children: ReactNode }) {
     sections,
     pages,
     activeIslandId,
+    setActiveIslandId,
     activeSectionId,
+    setActiveSectionId,
     activePageId,
+    setActivePageId,
     viewMode,
+    setViewMode,
     getIslandById,
     getSectionById,
     getPageById,

@@ -1,6 +1,6 @@
 import { lazy } from 'react'
 import type { ComponentType } from 'react'
-import type { BoundaryConfig } from '../components/boundary/boundary'
+import type { BoundaryConfig } from '../context/BoundaryContext'
 import { HomeSection2Skeleton } from '../island/home/sections/Section2Skeleton'
 
 // Lazy-loaded sections

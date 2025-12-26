@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { BoundaryConfig } from './boundary'
+import type { BoundaryConfig } from '../../context/BoundaryContext'
 
 interface SectionBoundaryVisualizerProps {
   position: [number, number, number]

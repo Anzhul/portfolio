@@ -1,4 +1,4 @@
-import type { BoundaryConfig, BoundaryState } from './boundary'
+import type { BoundaryConfig, BoundaryState } from '../../context/BoundaryContext'
 import type { CameraContextType } from '../../context/CameraContext'
 import type { IslandData } from '../../context/WorldContext'
 import { findClosestEntity, type EntityPosition } from '../../utils/routing'
@@ -91,6 +91,12 @@ export class BoundaryManager {
   getIslandState(islandId: string): BoundaryState | null {
     const island = this.islands.get(islandId);
     return island ? { ...island.state } : null;
+  }
+
+  // Get island position
+  getIslandPosition(islandId: string): [number, number, number] | null {
+    const island = this.islands.get(islandId);
+    return island ? island.position : null;
   }
 
   // Get current boundary state for a section
@@ -207,7 +213,6 @@ export class BoundaryManager {
     // CSS transform: translate(cameraPos) scale(zoom)
     // To convert screen coords to world coords: worldPoint = (screenPoint - cameraPos) / zoom
 
-
     const zoomoffsetX = (window.innerWidth / 2) - (window.innerWidth * cameraZoom / 2);
     const zoomoffsetY = (window.innerHeight / 2) - (window.innerHeight * cameraZoom / 2);
     // Screen corners
@@ -216,12 +221,7 @@ export class BoundaryManager {
     const screenRight = screenLeft + window.innerWidth
     const screenBottom = screenTop + window.innerHeight
 
-
-
-
-
     // World corners (reversing the transform)
-
     const viewportLeft = screenLeft / cameraZoom;
     const viewportTop = screenTop / cameraZoom;
     const viewportRight =  screenRight / cameraZoom;
@@ -297,17 +297,17 @@ export class BoundaryManager {
 
     // Fire events on state changes
     if (!wasLoaded && isLoaded) {
-      console.log(`🌴 Island "${islandId}" LOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+      //console.log(`🌴 Island "${islandId}" LOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
     }
     if (wasLoaded && !isLoaded) {
       //console.log(`🌴 Island "${islandId}" UNLOADING (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
     }
 
     if (!wasActive && isActive) {
-      console.log(`⚡ Island "${islandId}" ACTIVE (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+      //console.log(`⚡ Island "${islandId}" ACTIVE (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
     }
     if (wasActive && !isActive) {
-      console.log(`💤 Island "${islandId}" INACTIVE (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
+      //console.log(`💤 Island "${islandId}" INACTIVE (distance: ${distance.toFixed(2)}px, zoom: ${cameraZoom.toFixed(2)}x)`);
     }
   }
 

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { useWorld } from '../../context/WorldContext'
 import { useBoundary } from '../../context/BoundaryContext'
 import { BoundaryVisualizer } from '../boundary/BoundaryVisualizer'
-import type { BoundaryConfig } from '../boundary/boundary'
+import type { BoundaryConfig } from '../../context/BoundaryContext'
 
 interface IslandProps {
   id: string
