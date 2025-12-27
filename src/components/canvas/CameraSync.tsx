@@ -27,11 +27,14 @@ function CameraSync() {
     const render = () => {
       const state = cameraContext.getState()
 
+      //console.log(`🎬 CameraSync.render: Syncing camera to position: [${state.position[0].toFixed(2)}, ${state.position[1].toFixed(2)}], zoom: ${state.zoom.toFixed(2)}`)
+
       // Keep camera at a fixed distance from origin to match orthographic-like behavior
       // The Z distance determines the perspective strength
       // Increased from 1000 to 2000 for better quality when zoomed in
-      const baseCameraZ = 2000
+      const baseCameraZ = 1000
       camera.position.set(0, 0, baseCameraZ)
+
 
       // Calculate the conversion factor from pixels to Three.js units
       // At z=0, we need 1 Three.js unit = 1 pixel on screen
@@ -46,8 +49,8 @@ function CameraSync() {
       // Instead of moving the camera, we move and scale the scene
       // This matches the CSS transform behavior: translate(x, y) scale(zoom)
       // Apply pixel-to-unit conversion so 1px in CSS = 1 unit in Three.js at z=0
-      const sceneX = state.position[0] * pixelToUnit
-      const sceneY = -state.position[1] * pixelToUnit
+      const sceneX = state.truePosition[0] * pixelToUnit
+      const sceneY = -state.truePosition[1] * pixelToUnit
 
       scene.position.set(
         sceneX,   // Same direction as CSS translate X
@@ -58,10 +61,10 @@ function CameraSync() {
       // Debug logging (only log significant changes to avoid spam)
       if (Math.abs(sceneX - (scene.userData.lastLoggedX || 0)) > 100 ||
           Math.abs(sceneY - (scene.userData.lastLoggedY || 0)) > 100) {
-        console.log(`🎬 CameraSync: Scene position: [${sceneX.toFixed(2)}, ${sceneY.toFixed(2)}]`)
-        console.log(`🎬 CameraSync: Camera state: position=[${state.position[0].toFixed(2)}, ${state.position[1].toFixed(2)}], zoom=${state.zoom.toFixed(2)}`)
-        console.log(`🎬 CameraSync: pixelToUnit: ${pixelToUnit.toFixed(4)}`)
-        console.log(`🎬 CameraSync: Camera at Z=${baseCameraZ}, FOV=${(state.fov * 180 / Math.PI).toFixed(1)}°`)
+        //console.log(`🎬 CameraSync: Scene position: [${sceneX.toFixed(2)}, ${sceneY.toFixed(2)}]`)
+        //console.log(`🎬 CameraSync: Camera state: position=[${state.truePosition[0].toFixed(2)}, ${state.truePosition[1].toFixed(2)}], zoom=${state.zoom.toFixed(2)}`)
+        //console.log(`🎬 CameraSync: pixelToUnit: ${pixelToUnit.toFixed(4)}`)
+        //console.log(`🎬 CameraSync: Camera at Z=${baseCameraZ}, FOV=${(state.fov * 180 / Math.PI).toFixed(1)}°`)
         scene.userData.lastLoggedX = sceneX
         scene.userData.lastLoggedY = sceneY
       }

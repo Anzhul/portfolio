@@ -38,7 +38,8 @@ function App() {
                   {/* World with 2D content */}
                   <World dimensions={[10000, 10000]}>
                     {/* Background plane */}
-                    <Plane position={[0, 0, 0]} height={10000} width={10000} emmissive={1.0} color="#ff00ff" />
+                    <Plane position={[0, 0, 500]} height={2000} width={2000} emmissive={1.0} color="#ff00ff" />
+                    <Plane position={[0, 0, 0]} height={5000} width={5000} emmissive={1.0} color="#00ff00" />
 
                     {/* Dynamically loaded islands */}
                     {Object.values(ISLAND_REGISTRY).map((config) => (

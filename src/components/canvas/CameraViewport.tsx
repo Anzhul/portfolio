@@ -10,7 +10,7 @@ interface CameraViewportProps {
 }
 
 export interface CameraViewportHandle {
-  moveTo: (x: number, y: number, z?: number, zoom?: number, smooth?: boolean) => void
+  moveTo: (x: number, y: number, trueX: number, viewPortY: number, z?: number, zoom?: number, smooth?: boolean, sceneX?: number, sceneY?: number)=> void
 }
 
 export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportProps>(
@@ -25,10 +25,12 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
   // Target values for trailing
   const targetZoomRef = useRef(0.45)
   const targetPositionRef = useRef<[number, number, number]>([0, 0, 5])
+  const trueTargetPositionRef = useRef<[number, number, number]>([0, 0, 5])
 
   // Current interpolated values
   const currentZoomRef = useRef(0.45)
   const currentPositionRef = useRef<[number, number, number]>([0, 0, 5])
+  const trueCurrentPositionRef = useRef<[number, number, number]>([0, 0, 5])
 
   /**
    * Comprehensive camera movement function
@@ -45,32 +47,34 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
   const moveTo = (
     x: number,
     y: number,
+    trueX: number,
+    trueY: number,
     z: number = 0,
     zoom?: number,
     smooth: boolean = false,
-    sceneX?: number,
-    sceneY?: number
   ) => {
-    // Use independent scene position if provided, otherwise use viewport position
-    const actualSceneX = sceneX !== undefined ? sceneX : x
-    const actualSceneY = sceneY !== undefined ? sceneY : y
 
-    const targetPos: [number, number, number] = [actualSceneX, actualSceneY, z]
+    const targetPos: [number, number, number] = [x, y, z]
+    const truetargetPos: [number, number, number] = [trueX, trueY, z]
     const targetZoom = zoom ?? currentZoomRef.current
 
     if (smooth) {
       // Smooth transition: update target refs and let animation loop interpolate
       targetPositionRef.current = targetPos
+      trueTargetPositionRef.current = truetargetPos
       targetZoomRef.current = targetZoom
       console.log(`🎯 CameraViewport.moveTo: Smooth transition to [${x}, ${y}, ${z}], zoom: ${targetZoom}`)
     } else {
       // Immediate jump: update both target and current refs
       targetPositionRef.current = targetPos
       currentPositionRef.current = targetPos
+      trueTargetPositionRef.current = truetargetPos
+      trueCurrentPositionRef.current = truetargetPos
       targetZoomRef.current = targetZoom
       currentZoomRef.current = targetZoom
 
       // Update camera context immediately (this triggers R3F CameraSync)
+      camera.setTruePosition(truetargetPos)
       camera.setPosition(targetPos)
       camera.setZoom(targetZoom)
 
@@ -133,6 +137,21 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
           camZ
         ]
 
+        const [trueCamX, trueCamY, trueCamZ] = trueTargetPositionRef.current
+        trueTargetPositionRef.current = [
+          cursorX - centerX - worldX * newTargetZoom,
+          cursorY - centerY - worldY * newTargetZoom,
+          trueCamZ
+        ]
+        
+        const trueWorldX = (cursorX - centerX - trueCamX) / currentZoom
+        const trueWorldY = (cursorY - centerY - trueCamY) / currentZoom
+        trueTargetPositionRef.current = [
+          cursorX - centerX - trueWorldX * newTargetZoom,
+          cursorY - centerY - trueWorldY * newTargetZoom,
+          trueCamZ
+        ]
+
         targetZoomRef.current = newTargetZoom
       }
     }
@@ -193,6 +212,13 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         z
       ]
 
+      const [trueX, trueY, trueZ] = trueTargetPositionRef.current
+      trueTargetPositionRef.current = [
+        trueX + deltaX * panSpeed,
+        trueY + deltaY * panSpeed,
+        trueZ
+      ]
+
       lastMousePosRef.current = { x: e.clientX, y: e.clientY }
     }
 
@@ -223,6 +249,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       // Interpolate position
       const [targetX, targetY, targetZ] = targetPositionRef.current
       const [currentX, currentY, currentZ] = currentPositionRef.current
+      const [trueCurrentX, trueCurrentY, trueCurrentZ] = trueCurrentPositionRef.current
 
       currentPositionRef.current = [
         currentX + (targetX - currentX) * trailingSpeed,
@@ -230,9 +257,19 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         currentZ + (targetZ - currentZ) * trailingSpeed,
       ]
 
+      trueCurrentPositionRef.current = [
+        trueCurrentX + (trueTargetPositionRef.current[0] - trueCurrentX) * trailingSpeed,
+        trueCurrentY + (trueTargetPositionRef.current[1] - trueCurrentY) * trailingSpeed,
+        trueCurrentZ + (trueTargetPositionRef.current[2] - trueCurrentZ) * trailingSpeed,
+      ]
+
+      //console.log(`🎬 CameraViewport.animate: Current position: [${currentPositionRef.current[0].toFixed(2)}, ${currentPositionRef.current[1].toFixed(2)}, ${currentPositionRef.current[2].toFixed(2)}], zoom: ${currentZoomRef.current.toFixed(2)}`)
+      console.log(`true position: [${trueCurrentPositionRef.current[0].toFixed(2)}, ${trueCurrentPositionRef.current[1].toFixed(2)}, ${trueCurrentPositionRef.current[2].toFixed(2)}]`)
+
       // Update camera state
       camera.setZoom(currentZoomRef.current)
       camera.setPosition(currentPositionRef.current)
+      camera.setTruePosition(trueCurrentPositionRef.current)
 
       // Update CSS transform
       if (contentRef.current) {

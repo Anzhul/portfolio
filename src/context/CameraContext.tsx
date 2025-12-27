@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 
 export interface CameraState {
   position: [number, number, number]
+  truePosition: [number, number, number]
   rotation: [number, number, number]
   fov: number
   zoom: number
@@ -18,6 +19,7 @@ export interface CameraContextType {
 
   // Update state (updates ref immediately, notifies subscribers with throttle)
   setPosition: (position: [number, number, number]) => void
+  setTruePosition: (truePosition: [number, number, number]) => void
   setRotation: (rotation: [number, number, number]) => void
   setFov: (fov: number) => void
   setZoom: (zoom: number) => void
@@ -60,6 +62,7 @@ export function CameraProvider({ children }: { children: ReactNode }) {
   // Store camera state in ref (doesn't cause re-renders when updated)
   const stateRef = useRef<CameraState>({
     position: [0, 0, 5],
+    truePosition: [0, 0, 5],
     rotation: [0, 0, 0],
     fov: (75 * Math.PI) / 180,  // Convert 75 degrees to radians
     zoom: 0.45,
@@ -87,6 +90,11 @@ export function CameraProvider({ children }: { children: ReactNode }) {
 
       setPosition: (position) => {
         stateRef.current.position = position
+        notifyListeners()
+      },
+
+      setTruePosition: (truePosition) => {
+        stateRef.current.truePosition = truePosition
         notifyListeners()
       },
 

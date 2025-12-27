@@ -37,7 +37,7 @@ export function Map({ cameraViewportRef }: MapProps) {
       console.log(`🗺️ Map: Camera position: [${cameraX}, ${cameraY}, ${islandZ}]`)
 
       // Smooth transition to island (keep current zoom)
-      cameraViewportRef.current.moveTo(cameraX, cameraY, islandZ, undefined, true)
+      //cameraViewportRef.current.moveTo(cameraX, cameraY, islandZ, undefined, true)
     } else {
       console.error(`🗺️ Map: Failed to navigate - island or ref missing`, { island, ref: cameraViewportRef.current })
     }

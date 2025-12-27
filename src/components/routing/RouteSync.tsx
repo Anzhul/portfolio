@@ -65,28 +65,22 @@ export function RouteSync({ cameraViewportRef }: RouteSyncProps) {
 
     const screenLeft = (cameraX * currentZoom) - zoomoffsetX;
     const screenTop = (cameraY * currentZoom) - zoomoffsetY;
-    console.log("Screen coords:", screenLeft, screenTop);
     const screenRight = screenLeft + (window.innerWidth) //* currentZoom);
     const screenBottom = screenTop + (window.innerHeight) //* currentZoom);
-    console.log("Screen coords:", screenRight, screenBottom);
 
     // Calculate center of viewport
     const viewportCenterX = (screenLeft + screenRight) / 2;
     const viewportCenterY = (screenTop + screenBottom) / 2;
-    console.log("Viewport center:", viewportCenterX, viewportCenterY);
-
-        console.log(`🧭 RouteSync: 3D Scene position: [${cameraX}, ${cameraY}]`)
-        console.log(`🧭 RouteSync: 2D CSS position: [${viewportCenterX}, ${viewportCenterY}]`)
 
         // Instant jump to island with decoupled 2D/3D positions
         cameraViewportRef.current.moveTo(
-          cameraX,          // 3D scene position (controls plane position)
+          viewportCenterX,          // 3D scene position (controls plane position)
+          viewportCenterY,
+          cameraX,
           cameraY,
           islandZ,
           undefined,        // Keep current zoom
-          false,            // Instant jump
-          viewportCenterX,  // 2D CSS position (controls HTML content)
-          viewportCenterY
+          false
         )
 
         // Clear flag after a delay

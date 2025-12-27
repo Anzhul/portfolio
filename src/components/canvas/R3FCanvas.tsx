@@ -23,9 +23,9 @@ function R3FCanvas({ children }: R3FCanvasProps) {
         frameloop="never" // Manual control via ticker (same as VaseR3F)
         camera={{
           position: [
-            initialState.position[0],
-            initialState.position[1],
-            initialState.position[2]
+            initialState.truePosition[0],
+            initialState.truePosition[1],
+            initialState.truePosition[2]
           ],
           fov: initialState.fov,
           near: 0.1,
