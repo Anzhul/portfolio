@@ -61,8 +61,6 @@ export function RouteSync({ cameraViewportRef }: RouteSyncProps) {
         const cameraX = -islandX
         const cameraY = -islandY
 
-
-
     const screenLeft = (cameraX * currentZoom) - zoomoffsetX;
     const screenTop = (cameraY * currentZoom) - zoomoffsetY;
     const screenRight = screenLeft + (window.innerWidth) //* currentZoom);
@@ -72,12 +70,19 @@ export function RouteSync({ cameraViewportRef }: RouteSyncProps) {
     const viewportCenterX = (screenLeft + screenRight) / 2;
     const viewportCenterY = (screenTop + screenBottom) / 2;
 
+    const truescreenLeft = (islandX * currentZoom);
+    const truescreenTop = (islandY * currentZoom);
+    //const truescreenRight = truescreenLeft + (window.innerWidth) //* currentZoom);
+    //const truescreenBottom = truescreenTop + (window.innerHeight) //* currentZoom);
+    //const trueViewportCenterX = (truescreenLeft + truescreenRight) / 2;
+    //const trueViewportCenterY = (truescreenTop + truescreenBottom) / 2;
+
         // Instant jump to island with decoupled 2D/3D positions
         cameraViewportRef.current.moveTo(
           viewportCenterX,          // 3D scene position (controls plane position)
           viewportCenterY,
-          cameraX,
-          cameraY,
+          -truescreenLeft,
+          -truescreenTop,
           islandZ,
           undefined,        // Keep current zoom
           false

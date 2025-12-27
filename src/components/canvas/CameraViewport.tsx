@@ -143,7 +143,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
           cursorY - centerY - worldY * newTargetZoom,
           trueCamZ
         ]
-        
+
         const trueWorldX = (cursorX - centerX - trueCamX) / currentZoom
         const trueWorldY = (cursorY - centerY - trueCamY) / currentZoom
         trueTargetPositionRef.current = [
@@ -264,7 +264,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       ]
 
       //console.log(`🎬 CameraViewport.animate: Current position: [${currentPositionRef.current[0].toFixed(2)}, ${currentPositionRef.current[1].toFixed(2)}, ${currentPositionRef.current[2].toFixed(2)}], zoom: ${currentZoomRef.current.toFixed(2)}`)
-      console.log(`true position: [${trueCurrentPositionRef.current[0].toFixed(2)}, ${trueCurrentPositionRef.current[1].toFixed(2)}, ${trueCurrentPositionRef.current[2].toFixed(2)}]`)
+      //console.log(`true position: [${trueCurrentPositionRef.current[0].toFixed(2)}, ${trueCurrentPositionRef.current[1].toFixed(2)}, ${trueCurrentPositionRef.current[2].toFixed(2)}]`)
 
       // Update camera state
       camera.setZoom(currentZoomRef.current)

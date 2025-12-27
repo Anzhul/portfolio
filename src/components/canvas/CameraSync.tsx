@@ -34,6 +34,7 @@ function CameraSync() {
       // Increased from 1000 to 2000 for better quality when zoomed in
       const baseCameraZ = 1000
       camera.position.set(0, 0, baseCameraZ)
+      camera.rotation.set(0, 0, 0) // Explicitly reset rotation to prevent auto-rotation
 
 
       // Calculate the conversion factor from pixels to Three.js units
@@ -61,10 +62,21 @@ function CameraSync() {
       // Debug logging (only log significant changes to avoid spam)
       if (Math.abs(sceneX - (scene.userData.lastLoggedX || 0)) > 100 ||
           Math.abs(sceneY - (scene.userData.lastLoggedY || 0)) > 100) {
-        //console.log(`🎬 CameraSync: Scene position: [${sceneX.toFixed(2)}, ${sceneY.toFixed(2)}]`)
-        //console.log(`🎬 CameraSync: Camera state: position=[${state.truePosition[0].toFixed(2)}, ${state.truePosition[1].toFixed(2)}], zoom=${state.zoom.toFixed(2)}`)
-        //console.log(`🎬 CameraSync: pixelToUnit: ${pixelToUnit.toFixed(4)}`)
-        //console.log(`🎬 CameraSync: Camera at Z=${baseCameraZ}, FOV=${(state.fov * 180 / Math.PI).toFixed(1)}°`)
+        console.log(`🎬 CameraSync: Scene position: [${sceneX.toFixed(2)}, ${sceneY.toFixed(2)}]`)
+        console.log(`🎬 CameraSync: Camera state: position=[${state.truePosition[0].toFixed(2)}, ${state.truePosition[1].toFixed(2)}], zoom=${state.zoom.toFixed(2)}`)
+        console.log(`🎬 CameraSync: pixelToUnit: ${pixelToUnit.toFixed(4)}`)
+        console.log(`🎬 CameraSync: Camera at Z=${baseCameraZ}, FOV=${(state.fov * 180 / Math.PI).toFixed(1)}°`)
+        console.log(`🎬 CameraSync: Camera rotation: [${camera.rotation.x.toFixed(2)}, ${camera.rotation.y.toFixed(2)}, ${camera.rotation.z.toFixed(2)}]`)
+        console.log(`🎬 CameraSync: Scene rotation: [${scene.rotation.x.toFixed(2)}, ${scene.rotation.y.toFixed(2)}, ${scene.rotation.z.toFixed(2)}]`)
+        console.log(`🎬 CameraSync: Scene scale: ${scene.scale.x.toFixed(2)}`)
+
+        // Log all planes in the scene
+        scene.traverse((child) => {
+          if (child.type === 'Mesh' && child.name) {
+            console.log(`  📦 ${child.name}: worldPos=[${child.position.x.toFixed(2)}, ${child.position.y.toFixed(2)}, ${child.position.z.toFixed(2)}], rot=[${child.rotation.x.toFixed(2)}, ${child.rotation.y.toFixed(2)}, ${child.rotation.z.toFixed(2)}]`)
+          }
+        })
+
         scene.userData.lastLoggedX = sceneX
         scene.userData.lastLoggedY = sceneY
       }

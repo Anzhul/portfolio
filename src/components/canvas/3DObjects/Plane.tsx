@@ -24,7 +24,7 @@ export function Plane({
   useEffect(() => {
     // Create the 3D plane mesh
     const plane = (
-      <mesh position={position} receiveShadow>
+      <mesh name={planeId} position={position} receiveShadow>
         <planeGeometry args={[width, height]} />
         {emmissive !== 0.0 ? (
           <meshStandardMaterial
