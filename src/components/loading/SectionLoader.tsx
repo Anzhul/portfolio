@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useBoundary, useSectionBoundaryState } from '../../context/BoundaryContext'
 import type { SectionConfig } from '../../config/sectionRegistry'
 import { shouldShowSkeleton } from '../../utils/devMode'
+import { useSimpleLoading } from '../../hooks/useSimpleLoading'
 
 export interface SectionLoaderProps {
   config: SectionConfig
@@ -26,6 +27,19 @@ export function SectionLoader({ config }: SectionLoaderProps) {
   const { manager } = useBoundary()
   const boundaryState = useSectionBoundaryState(config.id)
   const [isPreloading, setIsPreloading] = useState(false)
+  const [componentLoaded, setComponentLoaded] = useState(false)
+
+  // Track section component loading
+  const { markLoaded } = useSimpleLoading({
+    islandId: config.islandId
+  })
+
+  // Mark as loaded when component successfully renders
+  useEffect(() => {
+    if (componentLoaded) {
+      markLoaded()
+    }
+  }, [componentLoaded])
 
   // Dev mode: Force skeleton display for testing
   const forceSkeletonMode = shouldShowSkeleton(config.id)
@@ -57,6 +71,15 @@ export function SectionLoader({ config }: SectionLoaderProps) {
   const SkeletonComponent = config.skeleton
   const SectionComponent = config.component
 
+  // Wrapper component to detect when section has loaded
+  const SectionWrapper = () => {
+    useEffect(() => {
+      setComponentLoaded(true)
+    }, [])
+
+    return <SectionComponent />
+  }
+
   // Dev mode: Force skeleton display
   if (forceSkeletonMode) {
     return <SkeletonComponent />
@@ -64,7 +87,7 @@ export function SectionLoader({ config }: SectionLoaderProps) {
 
   // If not lazy, just render the section directly
   if (!config.lazy) {
-    return <SectionComponent />
+    return <SectionWrapper />
   }
 
   // For lazy sections, only load when within load radius or preloading has started
@@ -78,7 +101,7 @@ export function SectionLoader({ config }: SectionLoaderProps) {
   // Within load radius - show section with Suspense boundary
   return (
     <Suspense fallback={<SkeletonComponent />}>
-      <SectionComponent />
+      <SectionWrapper />
     </Suspense>
   )
 }

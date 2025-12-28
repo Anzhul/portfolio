@@ -2,8 +2,6 @@ import { useEffect, useRef, useMemo } from 'react'
 import { useTexture } from '@react-three/drei'
 import { useScene } from '../../../context/SceneContext'
 import { useMenu } from '../../../context/MenuContext'
-import { useCamera } from '../../../context/CameraContext'
-import { ticker } from '../../../utils/AnimationTicker'
 import * as THREE from 'three'
 
 interface ImagePlaneProps {
@@ -19,6 +17,7 @@ interface ImagePlaneProps {
   transparent?: boolean
   emmissive?: number
   emissiveIntensity?: number
+  islandId?: string
 }
 
 export function ImagePlane({
@@ -33,7 +32,8 @@ export function ImagePlane({
   opacity = 1,
   transparent = false,
   emmissive = 0.0,
-  emissiveIntensity = 1.0
+  emissiveIntensity = 1.0,
+  islandId // eslint-disable-line @typescript-eslint/no-unused-vars
 }: ImagePlaneProps) {
   const { addObject, removeObject } = useScene()
   const { isMobile } = useMenu()
@@ -76,9 +76,22 @@ export function ImagePlane({
 // Bicubic texture filtering shader for high-quality zoomable images
 const bicubicVertexShader = `
   varying vec2 vUv;
+  varying float vZoomLevel;
 
   void main() {
     vUv = uv;
+
+    // Extract scale (zoom) from modelViewMatrix
+    // The scale is the length of the first column vector (x-axis scaling)
+    vec3 scale = vec3(
+      length(vec3(modelViewMatrix[0][0], modelViewMatrix[0][1], modelViewMatrix[0][2])),
+      length(vec3(modelViewMatrix[1][0], modelViewMatrix[1][1], modelViewMatrix[1][2])),
+      length(vec3(modelViewMatrix[2][0], modelViewMatrix[2][1], modelViewMatrix[2][2]))
+    );
+
+    // Use x-axis scale as zoom level (scene has uniform scale)
+    vZoomLevel = scale.x;
+
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `
@@ -87,9 +100,9 @@ const bicubicFragmentShader = `
   uniform sampler2D map;
   uniform float opacity;
   uniform vec2 textureSize;
-  uniform float zoomLevel;
 
   varying vec2 vUv;
+  varying float vZoomLevel;
 
   // Cubic interpolation using Catmull-Rom spline with increased sharpness
   // B-spline parameter adjusted for sharper results (default is 0.5, higher = sharper)
@@ -144,7 +157,7 @@ const bicubicFragmentShader = `
     // Map zoom range [0.15, 1.0] to blur strength [1.0, 0.0]
     // When zoom = 0.15 (max zoomed out), blurStrength = 1.0
     // When zoom = 1.0 (max zoomed in), blurStrength = 0.0
-    float blurStrength = clamp((1.0 - zoomLevel) / (1.0 - 0.15), 0.0, 1.0);
+    float blurStrength = clamp((1.0 - vZoomLevel) / (1.0 - 0.15), 0.0, 1.0);
 
     if (blurStrength > 0.01) {
       // Simple box blur - sample surrounding pixels
@@ -196,7 +209,6 @@ function ImagePlaneMesh({
 }) {
   const texture = useTexture(imageUrl)
   const meshRef = useRef<THREE.Mesh>(null)
-  const camera = useCamera()
 
   // Configure texture for bicubic filtering
   texture.generateMipmaps = false
@@ -211,39 +223,12 @@ function ImagePlaneMesh({
     return new THREE.Vector2(image.width, image.height)
   }, [texture])
 
-  // Create shader material uniforms - initial values only
+  // Create shader material uniforms (zoom is now extracted from modelViewMatrix)
   const uniforms = useMemo(() => ({
     map: { value: texture },
     opacity: { value: opacity },
-    textureSize: { value: textureSize },
-    zoomLevel: { value: 0.45 }  // Initial value
+    textureSize: { value: textureSize }
   }), [texture, opacity, textureSize])
-
-  // Update zoom uniform every frame using ticker
-  useEffect(() => {
-    let lastZoom = -1 // Track last zoom to avoid unnecessary updates
-
-    const updateZoom = () => {
-      if (meshRef.current) {
-        const currentZoom = camera.getState().zoom
-
-        // Only update if zoom actually changed (with small epsilon for floating point)
-        if (Math.abs(currentZoom - lastZoom) > 0.001) {
-          const material = meshRef.current.material as THREE.ShaderMaterial
-          if (material.uniforms && material.uniforms.zoomLevel) {
-            material.uniforms.zoomLevel.value = currentZoom
-            lastZoom = currentZoom
-          }
-        }
-      }
-    }
-
-    ticker.add(updateZoom)
-
-    return () => {
-      ticker.remove(updateZoom)
-    }
-  }, [camera])
 
   return (
     <mesh ref={meshRef} name={planeId} position={[position[0], -position[1], position[2]]}>

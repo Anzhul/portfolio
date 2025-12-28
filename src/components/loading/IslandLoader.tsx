@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useBoundary, useBoundaryState } from '../../context/BoundaryContext'
 import type { IslandConfig } from '../../config/islandRegistry'
 import { shouldShowSkeleton } from '../../utils/devMode'
+import { useSimpleLoading } from '../../hooks/useSimpleLoading'
 
 export interface IslandLoaderProps {
   config: IslandConfig
@@ -26,6 +27,19 @@ export function IslandLoader({ config }: IslandLoaderProps) {
   const { manager } = useBoundary()
   const boundaryState = useBoundaryState(config.id)
   const [isPreloading, setIsPreloading] = useState(false)
+  const [componentLoaded, setComponentLoaded] = useState(false)
+
+  // Track island component loading
+  const { markLoaded } = useSimpleLoading({
+    islandId: config.id
+  })
+
+  // Mark as loaded when component successfully renders
+  useEffect(() => {
+    if (componentLoaded) {
+      markLoaded()
+    }
+  }, [componentLoaded])
 
   // Dev mode: Force skeleton display for testing
   const forceSkeletonMode = shouldShowSkeleton(config.id)
@@ -59,6 +73,15 @@ export function IslandLoader({ config }: IslandLoaderProps) {
   const SkeletonComponent = config.skeleton
   const IslandComponent = config.component
 
+  // Wrapper component to detect when island has loaded
+  const IslandWrapper = () => {
+    useEffect(() => {
+      setComponentLoaded(true)
+    }, [])
+
+    return <IslandComponent />
+  }
+
   // Dev mode: Force skeleton display
   if (forceSkeletonMode) {
     return <SkeletonComponent />
@@ -68,7 +91,7 @@ export function IslandLoader({ config }: IslandLoaderProps) {
   if (config.loadImmediately) {
     return (
       <Suspense fallback={<SkeletonComponent />}>
-        <IslandComponent />
+        <IslandWrapper />
       </Suspense>
     )
   }
@@ -84,7 +107,7 @@ export function IslandLoader({ config }: IslandLoaderProps) {
   // Within load radius - show island with Suspense boundary
   return (
     <Suspense fallback={<SkeletonComponent />}>
-      <IslandComponent />
+      <IslandWrapper />
     </Suspense>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useWorld } from '../../context/WorldContext'
 import type { BoundaryConfig } from '../../context/BoundaryContext'
+import { useSectionBoundaryState } from '../../context/BoundaryContext'
 import { SectionBoundaryVisualizer } from '../boundary/SectionBoundaryVisualizer'
 
 interface SectionProps {
@@ -26,12 +27,22 @@ export function Section({
   children
 }: SectionProps) {
   const { registerSection, unregisterSection } = useWorld()
+  const boundaryState = useSectionBoundaryState(id)
 
   useEffect(() => {
     registerSection({ id, islandId, name, position, description })
     return () => unregisterSection(islandId, id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, islandId, name, position[0], position[1], position[2], description, registerSection, unregisterSection])
+
+  // Build className with active state (loading classes will be added by SimpleLoadingManager)
+  const classNames = [
+    name,
+    'loading', // Start as loading
+    boundaryState.isActive ? 'active' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <>
@@ -45,7 +56,7 @@ export function Section({
       )}
 
       {/* Section content */}
-      <div data-section-id={id} className={name}>{children}</div>
+      <div data-section-id={id} className={classNames}>{children}</div>
     </>
   )
 }

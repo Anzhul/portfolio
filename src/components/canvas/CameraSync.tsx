@@ -24,6 +24,24 @@ function CameraSync() {
 
   // Render loop using ticker - directly use camera state without interpolation
   useEffect(() => {
+    // Cache for pixel-to-unit conversion (only recalculate on resize or FOV change)
+    const baseCameraZ = 1000
+    let cachedPixelToUnit = 0
+    let cachedViewportHeight = 0
+    let cachedFov = 0
+
+    // Calculate pixel-to-unit conversion (cached)
+    const getPixelToUnit = (fovRadians: number, viewportHeight: number): number => {
+      // Only recalculate if viewport height or FOV changed
+      if (viewportHeight !== cachedViewportHeight || fovRadians !== cachedFov) {
+        const visibleHeightAtZ0 = 2 * Math.tan(fovRadians / 2) * baseCameraZ
+        cachedPixelToUnit = visibleHeightAtZ0 / viewportHeight
+        cachedViewportHeight = viewportHeight
+        cachedFov = fovRadians
+      }
+      return cachedPixelToUnit
+    }
+
     const render = () => {
       const state = cameraContext.getState()
 
@@ -32,19 +50,13 @@ function CameraSync() {
       // Keep camera at a fixed distance from origin to match orthographic-like behavior
       // The Z distance determines the perspective strength
       // Increased from 1000 to 2000 for better quality when zoomed in
-      const baseCameraZ = 1000
       camera.position.set(0, 0, baseCameraZ)
       camera.rotation.set(0, 0, 0) // Explicitly reset rotation to prevent auto-rotation
 
-
-      // Calculate the conversion factor from pixels to Three.js units
-      // At z=0, we need 1 Three.js unit = 1 pixel on screen
-      // For a perspective camera: visibleHeight = 2 * tan(fov/2) * distance
-      // We want: visibleHeight (in Three.js units) = viewport height (in pixels)
+      // Get cached pixel-to-unit conversion (only recalculates on viewport/FOV change)
       const fovRadians = camera instanceof THREE.PerspectiveCamera ? (camera.fov * Math.PI) / 180 : state.fov
       const viewportHeight = gl.domElement.clientHeight
-      const visibleHeightAtZ0 = 2 * Math.tan(fovRadians / 2) * baseCameraZ;
-      const pixelToUnit = visibleHeightAtZ0 / viewportHeight
+      const pixelToUnit = getPixelToUnit(fovRadians, viewportHeight)
       
 
       // Instead of moving the camera, we move and scale the scene
@@ -59,27 +71,6 @@ function CameraSync() {
         0
       )
 
-      // Debug logging (only log significant changes to avoid spam)
-      if (Math.abs(sceneX - (scene.userData.lastLoggedX || 0)) > 100 ||
-          Math.abs(sceneY - (scene.userData.lastLoggedY || 0)) > 100) {
-        /*console.log(`🎬 CameraSync: Scene position: [${sceneX.toFixed(2)}, ${sceneY.toFixed(2)}]`)
-        console.log(`🎬 CameraSync: Camera state: position=[${state.truePosition[0].toFixed(2)}, ${state.truePosition[1].toFixed(2)}], zoom=${state.zoom.toFixed(2)}`)
-        console.log(`🎬 CameraSync: pixelToUnit: ${pixelToUnit.toFixed(4)}`)
-        console.log(`🎬 CameraSync: Camera at Z=${baseCameraZ}, FOV=${(state.fov * 180 / Math.PI).toFixed(1)}°`)
-        console.log(`🎬 CameraSync: Camera rotation: [${camera.rotation.x.toFixed(2)}, ${camera.rotation.y.toFixed(2)}, ${camera.rotation.z.toFixed(2)}]`)
-        console.log(`🎬 CameraSync: Scene rotation: [${scene.rotation.x.toFixed(2)}, ${scene.rotation.y.toFixed(2)}, ${scene.rotation.z.toFixed(2)}]`)
-        console.log(`🎬 CameraSync: Scene scale: ${scene.scale.x.toFixed(2)}`)*/
-
-        // Log all planes in the scene
-        scene.traverse((child) => {
-          if (child.type === 'Mesh' && child.name) {
-            //console.log(`  📦 ${child.name}: worldPos=[${child.position.x.toFixed(2)}, ${child.position.y.toFixed(2)}, ${child.position.z.toFixed(2)}], rot=[${child.rotation.x.toFixed(2)}, ${child.rotation.y.toFixed(2)}, ${child.rotation.z.toFixed(2)}]`)
-          }
-        })
-
-        scene.userData.lastLoggedX = sceneX
-        scene.userData.lastLoggedY = sceneY
-      }
 
       // Apply zoom as uniform scale to the scene (matches CSS scale())
       scene.scale.setScalar(state.zoom)
@@ -91,8 +82,9 @@ function CameraSync() {
         camera.updateProjectionMatrix()
       }
 
-      camera.updateMatrixWorld()
-      scene.updateMatrixWorld(true)
+      // Update scene matrix (non-recursive for better performance)
+      // R3F handles camera matrix updates, and children will update their own matrices as needed
+      scene.updateMatrixWorld(false)
 
       // Render the scene
       gl.render(scene, camera)
