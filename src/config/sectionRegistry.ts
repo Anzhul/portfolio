@@ -40,7 +40,9 @@ export interface SectionConfig {
  *   }
  * }
  */
-export const SECTION_REGISTRY: Record<string, SectionConfig> = {
+
+
+export const SECTION_REGISTRY: Record<string, SectionConfig> = {/*
   'home-section2': {
     id: 'home-section2',
     islandId: 'home',
@@ -54,6 +56,7 @@ export const SECTION_REGISTRY: Record<string, SectionConfig> = {
     skeleton: HomeSection2Skeleton,
     lazy: true,
   },
+  */
   // Add more lazy sections here
 }
 

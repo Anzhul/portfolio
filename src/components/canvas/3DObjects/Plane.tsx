@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { useScene } from '../../../context/SceneContext'
+import { useMenu } from '../../../context/MenuContext'
 
 interface PlaneProps {
   position?: [number, number, number]
+  mobilePosition?: [number, number, number]
   height?: number
   width?: number
+  mobileHeight?: number
+  mobileWidth?: number
   color?: string
   zIndex?: number
   emmissive?: number
@@ -12,20 +16,29 @@ interface PlaneProps {
 
 export function Plane({
   position = [0, 0, 0],
+  mobilePosition,
   height = 100,
   width = 100,
+  mobileHeight,
+  mobileWidth,
   color = '#ff6b6b',
   zIndex = 0,
   emmissive = 0.0
 }: PlaneProps) {
   const { addObject, removeObject } = useScene()
+  const { isMobile } = useMenu()
   const planeId = useRef(`test-plane-${Math.random()}`).current
+
+  // Use mobile values if provided and on mobile, otherwise use desktop values
+  const actualPosition = isMobile && mobilePosition ? mobilePosition : position
+  const actualHeight = isMobile && mobileHeight !== undefined ? mobileHeight : height
+  const actualWidth = isMobile && mobileWidth !== undefined ? mobileWidth : width
 
   useEffect(() => {
     // Create the 3D plane mesh
     const plane = (
-      <mesh name={planeId} position={position} receiveShadow>
-        <planeGeometry args={[width, height]} />
+      <mesh name={planeId} position={actualPosition} receiveShadow>
+        <planeGeometry args={[actualWidth, actualHeight]} />
         {emmissive !== 0.0 ? (
           <meshStandardMaterial
             color={color}
@@ -55,7 +68,7 @@ export function Plane({
     // Only re-run if position, height, width, color, zIndex, or emmissive change
     // Don't include addObject/removeObject as they're stable callbacks
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [position, height, width, color, zIndex, emmissive])
+  }, [actualPosition, actualHeight, actualWidth, color, zIndex, emmissive])
 
   // This component doesn't render HTML - it only adds to the 3D scene
   return null

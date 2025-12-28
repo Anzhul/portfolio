@@ -34,7 +34,10 @@ function R3FCanvas({ children }: R3FCanvasProps) {
         gl={{
           alpha: true,
           antialias: true,
+          outputColorSpace: 'srgb',
+          toneMapping: 0, // NoToneMapping
         }}
+        linear={false}
         shadows
       >
         {/* Lights in world space (don't move with scene) - fixed shadow camera */}

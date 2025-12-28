@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useMemo, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useMenu } from './MenuContext'
 
 // Tracks camera position and settings for WebGL navigation component
 // Uses ref-based storage to avoid re-renders on frequent updates (dragging/panning)
@@ -59,13 +60,15 @@ function throttle<T extends (...args: any[]) => void>(func: T, delay: number): T
 
 // Automatically passes everything between the tags as the children prop
 export function CameraProvider({ children }: { children: ReactNode }) {
+  const { isMobile } = useMenu()
+
   // Store camera state in ref (doesn't cause re-renders when updated)
   const stateRef = useRef<CameraState>({
     position: [0, 0, 5],
     truePosition: [0, 0, 5],
     rotation: [0, 0, 0],
     fov: (75 * Math.PI) / 180,  // Convert 75 degrees to radians
-    zoom: 0.45,
+    zoom: isMobile ? 0.3 : 0.45,  // Mobile gets more zoomed out view
   })
 
   // Store subscribers (components that want to be notified of changes vis callbacks)

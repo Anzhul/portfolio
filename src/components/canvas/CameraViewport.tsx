@@ -1,6 +1,7 @@
 import { useRef, useEffect, useMemo, useImperativeHandle, forwardRef, type ReactNode, type MouseEvent } from 'react'
 import { useCamera } from '../../context/CameraContext'
 import { useScene } from '../../context/SceneContext'
+import { useMenu } from '../../context/MenuContext'
 import { ticker } from '../../utils/AnimationTicker'
 import R3FCanvas from './R3FCanvas'
 import './CameraViewport.scss'
@@ -17,18 +18,20 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
   ({ children }, ref) => {
   const camera = useCamera()
   const { objects } = useScene()
+  const { isMobile } = useMenu()
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const isPanningRef = useRef(false)
   const lastMousePosRef = useRef({ x: 0, y: 0 })
 
   // Target values for trailing
-  const targetZoomRef = useRef(0.45)
+  const initialZoom = isMobile ? 0.3 : 0.45
+  const targetZoomRef = useRef(initialZoom)
   const targetPositionRef = useRef<[number, number, number]>([0, 0, 5])
   const trueTargetPositionRef = useRef<[number, number, number]>([0, 0, 5])
 
   // Current interpolated values
-  const currentZoomRef = useRef(0.45)
+  const currentZoomRef = useRef(initialZoom)
   const currentPositionRef = useRef<[number, number, number]>([0, 0, 5])
   const trueCurrentPositionRef = useRef<[number, number, number]>([0, 0, 5])
 
@@ -262,9 +265,6 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         trueCurrentY + (trueTargetPositionRef.current[1] - trueCurrentY) * trailingSpeed,
         trueCurrentZ + (trueTargetPositionRef.current[2] - trueCurrentZ) * trailingSpeed,
       ]
-
-      //console.log(`🎬 CameraViewport.animate: Current position: [${currentPositionRef.current[0].toFixed(2)}, ${currentPositionRef.current[1].toFixed(2)}, ${currentPositionRef.current[2].toFixed(2)}], zoom: ${currentZoomRef.current.toFixed(2)}`)
-      //console.log(`true position: [${trueCurrentPositionRef.current[0].toFixed(2)}, ${trueCurrentPositionRef.current[1].toFixed(2)}, ${trueCurrentPositionRef.current[2].toFixed(2)}]`)
 
       // Update camera state
       camera.setZoom(currentZoomRef.current)
