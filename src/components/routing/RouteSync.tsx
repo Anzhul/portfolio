@@ -51,42 +51,12 @@ export function RouteSync({ cameraViewportRef }: RouteSyncProps) {
         // Set flag to prevent viewport-based routing from interfering
         isNavigatingFromUrl.current = true
 
-        // Get current zoom and viewport dimensions
-        const currentZoom = camera.getState().zoom
-        const zoomoffsetX = (window.innerWidth / 2) - (window.innerWidth * currentZoom / 2);
-        const zoomoffsetY = (window.innerHeight / 2) - (window.innerHeight * currentZoom / 2);
-
-        // Calculate camera position to center the island
         const [islandX, islandY, islandZ] = position
-        const cameraX = -islandX
-        const cameraY = -islandY
 
-    const screenLeft = (cameraX * currentZoom) - zoomoffsetX;
-    const screenTop = (cameraY * currentZoom) - zoomoffsetY;
-    const screenRight = screenLeft + (window.innerWidth) //* currentZoom);
-    const screenBottom = screenTop + (window.innerHeight) //* currentZoom);
-
-    // Calculate center of viewport
-    const viewportCenterX = (screenLeft + screenRight) / 2;
-    const viewportCenterY = (screenTop + screenBottom) / 2;
-
-    const truescreenLeft = (islandX * currentZoom);
-    const truescreenTop = (islandY * currentZoom);
-    //const truescreenRight = truescreenLeft + (window.innerWidth) //* currentZoom);
-    //const truescreenBottom = truescreenTop + (window.innerHeight) //* currentZoom);
-    //const trueViewportCenterX = (truescreenLeft + truescreenRight) / 2;
-    //const trueViewportCenterY = (truescreenTop + truescreenBottom) / 2;
-
-        // Instant jump to island with decoupled 2D/3D positions
-        cameraViewportRef.current.moveTo(
-          viewportCenterX,          // 3D scene position (controls plane position)
-          viewportCenterY,
-          -truescreenLeft,
-          -truescreenTop,
-          islandZ,
-          undefined,        // Keep current zoom
-          false
-        )
+        // Use simplified moveToIsland function with instant navigation
+        cameraViewportRef.current.moveToIsland(islandX, islandY, islandZ, {
+          animated: false  // Instant jump for URL navigation
+        })
 
         // Clear flag after a delay
         setTimeout(() => {

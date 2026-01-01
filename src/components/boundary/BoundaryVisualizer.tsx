@@ -22,6 +22,7 @@ export function BoundaryVisualizer({ position, boundaries }: BoundaryVisualizerP
     transform: 'translate(-50%, -50%)',
     pointerEvents: 'none' as const,
     opacity: 0.7,
+    display: 'none',
     zIndex: 1000,
   }), [position, loadRadius])
 
@@ -37,6 +38,7 @@ export function BoundaryVisualizer({ position, boundaries }: BoundaryVisualizerP
     pointerEvents: 'none' as const,
     opacity: 0.5,
     zIndex: 1001,
+    display: 'none', // Hide active boundary by default
   }), [position, activeRadius])
 
   return (

@@ -1,15 +1,17 @@
-import { type RefObject } from 'react'
+import { type RefObject, useState, useRef, useEffect } from 'react'
 import { ISLAND_REGISTRY } from '../../../config/islandRegistry'
 import type { CameraViewportHandle } from '../../canvas/CameraViewport'
-import { useCamera } from '../../../context/CameraContext'
 import './Map.scss'
 
 interface MapProps {
   cameraViewportRef: RefObject<CameraViewportHandle | null>
+  isVisible?: boolean
 }
 
-export function Map({ cameraViewportRef }: MapProps) {
-  const camera = useCamera()
+export function Map({ cameraViewportRef, isVisible = false }: MapProps) {
+  const [position, setPosition] = useState({ x: 20, y: 80 })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 })
 
   const handleIslandClick = (islandId: string) => {
     const island = ISLAND_REGISTRY[islandId]
@@ -17,49 +19,87 @@ export function Map({ cameraViewportRef }: MapProps) {
     if (island && cameraViewportRef.current) {
       const [islandX, islandY, islandZ] = island.position
 
-      // Get current zoom level
-      const currentZoom = camera.getState().zoom
+      console.log(`🗺️ Map: Navigating to island "${islandId}" at [${islandX}, ${islandY}, ${islandZ}]`)
 
-      // Get viewport dimensions
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
-
-      // To center an island at position [x, y] in the viewport:
-      // Account for zoom: scaled viewport center = (viewport center) / zoom
-      // Camera position = -(island position) + (scaled viewport center)
-      const cameraX = -islandX + (viewportWidth / 2) / currentZoom
-      const cameraY = -islandY + (viewportHeight / 2) / currentZoom
-
-      console.log(`🗺️ Map: Navigating to island "${islandId}"`)
-      console.log(`🗺️ Map: Island position: [${islandX}, ${islandY}, ${islandZ}]`)
-      console.log(`🗺️ Map: Current zoom: ${currentZoom}`)
-      console.log(`🗺️ Map: Viewport: [${viewportWidth}, ${viewportHeight}]`)
-      console.log(`🗺️ Map: Camera position: [${cameraX}, ${cameraY}, ${islandZ}]`)
-
-      // Smooth transition to island (keep current zoom)
-      //cameraViewportRef.current.moveTo(cameraX, cameraY, islandZ, undefined, true)
+      // Use the simplified moveToIsland function
+      // It handles all coordinate transformations, distance calculation, and duration scaling
+      cameraViewportRef.current.moveToIsland(islandX, islandY, islandZ, {
+        animated: true,
+        easing: 'easeOutQuart'
+      })
     } else {
       console.error(`🗺️ Map: Failed to navigate - island or ref missing`, { island, ref: cameraViewportRef.current })
     }
   }
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only start drag if clicking on the header
+    if (!(e.target as HTMLElement).closest('.map-header')) return
+
+    setIsDragging(true)
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: position.x,
+      initialY: position.y
+    }
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return
+
+    const deltaX = e.clientX - dragRef.current.startX
+    const deltaY = e.clientY - dragRef.current.startY
+
+    setPosition({
+      x: dragRef.current.initialX + deltaX,
+      y: dragRef.current.initialY + deltaY
+    })
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  // Add and remove event listeners for dragging
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove)
+        window.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging])
+
   return (
-    <div className="map-container">
-      <div className="map-header">
-        <h3>Map</h3>
-      </div>
-      <div className="map-islands">
-        {Object.entries(ISLAND_REGISTRY).map(([id, config]) => (
-          <button
-            key={id}
-            className="map-island-button"
-            onClick={() => handleIslandClick(id)}
-            title={`Navigate to ${config.name}`}
-          >
-            <span className="island-icon">Island</span>
-            <span className="island-name">{config.name}</span>
-          </button>
-        ))}
+    <div
+      className={`map-container ${isVisible ? 'visible' : ''} ${isDragging ? 'dragging' : ''}`}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`
+      }}
+    >
+      <div className="map-inner">
+        <div
+          className="map-header"
+          onMouseDown={handleMouseDown}
+        >
+          <h3>Map</h3>
+        </div>
+        <div className="map-islands">
+          {Object.entries(ISLAND_REGISTRY).map(([id, config]) => (
+            <button
+              key={id}
+              className="map-island-button"
+              onClick={() => handleIslandClick(id)}
+              title={`Navigate to ${config.name}`}
+            >
+              <span className="island-name">{config.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

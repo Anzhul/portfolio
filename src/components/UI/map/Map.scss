@@ -1,25 +1,63 @@
+// Golden Ratio Calculations
+$phi: 1.618034;
+$phi-squared: 2.618034;
+$phi-cubed: 4.236068;
+$phi-fourth: 6.854102;
+$phi-fifth: 11.090170;
+
+// Inverse golden ratio calculations
+$phi-inverse: 0.618034;
+$phi-inverse-squared: 0.381966;
+$phi-inverse-cubed: 0.236068;
+
+$background: white;
+$primary: #222222;
+$border: #c6c6c6;
+
 .map-container {
   position: fixed;
-  top: 80px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  min-width: 200px;
-  backdrop-filter: blur(10px);
+  display: none;
+
+  &.visible {
+    display: block;
+  }
+
+  &.dragging {
+    cursor: grabbing;
+    user-select: none;
+
+    .map-header {
+      cursor: grabbing;
+    }
+  }
+
+  .map-inner {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+    backdrop-filter: blur(10px);
+  }
 
   .map-header {
     margin-bottom: 12px;
     padding-bottom: 8px;
     border-bottom: 2px solid #e0e0e0;
+    cursor: grab;
+    user-select: none;
+
+    &:active {
+      cursor: grabbing;
+    }
 
     h3 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
       color: #333;
+      pointer-events: none;
     }
   }
 
@@ -69,10 +107,10 @@
 // Mobile responsive
 @media (max-width: 768px) {
   .map-container {
-    top: 60px;
-    right: 10px;
-    min-width: 160px;
-    padding: 12px;
+    .map-inner {
+      min-width: 160px;
+      padding: 12px;
+    }
 
     .map-header h3 {
       font-size: 16px;

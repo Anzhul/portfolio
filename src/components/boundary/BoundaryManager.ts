@@ -31,6 +31,7 @@ export class BoundaryManager {
   private preloadedEntities: Set<string> = new Set();
   private routeChangeCallbacks: Set<RouteChangeCallback> = new Set();
   private currentClosestEntity: EntityPosition | null = null;
+  private cachedViewportBounds: ViewportBounds | null = null;
 
   constructor(camera: CameraContextType) {
     this.camera = camera;
@@ -144,17 +145,21 @@ export class BoundaryManager {
     const cameraPos = this.camera.getState().position;
     const cameraZoom = this.camera.getState().zoom;
 
+    // Cache window dimensions to avoid multiple property accesses
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
     // Calculate viewport bounds in world space
     // CSS transform: translate(cameraPos) scale(zoom)
     // To convert screen coords to world coords: worldPoint = (screenPoint - cameraPos) / zoom
-    const zoomoffsetX = (window.innerWidth / 2) - (window.innerWidth * cameraZoom / 2);
-    const zoomoffsetY = (window.innerHeight / 2) - (window.innerHeight * cameraZoom / 2);
+    const zoomoffsetX = (windowWidth / 2) - (windowWidth * cameraZoom / 2);
+    const zoomoffsetY = (windowHeight / 2) - (windowHeight * cameraZoom / 2);
 
     // Screen corners
     const screenLeft = -cameraPos[0] - zoomoffsetX;
     const screenTop = -cameraPos[1] - zoomoffsetY;
-    const screenRight = screenLeft + window.innerWidth;
-    const screenBottom = screenTop + window.innerHeight;
+    const screenRight = screenLeft + windowWidth;
+    const screenBottom = screenTop + windowHeight;
 
     // World corners (reversing the transform)
     const viewportLeft = screenLeft / cameraZoom;
@@ -176,6 +181,7 @@ export class BoundaryManager {
   private checkAllBoundaries() {
     // Calculate viewport bounds ONCE per frame, then reuse for all boundary checks
     const viewportBounds = this.calculateViewportBounds();
+    this.cachedViewportBounds = viewportBounds;
 
     this.islands.forEach((_, islandId) => {
       this.checkIslandBoundary(islandId, viewportBounds);
@@ -185,27 +191,18 @@ export class BoundaryManager {
     });
 
     // Update current route based on closest entity to viewport top-left
+    // This will reuse cachedViewportBounds instead of recalculating
     this.updateCurrentRoute();
   }
 
   // Update the current route based on viewport position
   private updateCurrentRoute() {
-    const cameraPos = this.camera.getState().position;
-    const cameraZoom = this.camera.getState().zoom;
+    // Reuse cached viewport bounds instead of recalculating
+    if (!this.cachedViewportBounds) {
+      return; // No cached bounds available, skip
+    }
 
-    // Calculate viewport center in world space
-    const zoomoffsetX = (window.innerWidth / 2) - (window.innerWidth * cameraZoom / 2);
-    const zoomoffsetY = (window.innerHeight / 2) - (window.innerHeight * cameraZoom / 2);
-
-    const screenLeft = -cameraPos[0] - zoomoffsetX;
-    const screenTop = -cameraPos[1] - zoomoffsetY;
-    const screenRight = screenLeft + window.innerWidth;
-    const screenBottom = screenTop + window.innerHeight;
-
-    const viewportLeft = screenLeft / cameraZoom;
-    const viewportTop = screenTop / cameraZoom;
-    const viewportRight = screenRight / cameraZoom;
-    const viewportBottom = screenBottom / cameraZoom;
+    const { viewportLeft, viewportTop, viewportRight, viewportBottom } = this.cachedViewportBounds;
 
     // Calculate center of viewport
     const viewportCenterX = (viewportLeft + viewportRight) / 2;

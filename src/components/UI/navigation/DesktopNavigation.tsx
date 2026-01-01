@@ -17,29 +17,42 @@ function DesktopNavigation({ vase }: DesktopNavigationProps) {
   return (
     <nav className="desktop-navigation">
       <div className="navigation-header">
-        <div className="logo">
-          {vase}
-          <h1 className="logo-text">Anzhu Ling</h1>
+        <div className="name-button-container">
+          <Link to="/">
+            <button className="name-button">
+              Anzhu Ling
+            </button>
+          </Link>
         </div>
-        <button
-          className="hamburger"
-          onClick={toggleMenu}
-          aria-label="Toggle menu"
-          aria-expanded={isMenuOpen}
-        >
-          <div className={`dot1 ${isMenuOpen ? 'open' : ''}`}></div>
-          <div className={`dot2 ${isMenuOpen ? 'open' : ''}`}></div>
-          <div className={`dot3 ${isMenuOpen ? 'open' : ''}`}></div>
-          <div className={`dot4 ${isMenuOpen ? 'open' : ''}`}></div>
-          <svg className={`x-lines ${isMenuOpen ? 'open' : ''}`} width="56" height="56" viewBox="0 0 56 56">
-            <line className="line1-outline" x1="16" y1="16" x2="40" y2="40" stroke="#BC591F" strokeWidth="7" strokeLinecap="round"/>
-            <line className="line2-outline" x1="16" y1="40" x2="40" y2="16" stroke="#BC591F" strokeWidth="7" strokeLinecap="round"/>
-            <line className="line1" x1="16" y1="16" x2="40" y2="40" stroke="#FF711E" strokeWidth="5" strokeLinecap="round"/>
-            <line className="line2" x1="16" y1="40" x2="40" y2="16" stroke="#FF711E" strokeWidth="5" strokeLinecap="round"/>
-          </svg>
-        </button>
+        <div className="spacer"></div>
+        <div className="menu-button-container">
+          <button
+            className="menu-button"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+            aria-expanded={isMenuOpen}
+          >
+            <div className={`menu-text-open ${isMenuOpen ? 'open' : ''}`}>
+              <span>M</span>
+              <span>e</span>
+              <span>n</span>
+              <span>u</span>
+            </div>
+            <div className={`menu-text-closed ${isMenuOpen ? 'open' : ''}`}>
+              <span>C</span>
+              <span>l</span>
+              <span>o</span>
+              <span>s</span>
+              <span>e</span>
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="11.203" height="11.203" viewBox="0 0 11.203 11.203">
+                  <path id="Union_8" data-name="Union 8" d="M2086.341-6348.786l-3.341-3.342-3.341,3.342a1.324,1.324,0,0,1-1.872,0,1.327,1.327,0,0,1,0-1.873l3.341-3.341-3.341-3.341a1.324,1.324,0,0,1,0-1.872,1.324,1.324,0,0,1,1.872,0l3.341,3.341,3.341-3.341a1.324,1.324,0,0,1,1.872,0,1.324,1.324,0,0,1,0,1.872l-3.342,3.341,3.342,3.341a1.324,1.324,0,0,1,0,1.873,1.321,1.321,0,0,1-.936.388A1.321,1.321,0,0,1,2086.341-6348.786Z" transform="translate(-2077.398 6359.601)" fill="#ff5a1e"/>
+                </svg>
+              </span>
+            </div>
+          </button>
+        </div>
       </div>
-
       <div className={`navigation-menu ${isMenuOpen ? 'open' : ''}`}>
         <div className={`about-box ${isMenuOpen ? 'open' : ''}`}>
           <h2 className="about-header">
@@ -52,30 +65,34 @@ function DesktopNavigation({ vase }: DesktopNavigationProps) {
             His current focus is on  integrating large data sets with visual displays.
           </p>
         </div>
+        <div className={`personal-box ${isMenuOpen ? 'open' : ''}`}>
+          <div className="vase">
+            {vase}
+          </div>
+          <div className='personal-work'>
+            <h2 className="personal-header">
+              <Link to="/personal">Personal work</Link>
+            </h2>
+          </div>
+        </div>
         <div className={`projects-box ${isMenuOpen ? 'open' : ''}`}>
           <h2 className="project-header">
             <Link to="/projects">Projects</Link>
           </h2>
           <ul className="project-links">
             <li>
-              <Link to="/project1">Project 1</Link>
+              <Link to="/project1">IIIFViewer</Link>
               <span className="year"> (2025)</span>
             </li>
             <li>
-              <Link to="/project2">Project 2</Link>
+              <Link to="/project2">30 Visualizations</Link>
             </li>
             <li>
               <Link to="/project3">Project 3</Link>
             </li>
-            
           </ul>
         </div>
         <div className={`miscellaneous-box ${isMenuOpen ? 'open' : ''}`}>
-          <div className={`personal-box ${isMenuOpen ? 'open' : ''}`}>
-            <h2 className="personal-header">
-              <Link to="/personal">Personal work</Link>
-            </h2>
-          </div>
           <div className={`external-links ${isMenuOpen ? 'open' : ''}`}>
             <ul>
               <li>

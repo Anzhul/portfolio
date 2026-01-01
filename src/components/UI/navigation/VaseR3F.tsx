@@ -63,7 +63,10 @@ function VaseMesh({ composerRef, isMobile, isMenuOpen }: { composerRef: React.Mu
   }, [texture])
 
   // Animation using custom Animation library - rotate 180 degrees every 8 seconds
+  // Only animate when menu is open
   useEffect(() => {
+    if (!isMenuOpen) return
+
     let currentAnimation: Animation<number> | null = null
     let timeoutId: number | null = null
 
@@ -118,7 +121,7 @@ function VaseMesh({ composerRef, isMobile, isMenuOpen }: { composerRef: React.Mu
         clearTimeout(timeoutId)
       }
     }
-  }, [gl, threeScene, camera, composerRef])
+  }, [gl, threeScene, camera, composerRef, isMenuOpen])
 
   return (
     <>
@@ -150,25 +153,25 @@ function VaseMesh({ composerRef, isMobile, isMenuOpen }: { composerRef: React.Mu
 function VaseR3F() {
   const composerRef = useRef<any>(null)
   const { isMobile, isMenuOpen } = useMenu()
-  const [shouldShow, setShouldShow] = useState(true)
+  const [shouldShow, setShouldShow] = useState(false)
 
-  // Handle delayed hide on mobile when menu closes
+  // Handle delayed hide when menu closes
   useEffect(() => {
-    if (isMobile && !isMenuOpen) {
-      // Delay hiding the vase when menu closes on mobile
+    if (!isMenuOpen) {
+      // Delay hiding the vase when menu closes
       const timeout = setTimeout(() => {
         setShouldShow(false)
-      }, 500) // 500ms delay
+      }, 600) // 600ms delay
 
       return () => clearTimeout(timeout)
     } else {
-      // Show immediately when menu opens or on desktop
+      // Show immediately when menu opens
       setShouldShow(true)
     }
-  }, [isMobile, isMenuOpen])
+  }, [isMenuOpen])
 
-  // Don't render on mobile when menu is closed (with delay)
-  if (isMobile && !shouldShow) {
+  // Don't render when menu is closed (with delay)
+  if (!shouldShow) {
     return null
   }
 

@@ -22,86 +22,181 @@ $c: 0.25rem;
 // Desktop Navigation - Hidden on mobile
 .desktop-navigation {
   position: fixed;
-  top: calc(100vh / $phi-sixth);
-  left: calc(100vh / $phi-sixth);
   z-index: 1000; // Above R3F canvas (z:1) and all content
-  border-radius: 5px;
-  backdrop-filter: blur(10px);
   pointer-events: auto; // Re-enable pointer events for navigation
   // Hide on mobile
   @media (max-width: 768px) {
     display: none;
   }
 
-  // Vase canvas styles for desktop navigation
-  .vase-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 6.75rem !important;
-    object-fit: contain;
-    margin: 0 auto;
-    //background-color: blue;
-  }
-
   .navigation-header {
-    position: absolute;
+    position: fixed;
+    border-radius: 0 0 0.25rem 0;
+    backdrop-filter: blur(10px);
+    background-color: white;
     top: 0;
     left: 0;
-    width: 7rem;
-    height: 10rem;
+    width: 24rem + $phi-squared * 1rem;
+    height: 2.5rem;
     display: flex;
+    flex-direction: row;
+    align-items: flex-start;
   }
 
-  .logo {
-    position: relative;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-weight: bold;
-    text-align: center;
-    color: $primary;
-    width: 7rem;
-    height: 8.5rem;
-    border-radius: 5px;
-    //border: solid 1px $border;
-    background-color: $background;
-    box-shadow: #22222233 0px 2px 6px;
-  }
-
-  .logo-text {
+  .name-button-container{
     position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    height: 1.75rem;
+    left: $phi-squared * 1rem + 1rem;
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.2rem;
+    height: 100%;
     font-weight: 500;
-    font-size: 0.75rem;
+    color: $primary;
+    margin: auto;
+
+    a {
+      text-decoration: none;
+      color: inherit;
+
+      &:hover {
+        text-decoration: none;
+      }
+
+      &:visited {
+        color: inherit;
+      }
+    }
+  }
+
+  .name-button {
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
+  .spacer{
+    position: absolute;
+    top: 55%;
+    left: 9.8rem;
+    transform: translate(0, -50%);
+    width: 0.05rem;
+    height: 0.65rem;
+    background-color: $primary;
+    opacity: 1;
+  }
+
+  .menu-button-container {
+    position: absolute;
+    left: 11rem;
+    top: 0;
+    width: 4rem;
+    height: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .menu-button{
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+    width: 100%;
+    height: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .menu-text-open,
+  .menu-text-closed {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1rem;
+    display: inline-flex;
+    color: #222222;
+
+    span {
+      transform: translate(-50%, -50%);
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-size: 1rem;
+      display: inline-block;
+      transition: transform 0.4s cubic-bezier(0.65, 0.05, 0.36, 1);
+      will-change: transform;
+    }
+  }
+
+  .menu-text-open {
+    // Default state: visible
+    span {
+      transform: translateY(0);
+    }
+
+    &.open {
+      // When open: slide up and out
+      @for $i from 1 through 4 {
+        span:nth-child(#{$i}) {
+          transform: translateY(-200%);
+          transition-delay: #{($i - 1) * 0.05}s;
+        }
+      }
+    }
+  }
+
+  .menu-text-closed {
+    // Default state: hidden below
+    span {
+      transform: translateY(200%);
+    }
+
+    &.open {
+      // When open: slide up to visible
+      @for $i from 1 through 5 {
+        span:nth-child(#{$i}) {
+          transform: translateY(0);
+          transition-delay: #{($i - 1) * 0.05}s;
+        }
+      }
+    }
+  }
+
   .navigation-menu{
     position: absolute;
-    top: 0;
-    left: 8.5rem;
-    height: 12.5rem;
-    width: 40rem;
+    top: 3.5rem;
+    left: $phi-squared * 1rem;
+    height: 23rem;
+    width: 24rem;
     background-color: $background;
     //border: solid 1px $border;
     border-radius: 5px;
     box-shadow: #22222233 0px 2px 6px;
     display: flex;
     flex-direction: row;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 0 1.25rem;
-    transform: translate(0, -150%);
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0rem;
+    transform: translate(-50%, 0);
     transition:cubic-bezier(0.65,0.05,0.36,1) 0.35s;
     transition-delay: 0.6s;
     opacity: 0;
@@ -130,16 +225,21 @@ $c: 0.25rem;
   }
 
   .about-box {
+    position: relative;
     width: 12.5rem;
+    left: 0;
+    top: 0;
     height: 10rem;
-    border: 1px solid $border;
+    margin: 1rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
     border-radius: 5px;
-    background-color: #B9CCBF;
+    background-color: #EDF1F2;
     overflow-y: auto;
     flex-shrink: 0;
+    transform: translate(0, 55%);
     transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
-    transform: translate(0, 50%);
-    transition-delay: 0s;
+    transition-delay: 0.3s;
     opacity: 0;
 
     &::-webkit-scrollbar {
@@ -199,17 +299,90 @@ $c: 0.25rem;
     line-height: 1.3;
   }
 
-  .projects-box {
-    width: 12.5rem;
+  .vase{
+    position: relative;
+    width: 8.5rem;
+    height: 7rem;
+    //border: 1px solid $border;
+    border-radius: 5px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  // Vase canvas styles for desktop navigation
+  .vase-canvas {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+    margin: 0 auto;
+  }
+
+  .personal-box {
+    width: 8.5rem;
     height: 10rem;
     //border: 1px solid $border;
     border-radius: 5px;
-    background-color: #F0E0C8;
+    margin: 1rem;
+    margin-left: 0.5rem;
+    margin-bottom: 0.5rem;
     overflow-y: auto;
     flex-shrink: 0;
     transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
-    transform: translate(0, 50%);
-    transition-delay: 0.15s;
+    transform: translate(0, 55%);
+    transition-delay: 0.2s;
+    opacity: 0;
+
+    &.open{
+      transform: translate(0, 0);
+      transition:cubic-bezier(0.45, 0, 0.55, 1) 0.45s;
+      opacity: 1;
+      transition-delay: 0.6s;
+    }
+  }
+
+  .personal-work{
+    position: relative;
+    top: 0;
+    width: 8.5rem;
+    height: 3rem;
+    //border: 1px solid $border;
+    border-radius: 5px;
+    background-color: #D98D85;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .personal-header {
+    position: relative;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    width: 6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 1rem;
+    color: $primary;
+  }
+
+  .projects-box {
+    position: relative;
+    width: 12.5rem;
+    left: 0;
+    top: 0;
+    height: 10rem;
+    margin: 1rem;
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+    border-radius: 5px;
+    background-color: #EDF1F2;
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
+    transform: translate(0, 55%);
+    transition-delay: 0.1s;
     opacity: 0;
 
     // Custom scrollbar
@@ -239,7 +412,7 @@ $c: 0.25rem;
     &.open {
       transform: translate(0, 0);
       opacity: 1;
-      transition-delay: 0.6s;
+      transition-delay: 0.75s;
     }
 
     // Firefox scrollbar
@@ -305,52 +478,35 @@ $c: 0.25rem;
   }
 
   .miscellaneous-box {
-    width: 10rem;
+    width: 8.5rem;
     height: 10rem;
-    overflow-y: display;
+    //border: 1px solid $border;
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 1rem;
+    margin-left: 0.5rem;
+    margin-top: 0.5rem;
     flex-shrink: 0;
-    display: flex;
+    background-color: #EDF1F2;
     flex-direction: column;
     justify-content: space-between;
     transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
-    transform: translate(0, 50%);
-    transition-delay: 0.3s;
+    transform: translate(0, 55%);
+    transition-delay: 0s;
     opacity: 0;
 
     &.open{
       transform: translate(0, 0);
       opacity: 1;
-      transition-delay: 0.75s;
+      transition-delay: 0.9s;
     }
   }
 
-  .personal-box {
-    width: 10rem;
-    height: 4rem;
-    //border: 1px solid $border;
-    border-radius: 5px;
-    background-color: #C7776F;
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-
-  .personal-header {
-    position: relative;
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 500;
-    width: 8rem;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 1rem;
-    color: $primary;
-  }
-
   .external-links {
-    position: relative;
+    position: absolute;
     bottom: 0.8rem;
     left: 0.5rem;
-    width: 8rem;
+    width: 8.5rem;
 
     ul {
       list-style: none;
@@ -367,187 +523,6 @@ $c: 0.25rem;
           font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
           font-size: 0.65rem;
           font-weight: 400;
-          transition: color 0.3s ease;
-
-          &:hover {
-            color: #222222;
-          }
-        }
-      }
-    }
-  }
-
-  // Hamburger button
-  .hamburger {
-    position: absolute;
-    top: 9rem;
-    left: 50%;
-    transform: translateX(-50%);
-    height: 3.5rem;
-    width: 3.5rem;
-    background-color: $background;
-    border: none;
-    //border: 1px solid $border;
-    border-radius: 5px;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1001;
-    overflow: hidden;
-
-  .dot1,
-  .dot2,
-  .dot3,
-  .dot4 {
-    position: absolute;
-    width: 0.3rem;
-    height: 0.3rem;
-    min-width: 0.3rem;
-    min-height: 0.3rem;
-    max-width: 0.3rem;
-    max-height: 0.3rem;
-    border: 1px solid #5b5b5b;
-    background-color: #8C8A84;
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    transition-delay: 0.25s;
-    border-radius: 50%;
-    box-sizing: border-box;
-    flex-shrink: 0;
-    z-index: 2;
-    will-change: transform;
-  }
-
-  .dot1 {
-    top: 1.075rem;
-    left: 1.075rem;
-
-    &.open {
-      transform: translate(-$c, -$c);
-      //background-color: #FF711E;
-      //border: 1px solid #FF711E;
-      transition-delay: 0s;
-    }
-  }
-
-  .dot2 {
-    top: 1.075rem;
-    right: 1.075rem;
-
-    &.open {
-      transform: translate($c, -$c);
-      //background-color: #FF711E;
-      //border: 1px solid #FF711E;
-      transition-delay: 0.1s;
-    }
-  }
-
-  .dot3 {
-    bottom: 1.075rem;
-    left: 1.075rem;
-
-    &.open {
-      transform: translate(-$c, $c);
-      //background-color: #FF711E;
-      //border: 1px solid #FF711E;
-      transition-delay: 0.05s;
-    }
-  }
-
-  .dot4 {
-    bottom: 1.075rem;
-    right: 1.075rem;
-
-    &.open {
-      transform: translate($c, $c);
-      //background-color: #FF711E;
-      //border: 1px solid #FF711E;
-      transition-delay: 0.075s;
-    }
-  }
-
-  .x-lines {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    overflow: visible;
-    z-index: 3;
-
-    .line1 {
-      stroke-dasharray: 42;
-      stroke-dashoffset: 42;
-      transition: 0;
-      transition-delay: 0.0s;
-    }
-
-    .line2{
-      stroke-dasharray: 42;
-      stroke-dashoffset: 42;
-      transition: 0;
-      transition-delay: 0s;
-    }
-
-    .line1-outline{
-      stroke-dasharray: 42;
-      stroke-dashoffset: 42;
-      transition: 0;
-      transition-delay: 0.0s;
-    }
-
-    .line2-outline {
-      stroke-dasharray: 42;
-      stroke-dashoffset: 42;
-      transition: 0;
-      transition-delay: 0s;
-    }
-
-    &.open {
-      .line1 {
-        transition: stroke-dashoffset 0.2s ease-out;
-        stroke-dashoffset: 0;
-        transition-delay: 0.45s;
-      }
-      .line2 {
-        transition: stroke-dashoffset 0.2s ease-out;
-        stroke-dashoffset: 0;
-        transition-delay: 0.5s;
-      }
-      .line1-outline {
-        transition: stroke-dashoffset 0.2s ease-out;
-        stroke-dashoffset: 0;
-        transition-delay: 0.45s;
-      }
-      .line2-outline {
-        transition: stroke-dashoffset 0.2s ease-out;
-        stroke-dashoffset: 0;
-        transition-delay: 0.5s;
-      }
-    }
-  }
-  }
-
-  .local-links {
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 1rem;
-    width: 8rem;
-
-    ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      margin: 0;
-      padding: 0;
-
-      li {
-        a {
-          color: #222222e4;
-          text-decoration: none;
-          font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-          font-size: 0.85rem;
-          font-weight: 500;
           transition: color 0.3s ease;
 
           &:hover {

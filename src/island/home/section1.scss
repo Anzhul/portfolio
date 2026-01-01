@@ -2,7 +2,7 @@
 .section1-content{
     position: absolute;
     color: white;
-    top: -20rem;
+    top: -15rem;
     left: 35rem;
     font-size: 3rem;
     //background-color: red;
@@ -16,7 +16,7 @@
         line-height: 2;
         color: #222222;
         font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-        font-size: 2rem;
+        font-size: 2.2rem;
         font-weight: 400;
     }
 }
@@ -27,10 +27,24 @@
     margin-top: 2rem;
     height: 6rem;
     width: 100%;
-    overflow: hidden;
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
     //background-color: red;
     font-weight: 500;
     font-size: 5rem;
     color: #222222;
+}
+
+.word-slide1{
+    display: none;
+}
+
+.word-slide2{
+    display: none;
+}
+
+.word-slide3{
+    position: absolute;
+    top: -0.5rem;
+    font-size: 7.5rem;
+    color: #668BF7;
 }

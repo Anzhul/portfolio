@@ -21,7 +21,7 @@ export function HomeIsland() {
     >
       {/* Moon */}
       <ImagePlane
-        position={[0, -1200, -300]}
+        position={[0, -1350, -800]}
         mobilePosition={[0, -800, -300]}
         height={350}
         width={350}
@@ -35,10 +35,24 @@ export function HomeIsland() {
       />
 
       <ImagePlane
-        position={[-2600, 350, -100]}
+        position={[1200, 950, -300]}
         mobilePosition={[0, -800, -300]}
-        height={700}
-        width={2800}
+        height={400}
+        width={1600}
+        mobileHeight={250}
+        mobileWidth={250}
+        imageUrl="/Range.png"
+        transparent={true}
+        opacity={1}
+        emmissive={0.5}
+        islandId="home"
+      />
+
+      <ImagePlane
+        position={[-3000, 350, -200]}
+        mobilePosition={[0, -800, -300]}
+        height={750}
+        width={3000}
         mobileHeight={250}
         mobileWidth={250}
         imageUrl="/mountains.png"
@@ -50,7 +64,7 @@ export function HomeIsland() {
 
       {/* Spaceship */}
       <ImagePlane
-        position={[-475, 575, 0]}
+        position={[-475, 625, 0]}
         mobilePosition={[-500, 500, 0]}
         height={1450}
         width={2900}
@@ -65,7 +79,7 @@ export function HomeIsland() {
 
       {/* Me */}
       <ImagePlane
-        position={[-1080, 400, 40]}
+        position={[-1080, 450, 40]}
         mobilePosition={[-800, 300, 60]}
         height={360}
         width={180}
@@ -80,7 +94,7 @@ export function HomeIsland() {
 
       {/* Tree */}
       <ImagePlane
-        position={[-1450, -275, 60]}
+        position={[-1450, -225, 50]}
         mobilePosition={[-1000, -200, 80]}
         width={2800}
         height={2800}
@@ -94,10 +108,10 @@ export function HomeIsland() {
       />
 
       <ImagePlane
-        position={[-1650, 760, 200]}
+        position={[-1650, 1000, 200]}
         mobilePosition={[-1000, -200, 80]}
-        width={2800}
-        height={750}
+        width={3200}
+        height={1600}
         mobileWidth={1800}
         mobileHeight={1800}
         imageUrl="/Hill.png"
@@ -107,8 +121,9 @@ export function HomeIsland() {
         islandId="home"
       />
 
+{/*}
       <HomeGreetings />
-
+*/}
       {/* Lazy-loaded sections with their own boundaries */}
       {lazySections.map((sectionConfig) => (
         <SectionLoader key={sectionConfig.id} config={sectionConfig} />
