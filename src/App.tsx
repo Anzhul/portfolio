@@ -1,64 +1,65 @@
-import { BrowserRouter} from 'react-router-dom'
-import { useRef, useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import './App.scss'
-import { loadingManager } from './utils/SimpleLoadingManager'
-import { MenuProvider } from './context/MenuContext'
-import { CameraProvider } from './context/CameraContext'
-import { WorldProvider } from './context/WorldContext'
-import { BoundaryProvider } from './context/BoundaryContext'
+import { Home } from './pages/lightweight/Home'
+import { Projects } from './pages/lightweight/Projects'
+import { Links } from './pages/lightweight/Links'
 import Navigation from './components/UI/navigation/Navigation'
 import Toolbar from './components/UI/toolbar/Toolbar'
-import { World } from './components/world/World'
-import { SceneProvider } from './context/SceneContext'
-import { CameraViewport, type CameraViewportHandle } from './components/canvas/CameraViewport'
-import { IslandLoader } from './components/loading/IslandLoader'
-import { ISLAND_REGISTRY } from './config/islandRegistry'
-import { RouteSync } from './components/routing/RouteSync'
-import { Map } from './components/UI/map/Map'
+import { MenuProvider } from './context/MenuContext'
+import { ToolbarProvider } from './context/ToolbarContext'
+import { NavigationProvider } from './context/NavigationContext'
+
+// Lazy load the heavy 3D experience - only loads when user navigates to 3D routes
+const Experience3D = lazy(() =>
+  import('./pages/experience/Experience3D').then(module => ({
+    default: module.Experience3D
+  }))
+)
+
+// Lightweight page routes that don't use 3D
+const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links']
 
 function AppContent() {
-  const cameraViewportRef = useRef<CameraViewportHandle>(null)
-  const [isMapVisible, setIsMapVisible] = useState(false)
+  const location = useLocation()
+  const [has3DLoaded, setHas3DLoaded] = useState(false)
 
-  // Mark app as loaded after initial render
+  // Determine if current route is lightweight or 3D
+  const isLightweightRoute = LIGHTWEIGHT_ROUTES.includes(location.pathname)
+  const should3DBeActive = !isLightweightRoute
+
+  // Once 3D loads, keep track so we can keep it mounted
   useEffect(() => {
-    loadingManager.markAppLoaded()
-  }, [])
+    if (should3DBeActive) {
+      setHas3DLoaded(true)
+    }
+  }, [should3DBeActive])
 
   return (
     <>
-      {/* Route synchronization - updates URL based on viewport position */}
-      <RouteSync cameraViewportRef={cameraViewportRef} />
-
-      {/* Navigation - fixed position, separate from camera transforms */}
+      {/* Navigation - shared across all pages */}
       <Navigation />
 
-      {/* Toolbar - fixed position controls */}
-      <Toolbar
-        onZoomIn={() => cameraViewportRef.current?.zoomIn()}
-        onZoomOut={() => cameraViewportRef.current?.zoomOut()}
-        onButton3Click={() => setIsMapVisible(!isMapVisible)}
-        isMapVisible={isMapVisible}
-      />
+      {/* Toolbar - loads immediately but only functional in 3D routes */}
+      <Toolbar loaded={true} />
 
-      {/* Map - fixed position navigation to islands */}
-      <Map cameraViewportRef={cameraViewportRef} isVisible={isMapVisible} />
+      <Routes>
+        {/* Lightweight pages - no 3D library loaded */}
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/links" element={<Links />} />
 
-      {/* Camera viewport wraps world for pan/zoom control */}
-      <CameraViewport ref={cameraViewportRef}>
-        {/* World with 2D content */}
-        <World dimensions={[10000, 10000]}>
-          {/* Background plane
-          <Plane position={[0, 0, 500]} height={2000} width={2000} emmissive={1.0} color="#ff00ff" />
-          <Plane position={[0, 0, 0]} height={5000} width={5000} emmissive={1.0} color="#00ff00" />
-          */}
+        {/* Heavy 3D experience - lazy loaded for all other routes */}
+        <Route path="/*" element={null} />
+      </Routes>
 
-          {/* Dynamically loaded islands */}
-          {Object.values(ISLAND_REGISTRY).map((config) => (
-            <IslandLoader key={config.id} config={config} />
-          ))}
-        </World>
-      </CameraViewport>
+      {/* Keep Experience3D mounted once loaded, just toggle visibility */}
+      {(should3DBeActive || has3DLoaded) && (
+        <Suspense fallback={null}>
+          <Experience3D isVisible={should3DBeActive} />
+        </Suspense>
+      )}
     </>
   )
 }
@@ -66,19 +67,15 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <MenuProvider>
-        <WorldProvider>
-          <SceneProvider>
-            <CameraProvider>
-              <BoundaryProvider>
-                <AppContent />
-              </BoundaryProvider>
-            </CameraProvider>
-          </SceneProvider>
-        </WorldProvider>
-      </MenuProvider>
+      <NavigationProvider>
+        <MenuProvider>
+          <ToolbarProvider>
+            <AppContent />
+          </ToolbarProvider>
+        </MenuProvider>
+      </NavigationProvider>
     </BrowserRouter>
   )
 }
 
-export default App 
+export default App

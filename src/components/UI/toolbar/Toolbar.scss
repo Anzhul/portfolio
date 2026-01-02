@@ -24,6 +24,14 @@ $border: #c6c6c6;
   z-index: 1000;
   pointer-events: auto;
   border-radius: 0.25rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+
+  &.active {
+    opacity: 1;
+    visibility: visible;
+  }
 
   .toolbar-content {
     display: flex;

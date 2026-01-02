@@ -1,32 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import DesktopNavigation from './DesktopNavigation'
 import MobileNavigation from './MobileNavigation'
-import VaseR3F from './VaseR3F'
 
 function Navigation() {
-  // Initialize with correct value immediately to avoid flash
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false // SSR safety
-    return window.matchMedia('(max-width: 768px)').matches
-  })
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 768px)')
-
-    // Listen for changes
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsMobile(e.matches)
-    }
-
-    mediaQuery.addEventListener('change', handleChange)
-
-    return () => mediaQuery.removeEventListener('change', handleChange)
+    // Add loaded class after a brief delay to allow initial render
+    setTimeout(() => setLoaded(true), 100)
   }, [])
 
   return (
     <>
-      <DesktopNavigation vase={!isMobile ? <VaseR3F /> : null} />
-      <MobileNavigation vase={isMobile ? <VaseR3F /> : null} />
+      <DesktopNavigation loaded={loaded} />
+      <MobileNavigation loaded={loaded} />
     </>
   )
 }

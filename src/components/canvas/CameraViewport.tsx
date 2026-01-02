@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, useImperativeHandle, forwardRef, type ReactNode, type MouseEvent } from 'react'
+import { useRef, useEffect, useMemo, useImperativeHandle, forwardRef, Suspense, type ReactNode, type MouseEvent } from 'react'
 import { useCamera } from '../../context/CameraContext'
 import { useSceneObjects } from '../../context/SceneContext'
 import { useMenu } from '../../context/MenuContext'
@@ -840,12 +840,14 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     >
       {/* R3F Canvas - renders 3D objects */}
       <R3FCanvas>
-        {/* Render all 3D objects in sorted order */}
-        {sortedObjects.map(({ id, component }) => (
-          <group key={id}>
-            {component}
-          </group>
-        ))}
+        <Suspense fallback={null}>
+          {/* Render all 3D objects in sorted order */}
+          {sortedObjects.map(({ id, component }) => (
+            <group key={id}>
+              {component}
+            </group>
+          ))}
+        </Suspense>
       </R3FCanvas>
 
       <div

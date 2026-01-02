@@ -97,7 +97,8 @@ export function IslandLoader({ config }: IslandLoaderProps) {
   }
 
   // For other islands, only load when within load radius or preloading has started
-  const shouldLoad = boundaryState.isLoaded || isPreloading
+  // Once component is loaded, keep it loaded even if we leave the boundary
+  const shouldLoad = boundaryState.isLoaded || isPreloading || componentLoaded
 
   if (!shouldLoad) {
     // Show skeleton until we're close enough to start loading

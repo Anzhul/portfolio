@@ -1,29 +1,16 @@
-// Golden Ratio Calculations to the Fifth Degree
-$phi: 1.618034; // φ (phi) - the golden ratio
-$phi-squared: 2.618034; // φ² = φ + 1
-$phi-cubed: 4.236068; // φ³ = φ² + φ
-$phi-fourth: 6.854102; // φ⁴ = φ³ + φ²
-$phi-fifth: 11.090170; // φ⁵ = φ⁴ + φ³
-$phi-sixth: 17.944271909999159; // φ⁶ = φ⁵ + φ⁴
-
-// Inverse golden ratio calculations
-$phi-inverse: 0.618034; // 1/φ
-$phi-inverse-squared: 0.381966; // 1/φ²
-$phi-inverse-cubed: 0.236068; // 1/φ³
-$phi-inverse-fourth: 0.145898; // 1/φ⁴
-$phi-inverse-fifth: 0.090170; // 1/φ⁵
+// Golden Ratio Calculations
+$phi: 1.618034;
+$phi-squared: 2.618034;
 
 $background: white;
 $primary: #222222;
-$border: #c6c6c6;
-
-$c: 0.25rem;
 
 // Desktop Navigation - Hidden on mobile
 .desktop-navigation {
   position: fixed;
-  z-index: 1000; // Above R3F canvas (z:1) and all content
-  pointer-events: auto; // Re-enable pointer events for navigation
+  z-index: 1000;
+  pointer-events: auto;
+
   // Hide on mobile
   @media (max-width: 768px) {
     display: none;
@@ -31,19 +18,17 @@ $c: 0.25rem;
 
   .navigation-header {
     position: fixed;
-    border-radius: 0 0 0.25rem 0;
-    backdrop-filter: blur(10px);
-    background-color: white;
     top: 0;
     left: 0;
-    width: 24rem + $phi-squared * 1rem;
-    height: 2.5rem;
+    width: 100vw;
+    height: 3rem;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center;
+    //background-color: red;
   }
 
-  .name-button-container{
+  .name-button-container {
     position: absolute;
     left: $phi-squared * 1rem + 1rem;
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
@@ -51,7 +36,8 @@ $c: 0.25rem;
     height: 100%;
     font-weight: 500;
     color: $primary;
-    margin: auto;
+    display: flex;
+    align-items: center;
 
     a {
       text-decoration: none;
@@ -68,467 +54,56 @@ $c: 0.25rem;
   }
 
   .name-button {
-    position: relative;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
     font-size: 1rem;
     font-weight: 400;
-    width: 100%;
-    height: 100%;
     background-color: transparent;
     border: none;
     cursor: pointer;
     padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: $primary;
+
+    &:hover {
+      opacity: 0.7;
+    }
   }
 
-  .spacer{
-    position: absolute;
-    top: 55%;
-    left: 9.8rem;
-    transform: translate(0, -50%);
-    width: 0.05rem;
-    height: 0.65rem;
-    background-color: $primary;
-    opacity: 1;
-  }
-
-  .menu-button-container {
-    position: absolute;
-    left: 11rem;
-    top: 0;
-    width: 4rem;
-    height: 100%;
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .menu-button{
-    position: relative;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .projects-button{
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-weight: 400;
     font-size: 1rem;
-    width: 100%;
-    height: 100%;
-    background: none;
+    font-weight: 400;
+    background-color: transparent;
     border: none;
     cursor: pointer;
     padding: 0;
-    overflow: hidden;
+    color: $primary;
+
+    &:hover {
+      opacity: 0.7;
+    }
   }
 
-  .menu-text-open,
-  .menu-text-closed {
+  .nav-links {
+    display: flex;
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 1rem;
-    display: inline-flex;
-    color: #222222;
+    right: $phi-squared * 1rem + 1rem;
+    gap: 2rem;
+    align-items: center;
 
-    span {
-      transform: translate(-50%, -50%);
+    .nav-link {
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-size: 1rem;
-      display: inline-block;
-      transition: transform 0.4s cubic-bezier(0.65, 0.05, 0.36, 1);
-      will-change: transform;
-    }
-  }
-
-  .menu-text-open {
-    // Default state: visible
-    span {
-      transform: translateY(0);
-    }
-
-    &.open {
-      // When open: slide up and out
-      @for $i from 1 through 4 {
-        span:nth-child(#{$i}) {
-          transform: translateY(-200%);
-          transition-delay: #{($i - 1) * 0.05}s;
-        }
-      }
-    }
-  }
-
-  .menu-text-closed {
-    // Default state: hidden below
-    span {
-      transform: translateY(200%);
-    }
-
-    &.open {
-      // When open: slide up to visible
-      @for $i from 1 through 5 {
-        span:nth-child(#{$i}) {
-          transform: translateY(0);
-          transition-delay: #{($i - 1) * 0.05}s;
-        }
-      }
-    }
-  }
-
-  .navigation-menu{
-    position: absolute;
-    top: 3.5rem;
-    left: $phi-squared * 1rem;
-    height: 23rem;
-    width: 24rem;
-    background-color: $background;
-    //border: solid 1px $border;
-    border-radius: 5px;
-    box-shadow: #22222233 0px 2px 6px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 0rem;
-    transform: translate(-50%, 0);
-    transition:cubic-bezier(0.65,0.05,0.36,1) 0.35s;
-    transition-delay: 0.6s;
-    opacity: 0;
-    overflow: hidden;
-
-    // Remove all link decoration
-    a {
+      font-weight: 400;
+      color: $primary;
       text-decoration: none;
-      color: inherit;
+      transition: opacity 0.2s ease;
 
       &:hover {
-        text-decoration: none;
+        opacity: 0.7;
       }
 
       &:visited {
-        color: inherit;
-      }
-    }
-
-    &.open{
-      transition:cubic-bezier(0.65,0.05,0.36,1) 0.4s;
-      transform: translate(0,0);
-      transition-delay: 0.2s;
-      opacity: 1;
-    }
-  }
-
-  .about-box {
-    position: relative;
-    width: 12.5rem;
-    left: 0;
-    top: 0;
-    height: 10rem;
-    margin: 1rem;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
-    border-radius: 5px;
-    background-color: #EDF1F2;
-    overflow-y: auto;
-    flex-shrink: 0;
-    transform: translate(0, 55%);
-    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
-    transition-delay: 0.3s;
-    opacity: 0;
-
-    &::-webkit-scrollbar {
-      width: 0.5rem;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #8C8A84;
-      border-radius: 5px;
-      border: 2px solid #B9CCBF;
-
-      &:hover {
-        background: #6B6964;
-      }
-    }
-
-    // Remove scrollbar arrows
-    &::-webkit-scrollbar-button {
-      display: none;
-    }
-
-    &.open {
-      transform: translate(0, 0);
-      opacity: 1;
-      transition-delay: 0.45s;
-    }
-
-    // Firefox scrollbar
-    scrollbar-width: thin;
-    scrollbar-color: #8C8A84 transparent;
-  }
-
-  .about-header {
-    position: relative;
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 500;
-    width: 9rem;
-    top: 0.9rem;
-    left: 1rem;
-    color: $primary;
-  }
-
-  .about-text {
-    position: relative;
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 400;
-    width: 9rem;
-    top: 1.6rem;
-    left: 1rem;
-    color: $primary;
-    line-height: 1.3;
-  }
-
-  .vase{
-    position: relative;
-    width: 8.5rem;
-    height: 7rem;
-    //border: 1px solid $border;
-    border-radius: 5px;
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-
-  // Vase canvas styles for desktop navigation
-  .vase-canvas {
-    position: relative;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
-    margin: 0 auto;
-  }
-
-  .personal-box {
-    width: 8.5rem;
-    height: 10rem;
-    //border: 1px solid $border;
-    border-radius: 5px;
-    margin: 1rem;
-    margin-left: 0.5rem;
-    margin-bottom: 0.5rem;
-    overflow-y: auto;
-    flex-shrink: 0;
-    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
-    transform: translate(0, 55%);
-    transition-delay: 0.2s;
-    opacity: 0;
-
-    &.open{
-      transform: translate(0, 0);
-      transition:cubic-bezier(0.45, 0, 0.55, 1) 0.45s;
-      opacity: 1;
-      transition-delay: 0.6s;
-    }
-  }
-
-  .personal-work{
-    position: relative;
-    top: 0;
-    width: 8.5rem;
-    height: 3rem;
-    //border: 1px solid $border;
-    border-radius: 5px;
-    background-color: #D98D85;
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-
-  .personal-header {
-    position: relative;
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 500;
-    width: 6rem;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 1rem;
-    color: $primary;
-  }
-
-  .projects-box {
-    position: relative;
-    width: 12.5rem;
-    left: 0;
-    top: 0;
-    height: 10rem;
-    margin: 1rem;
-    margin-right: 0.5rem;
-    margin-top: 0.5rem;
-    border-radius: 5px;
-    background-color: #EDF1F2;
-    overflow-y: auto;
-    flex-shrink: 0;
-    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
-    transform: translate(0, 55%);
-    transition-delay: 0.1s;
-    opacity: 0;
-
-    // Custom scrollbar
-    &::-webkit-scrollbar {
-      width: 0.5rem;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #8C8A84;
-      border-radius: 5px;
-      border: 2px solid #D6E4E1;
-
-      &:hover {
-        background: #6B6964;
-      }
-    }
-
-    // Remove scrollbar arrows
-    &::-webkit-scrollbar-button {
-      display: none;
-    }
-
-    &.open {
-      transform: translate(0, 0);
-      opacity: 1;
-      transition-delay: 0.75s;
-    }
-
-    // Firefox scrollbar
-    scrollbar-width: thin;
-    scrollbar-color: #8C8A84 transparent;
-
-  }
-
-  .project-header {
-    position: relative;
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 500;
-    width: 9rem;
-    top: 0.9rem;
-    left: 1rem;
-    color: $primary;
-  }
-
-  .project-text {
-    position: relative;
-    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 400;
-    width: 9rem;
-    top: 1.65rem;
-    left: 1rem;
-    color: $primary;
-    line-height: 1.3;
-  }
-
-  .project-links {
-    position: relative;
-    top: 1.35rem;
-    left: 1rem;
-    width: 10.25rem;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-
-    .year{
-      font-size: 0.6rem;
-      color: #555555;
-    }
-
-    li {
-      a {
         color: $primary;
-        text-decoration: none;
-        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-        font-size: 0.75rem;
-        font-weight: 400;
-        transition: color 0.3s ease;
-
-        &:hover {
-          color: #222222;
-        }
-      }
-    }
-  }
-
-  .miscellaneous-box {
-    width: 8.5rem;
-    height: 10rem;
-    //border: 1px solid $border;
-    border-radius: 5px;
-    overflow: hidden;
-    margin: 1rem;
-    margin-left: 0.5rem;
-    margin-top: 0.5rem;
-    flex-shrink: 0;
-    background-color: #EDF1F2;
-    flex-direction: column;
-    justify-content: space-between;
-    transition:cubic-bezier(0.77,0,0.18,1) 0.45s;
-    transform: translate(0, 55%);
-    transition-delay: 0s;
-    opacity: 0;
-
-    &.open{
-      transform: translate(0, 0);
-      opacity: 1;
-      transition-delay: 0.9s;
-    }
-  }
-
-  .external-links {
-    position: absolute;
-    bottom: 0.8rem;
-    left: 0.5rem;
-    width: 8.5rem;
-
-    ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.085rem;
-      margin: 0;
-      padding: 0;
-    
-      li {
-        a {
-          color: $primary;
-          text-decoration: none;
-          font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-          font-size: 0.65rem;
-          font-weight: 400;
-          transition: color 0.3s ease;
-
-          &:hover {
-            color: #222222;
-          }
-        }
       }
     }
   }

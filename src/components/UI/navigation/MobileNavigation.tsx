@@ -4,25 +4,18 @@ import MobileNavigationName from './MobileNavName'
 import './MobileNavigation.scss'
 
 interface MobileNavigationProps {
-  vase: React.ReactNode
+  loaded?: boolean
 }
 
-function MobileNavigation({ vase }: MobileNavigationProps) {
-  //const menuStuff = useMenu()
-  //const isMenuOpen = menuStuff.isMenuOpen
-  //const setIsMenuOpen = menuStuff.setIsMenuOpen
+function MobileNavigation({ loaded = false }: MobileNavigationProps) {
   const { isMenuOpen, setIsMenuOpen } = useMenu()
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
   }
 
-  const closeMenu = () => {
-    setIsMenuOpen(false)
-  }
-
   return (
-    <nav className="mobile-navigation">
+    <nav className={`mobile-navigation ${loaded ? 'loaded' : ''}`}>
 
       {/* Hamburger Button */}
       <button
@@ -49,9 +42,6 @@ function MobileNavigation({ vase }: MobileNavigationProps) {
       <div className={`mobile-menu-overlay ${isMenuOpen ? 'open' : ''}`}>
         <div className="menu-content">
           <div className="left-section">
-            <div className="logo">
-              {vase}
-            </div>
             <div className={`miscellaneous-box ${isMenuOpen ? 'open' : ''}`}>
               <div className={`personal-box ${isMenuOpen ? 'open' : ''}`}>
                 <h2 className="personal-header">
@@ -76,10 +66,10 @@ function MobileNavigation({ vase }: MobileNavigationProps) {
           <div className="right-section">
             <div className={`about-box ${isMenuOpen ? 'open' : ''}`}>
             <h2 className="about-header">
-            <Link to="/">About</Link>
+            <Link to="/home">About</Link>
             </h2>
             <p className="about-text">
-            Anzhu is an interactive developer and artist. 
+            Anzhu is an interactive developer and artist.
             <br></br>
             <br></br>
             His current focus is on  integrating large data sets with visual displays.

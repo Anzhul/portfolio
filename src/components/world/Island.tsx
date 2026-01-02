@@ -38,7 +38,7 @@ export function Island({ id, position, name, boundaries, children }: IslandProps
 
   // Build className with active state (loading classes will be added by SimpleLoadingManager)
   const classNames = [
-    name,
+    id, // Use ID instead of name to avoid spaces in class names
     'loading', // Start as loading
     boundaryState.isActive ? 'active' : '',
   ]

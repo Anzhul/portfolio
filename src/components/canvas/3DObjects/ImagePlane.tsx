@@ -33,7 +33,7 @@ export function ImagePlane({
   transparent = false,
   emmissive = 0.0,
   emissiveIntensity = 1.0,
-  islandId // eslint-disable-line @typescript-eslint/no-unused-vars
+  islandId: _islandId // Prefix with _ to indicate intentionally unused
 }: ImagePlaneProps) {
   const { addObject, removeObject } = useScene()
   const { isMobile } = useMenu()
@@ -53,9 +53,6 @@ export function ImagePlane({
         width={actualWidth}
         height={actualHeight}
         opacity={opacity}
-        transparent={transparent}
-        emmissive={emmissive}
-        emissiveIntensity={emissiveIntensity}
         planeId={planeId}
       />
     )
@@ -194,7 +191,6 @@ function ImagePlaneMesh({
   width,
   height,
   opacity,
-  transparent,
   planeId
 }: {
   imageUrl: string
@@ -202,9 +198,6 @@ function ImagePlaneMesh({
   width: number
   height: number
   opacity: number
-  transparent: boolean
-  emmissive: number
-  emissiveIntensity: number
   planeId: string
 }) {
   const texture = useTexture(imageUrl)
@@ -237,7 +230,7 @@ function ImagePlaneMesh({
         uniforms={uniforms}
         vertexShader={bicubicVertexShader}
         fragmentShader={bicubicFragmentShader}
-        transparent={transparent || opacity < 1}
+        transparent={true}
         side={THREE.DoubleSide}
       />
     </mesh>

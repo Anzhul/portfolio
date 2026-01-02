@@ -11,15 +11,6 @@ function MobileNavigationName({ name }: MobileNavigationNameProps) {
   // Split name into individual letters
   const letters = name.split('')
 
-  // Array of different easing functions for variety
-  const easingFunctions = [
-    'cubic-bezier(0.68, -0.55, 0.265, 1.55)', // bounce
-    'cubic-bezier(0.34, 1.56, 0.64, 1)', // overshoot
-    'cubic-bezier(0.25, 0.46, 0.45, 0.94)', // ease-out-quad
-    'cubic-bezier(0.175, 0.885, 0.32, 1.275)', // back-out
-    'cubic-bezier(0.77, 0, 0.175, 1)', // ease-in-out-quart
-  ]
-
   return (
     <div className="animated-name">
       {letters.map((letter, index) => {

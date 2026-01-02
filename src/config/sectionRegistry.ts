@@ -1,10 +1,10 @@
-import { lazy } from 'react'
+// import { lazy } from 'react'
 import type { ComponentType } from 'react'
 import type { BoundaryConfig } from '../context/BoundaryContext'
-import { HomeSection2Skeleton } from '../island/home/sections/Section2Skeleton'
+// import { HomeSection2Skeleton } from '../island/home/sections/Section2Skeleton'
 
 // Lazy-loaded sections
-const HomeSection2 = lazy(() => import('../island/home/sections/Section2').then(m => ({ default: m.HomeSection2 })))
+// const HomeSection2 = lazy(() => import('../island/home/sections/Section2').then(m => ({ default: m.HomeSection2 })))
 
 export interface SectionConfig {
   id: string

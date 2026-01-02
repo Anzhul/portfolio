@@ -1,0 +1,77 @@
+.home {
+  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+  color: #222222;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow: scroll;
+  overflow-x: hidden;
+
+  .home-intro{
+    position: absolute;
+    top:0;
+    left:0;
+    height:100vh;
+    width:100vw;
+  }
+
+  .home-header {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    width: calc(100% - 26rem);
+    height: 50%;
+    padding-left: 10rem;
+    padding-right: 10rem;
+    text-align: left;
+
+    h1 {
+      font-size: 4.5rem;
+      margin: 0;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      font-size: 1.8rem;
+      margin: 1rem 0 0;
+      opacity: 1;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 400;
+    }
+  }
+
+  .home-content {
+    width: 100%;
+    height: 300vh;
+    position: absolute;
+    top: 100vh;
+    left: 0;
+
+    .home-projects {
+      position: absolute;
+      height: 100vh;
+      width: 100%;
+      top: 0;
+      left: 0;
+      background-color: red;
+
+      h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        opacity: 0.95;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+    }
+  }
+}

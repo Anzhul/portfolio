@@ -27,10 +27,10 @@ import { AboutIslandSkeleton } from '../island/about/AboutIslandSkeleton'
 // import { AboutIslandSkeleton } from '../island/about/AboutIslandSkeleton'
 
 export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
-  home: {
-    id: 'home',
+  the_hill: {
+    id: 'the_hill',
     position: [0, 0, 0],
-    name: 'home',
+    name: 'the hill',
     boundaries: {
       loadRadius: 3000,
       activeRadius: 1600,
@@ -40,10 +40,10 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
     // loadImmediately: true,  // Disabled - home island now lazy loads like others
   },
 
-  about: {
-    id: 'about',
+  the_studio: {
+    id: 'the_studio',
     position: [4000, 4000, 0],
-    name: 'about',
+    name: 'the studio',
     boundaries: {
       loadRadius: 3000,
       activeRadius: 1600,

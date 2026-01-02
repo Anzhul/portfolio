@@ -1,5 +1,5 @@
 import { Island } from '../../components/world/Island'
-import { HomeGreetings } from './section1'
+// import { HomeGreetings } from './section1'
 import './home.scss'
 import { SectionLoader } from '../../components/loading/SectionLoader'
 import { getLazySectionsForIsland } from '../../config/sectionRegistry'
@@ -7,13 +7,13 @@ import { ImagePlane } from '../../components/canvas/3DObjects/ImagePlane'
 
 export function HomeIsland() {
   // Get lazy sections for this island
-  const lazySections = getLazySectionsForIsland('home')
+  const lazySections = getLazySectionsForIsland('the_hill')
 
   return (
     <Island
-      id="home"
+      id="the_hill"
       position={[0, 0, 0]}
-      name="home"
+      name="the hill"
       boundaries={{
         loadRadius: 3000,
         activeRadius: 1600,
@@ -31,7 +31,7 @@ export function HomeIsland() {
         transparent={true}
         opacity={1}
         emmissive={0.5}
-        islandId="home"
+        islandId="the_hill"
       />
 
       <ImagePlane
@@ -45,7 +45,7 @@ export function HomeIsland() {
         transparent={true}
         opacity={1}
         emmissive={0.5}
-        islandId="home"
+        islandId="the_hill"
       />
 
       <ImagePlane
@@ -59,7 +59,7 @@ export function HomeIsland() {
         transparent={true}
         opacity={1}
         emmissive={0.5}
-        islandId="home"
+        islandId="the_hill"
       />
 
       {/* Spaceship */}
@@ -74,7 +74,7 @@ export function HomeIsland() {
         transparent={true}
         opacity={1}
         emmissive={0.5}
-        islandId="home"
+        islandId="the_hill"
       />
 
       {/* Me */}
@@ -89,7 +89,7 @@ export function HomeIsland() {
         transparent={true}
         opacity={1}
         emmissive={0.5}
-        islandId="home"
+        islandId="the_hill"
       />
 
       {/* Tree */}
@@ -104,7 +104,7 @@ export function HomeIsland() {
         transparent={true}
         opacity={1}
         emmissive={0.5}
-        islandId="home"
+        islandId="the_hill"
       />
 
       <ImagePlane
@@ -118,7 +118,7 @@ export function HomeIsland() {
         transparent={true}
         opacity={1}
         emmissive={0.5}
-        islandId="home"
+        islandId="the_hill"
       />
 
 {/*}
