@@ -1,7 +1,7 @@
-import { useRef, useEffect, useMemo, useImperativeHandle, forwardRef, Suspense, type ReactNode, type MouseEvent } from 'react'
+import { useRef, useEffect, useMemo, useCallback, useImperativeHandle, forwardRef, Suspense, type ReactNode, type MouseEvent } from 'react'
 import { useCamera } from '../../context/CameraContext'
 import { useSceneObjects } from '../../context/SceneContext'
-import { useMenu } from '../../context/MenuContext'
+import { useViewport } from '../../context/ViewportContext'
 import { ticker } from '../../utils/AnimationTicker'
 import { Animation, Easing, type EasingFunction } from '../../utils/Animation'
 import R3FCanvas from './R3FCanvas'
@@ -22,16 +22,17 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
   ({ children }, ref) => {
   const camera = useCamera()
   const objects = useSceneObjects()
-  const { isMobile } = useMenu()
+  const { isMobileOnly } = useViewport()
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const isPanningRef = useRef(false)
   const lastMousePosRef = useRef({ x: 0, y: 0 })
   const activeAnimationRef = useRef<Animation<any> | null>(null)
   const isCustomAnimatingRef = useRef(false)
+  const restartAnimationRef = useRef<(() => void) | null>(null)
 
   // Target values for trailing
-  const initialZoom = isMobile ? 0.3 : 0.45
+  const initialZoom = isMobileOnly ? 0.3 : 0.45
   const targetZoomRef = useRef(initialZoom)
   const targetPositionRef = useRef<[number, number, number]>([0, 0, 5])
   const trueTargetPositionRef = useRef<[number, number, number]>([0, 0, 5])
@@ -127,6 +128,9 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     ]
 
     targetZoomRef.current = newZoom
+
+    // Restart animation since target changed
+    restartAnimationRef.current?.()
   }
 
   const zoomOut = () => {
@@ -159,6 +163,9 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     ]
 
     targetZoomRef.current = newZoom
+
+    // Restart animation since target changed
+    restartAnimationRef.current?.()
   }
 
   /**
@@ -541,6 +548,21 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     const container = containerRef.current
     if (!container) return
 
+    // Cache container rect to avoid expensive getBoundingClientRect() on every wheel event
+    let cachedRect = container.getBoundingClientRect()
+
+    // Update cached rect on window resize (debounced to avoid excessive recalculations)
+    let resizeTimeout: number | null = null
+    const updateCachedRect = () => {
+      if (resizeTimeout) clearTimeout(resizeTimeout)
+      resizeTimeout = window.setTimeout(() => {
+        if (container) {
+          cachedRect = container.getBoundingClientRect()
+        }
+      }, 100) // Wait 100ms after resize stops before recalculating
+    }
+    window.addEventListener('resize', updateCachedRect)
+
     const handleWheel = (e: globalThis.WheelEvent) => {
       e.preventDefault() // Always prevent default to block browser zoom
 
@@ -549,14 +571,13 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         const delta = e.deltaY * -0.00075
         const newTargetZoom = Math.max(0.15, Math.min(1, targetZoomRef.current + delta))
 
-        // Calculate cursor position relative to the container
-        const rect = container.getBoundingClientRect()
-        const cursorX = e.clientX - rect.left
-        const cursorY = e.clientY - rect.top
+        // Use cached rect instead of calling getBoundingClientRect() on every event
+        const cursorX = e.clientX - cachedRect.left
+        const cursorY = e.clientY - cachedRect.top
 
         // Get center of viewport
-        const centerX = rect.width / 2
-        const centerY = rect.height / 2
+        const centerX = cachedRect.width / 2
+        const centerY = cachedRect.height / 2
 
         // Calculate the point in world space that's currently under the cursor
         // We need to reverse the transform: point = (cursor - center - position) / zoom
@@ -584,6 +605,9 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         ]
 
         targetZoomRef.current = newTargetZoom
+
+        // Restart animation since target changed
+        restartAnimationRef.current?.()
       }
     }
 
@@ -606,14 +630,55 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     container.addEventListener('touchmove', handleTouchMove, { passive: false })
 
     return () => {
+      if (resizeTimeout) clearTimeout(resizeTimeout)
       container.removeEventListener('wheel', handleWheel)
       window.removeEventListener('keydown', handleKeyDown)
       container.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('resize', updateCachedRect)
+    }
+  }, [])
+
+  // Handle mouse move for panning (memoized to prevent recreation)
+  const handleMouseMove = useCallback((e: globalThis.MouseEvent) => {
+    if (!isPanningRef.current) return
+
+    const deltaX = e.clientX - lastMousePosRef.current.x
+    const deltaY = e.clientY - lastMousePosRef.current.y
+
+    const [x, y, z] = targetPositionRef.current
+
+    // Adjust pan speed based on zoom level (less zoom = faster pan)
+    const panSpeed = Math.max(0.25, Math.min(1, 1 / targetZoomRef.current))
+
+    targetPositionRef.current = [
+      x + deltaX * panSpeed,
+      y + deltaY * panSpeed,
+      z
+    ]
+
+    const [trueX, trueY, trueZ] = trueTargetPositionRef.current
+    trueTargetPositionRef.current = [
+      trueX + deltaX * panSpeed,
+      trueY + deltaY * panSpeed,
+      trueZ
+    ]
+
+    lastMousePosRef.current = { x: e.clientX, y: e.clientY }
+
+    // Restart animation since target changed
+    restartAnimationRef.current?.()
+  }, [])
+
+  // Handle mouse up (memoized to prevent recreation)
+  const handleMouseUp = useCallback(() => {
+    isPanningRef.current = false
+    if (containerRef.current) {
+      containerRef.current.style.cursor = 'grab'
     }
   }, [])
 
   // Handle mouse down to start panning
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+  const handleMouseDown = useCallback((e: MouseEvent<HTMLDivElement>) => {
     if (e.button === 0) { // Left click only
       isPanningRef.current = true
       lastMousePosRef.current = { x: e.clientX, y: e.clientY }
@@ -622,44 +687,10 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         containerRef.current.style.cursor = 'grabbing'
       }
     }
-  }
+  }, [])
 
-  // Handle mouse move for panning
+  // Set up mouse event listeners
   useEffect(() => {
-    const handleMouseMove = (e: globalThis.MouseEvent) => {
-      if (!isPanningRef.current) return
-
-      const deltaX = e.clientX - lastMousePosRef.current.x
-      const deltaY = e.clientY - lastMousePosRef.current.y
-
-      const [x, y, z] = targetPositionRef.current
-
-      // Adjust pan speed based on zoom level (less zoom = faster pan)
-      const panSpeed = Math.max(0.25, Math.min(1, 1 / targetZoomRef.current))
-
-      targetPositionRef.current = [
-        x + deltaX * panSpeed,
-        y + deltaY * panSpeed,
-        z
-      ]
-
-      const [trueX, trueY, trueZ] = trueTargetPositionRef.current
-      trueTargetPositionRef.current = [
-        trueX + deltaX * panSpeed,
-        trueY + deltaY * panSpeed,
-        trueZ
-      ]
-
-      lastMousePosRef.current = { x: e.clientX, y: e.clientY }
-    }
-
-    const handleMouseUp = () => {
-      isPanningRef.current = false
-      if (containerRef.current) {
-        containerRef.current.style.cursor = 'grab'
-      }
-    }
-
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
 
@@ -667,7 +698,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [])
+  }, [handleMouseMove, handleMouseUp])
 
   // Store initial viewport height and FOV for dynamic FOV adjustment
   const initialViewportHeightRef = useRef(window.innerHeight)
@@ -768,6 +799,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     const trailingSpeed = 0.1 // Adjust for more/less smoothness (0.1 = slower, 0.3 = faster)
     const threshold = 0.01 // Stop animating when differences are below this threshold
     let lastTransform = '' // Cache last transform to avoid unnecessary DOM writes
+    let isAnimating = false // Track whether animation is currently active
 
     const animate = (_timestamp: number, _deltaTime: number) => {
       // Skip trailing animation if custom animation is active
@@ -791,6 +823,29 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         currentZoomRef.current = targetZoomRef.current
         currentPositionRef.current = targetPositionRef.current
         trueCurrentPositionRef.current = trueTargetPositionRef.current
+
+        // Update camera state one final time (batched for efficiency)
+        camera.setState({
+          zoom: currentZoomRef.current,
+          position: currentPositionRef.current,
+          truePosition: trueCurrentPositionRef.current
+        })
+
+        // Final transform update
+        if (contentRef.current) {
+          const [x, y] = currentPositionRef.current
+          const newTransform = `translate(${x}px, ${y}px) scale(${currentZoomRef.current})`
+          if (newTransform !== lastTransform) {
+            contentRef.current.style.transform = newTransform
+            lastTransform = newTransform
+          }
+        }
+
+        // Stop animating - remove from ticker to save CPU
+        if (isAnimating) {
+          ticker.remove(animate)
+          isAnimating = false
+        }
       } else {
         // Continue interpolating
         currentZoomRef.current += (targetZoomRef.current - currentZoomRef.current) * trailingSpeed
@@ -806,29 +861,44 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
           trueCurrentY + (trueTargetPositionRef.current[1] - trueCurrentY) * trailingSpeed,
           trueCurrentZ + (trueTargetPositionRef.current[2] - trueCurrentZ) * trailingSpeed,
         ]
-      }
 
-      // Update camera state
-      camera.setZoom(currentZoomRef.current)
-      camera.setPosition(currentPositionRef.current)
-      camera.setTruePosition(trueCurrentPositionRef.current)
+        // Update camera state (batched for efficiency)
+        camera.setState({
+          zoom: currentZoomRef.current,
+          position: currentPositionRef.current,
+          truePosition: trueCurrentPositionRef.current
+        })
 
-      // Update CSS transform only if it changed
-      if (contentRef.current) {
-        const [x, y] = currentPositionRef.current
-        const newTransform = `translate(${x}px, ${y}px) scale(${currentZoomRef.current})`
-        if (newTransform !== lastTransform) {
-          contentRef.current.style.transform = newTransform
-          lastTransform = newTransform
+        // Update CSS transform only if it changed
+        if (contentRef.current) {
+          const [x, y] = currentPositionRef.current
+          const newTransform = `translate(${x}px, ${y}px) scale(${currentZoomRef.current})`
+          if (newTransform !== lastTransform) {
+            contentRef.current.style.transform = newTransform
+            lastTransform = newTransform
+          }
         }
       }
     }
 
-    // Add to ticker
-    ticker.add(animate)
+    // Function to start animation when target changes
+    const startAnimation = () => {
+      if (!isAnimating) {
+        ticker.add(animate)
+        isAnimating = true
+      }
+    }
+
+    // Expose restart function to other handlers
+    restartAnimationRef.current = startAnimation
+
+    // Initially start the animation
+    startAnimation()
 
     return () => {
       ticker.remove(animate)
+      isAnimating = false
+      restartAnimationRef.current = null
     }
   }, [camera])
 

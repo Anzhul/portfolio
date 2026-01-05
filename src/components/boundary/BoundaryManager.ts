@@ -140,6 +140,18 @@ export class BoundaryManager {
     return this.sectionIslandMap;
   }
 
+  // Update island DOM element classes directly (bypasses React re-renders)
+  private updateIslandDOM(islandId: string, isActive: boolean): void {
+    const element = document.querySelector(`[data-island-id="${islandId}"]`);
+    if (element) {
+      if (isActive) {
+        element.classList.add('active');
+      } else {
+        element.classList.remove('active');
+      }
+    }
+  }
+
   // Calculate viewport bounds in world space - cached per frame for all boundary checks
   private calculateViewportBounds(): ViewportBounds {
     const cameraPos = this.camera.getState().position;
@@ -316,6 +328,11 @@ export class BoundaryManager {
       viewportBottom
     );
     island.state.isActive = isActive;
+
+    // Update DOM directly instead of triggering React re-renders
+    if (wasActive !== isActive) {
+      this.updateIslandDOM(islandId, isActive);
+    }
 
     // Fire events on state changes
     if (!wasLoaded && isLoaded) {

@@ -15,13 +15,8 @@ export const Projects: React.FC = () => {
   ];
 
   return (
-    <div className="projects-page">
+    <div className="projects">
       <header className="projects-header">
-        <nav className="breadcrumb">
-          <a href="/">Home</a>
-          <span>/</span>
-          <span>Projects</span>
-        </nav>
         <h1>Projects</h1>
         <p>A collection of my work and experiments</p>
       </header>

@@ -1,4 +1,4 @@
-export function AboutIslandSkeleton() {
+export function TheStudioIslandSkeleton() {
   return (
     <div className="about-island-skeleton">
       <div className="about-skeleton-content">

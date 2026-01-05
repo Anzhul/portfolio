@@ -1,11 +1,11 @@
 import { Island } from '../../components/world/Island'
 // import { HomeGreetings } from './section1'
-import './home.scss'
+import './the_hill.scss'
 import { SectionLoader } from '../../components/loading/SectionLoader'
 import { getLazySectionsForIsland } from '../../config/sectionRegistry'
 import { ImagePlane } from '../../components/canvas/3DObjects/ImagePlane'
 
-export function HomeIsland() {
+export function TheHillIsland() {
   // Get lazy sections for this island
   const lazySections = getLazySectionsForIsland('the_hill')
 

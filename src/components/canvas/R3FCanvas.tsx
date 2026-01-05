@@ -20,7 +20,7 @@ function R3FCanvas({ children }: R3FCanvasProps) {
       <Canvas
         ref={canvasRef}
         className="r3f-canvas"
-        frameloop="never" // Manual control via ticker (same as VaseR3F)
+        frameloop="never" // Manual control via ticker
         camera={{
           position: [
             initialState.truePosition[0],

@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef, useMemo, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useMenu } from './MenuContext'
+import { useViewport } from './ViewportContext'
 
 // Tracks camera position and settings for WebGL navigation component
 // Uses ref-based storage to avoid re-renders on frequent updates (dragging/panning)
@@ -24,6 +24,9 @@ export interface CameraContextType {
   setRotation: (rotation: [number, number, number]) => void
   setFov: (fov: number) => void
   setZoom: (zoom: number) => void
+
+  // Batched update - set multiple values at once, notify only once
+  setState: (updates: Partial<CameraState>) => void
 
   // Subscribe to state changes (for components that need reactivity like minimap/URL handler)
   subscribe: (listener: () => void) => () => void
@@ -60,7 +63,7 @@ function throttle<T extends (...args: any[]) => void>(func: T, delay: number): T
 
 // Automatically passes everything between the tags as the children prop
 export function CameraProvider({ children }: { children: ReactNode }) {
-  const { isMobile } = useMenu()
+  const { isMobileOnly } = useViewport()
 
   // Store camera state in ref (doesn't cause re-renders when updated)
   const stateRef = useRef<CameraState>({
@@ -68,7 +71,7 @@ export function CameraProvider({ children }: { children: ReactNode }) {
     truePosition: [0, 0, 5],
     rotation: [0, 0, 0],
     fov: (75 * Math.PI) / 180,  // Convert 75 degrees to radians
-    zoom: isMobile ? 0.3 : 0.45,  // Mobile gets more zoomed out view
+    zoom: isMobileOnly ? 0.3 : 0.45,  // Mobile gets more zoomed out view
   })
 
   // Store subscribers (components that want to be notified of changes vis callbacks)
@@ -114,6 +117,16 @@ export function CameraProvider({ children }: { children: ReactNode }) {
       setZoom: (zoom) => {
         stateRef.current.zoom = zoom
         notifyListeners()
+      },
+
+      // Batched update - updates multiple properties and notifies only once
+      setState: (updates) => {
+        if (updates.position !== undefined) stateRef.current.position = updates.position
+        if (updates.truePosition !== undefined) stateRef.current.truePosition = updates.truePosition
+        if (updates.rotation !== undefined) stateRef.current.rotation = updates.rotation
+        if (updates.fov !== undefined) stateRef.current.fov = updates.fov
+        if (updates.zoom !== undefined) stateRef.current.zoom = updates.zoom
+        notifyListeners() // Only notify once for all updates
       },
 
       subscribe: (listener) => {

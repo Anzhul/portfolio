@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useTexture } from '@react-three/drei'
 import { useScene } from '../../../context/SceneContext'
-import { useMenu } from '../../../context/MenuContext'
+import { useViewport } from '../../../context/ViewportContext'
 import * as THREE from 'three'
 
 interface ImagePlaneProps {
@@ -36,13 +36,13 @@ export function ImagePlane({
   islandId: _islandId // Prefix with _ to indicate intentionally unused
 }: ImagePlaneProps) {
   const { addObject, removeObject } = useScene()
-  const { isMobile } = useMenu()
+  const { isMobileOnly } = useViewport()
   const planeId = useRef(`image-plane-${Math.random()}`).current
 
   // Use mobile values if provided and on mobile, otherwise use desktop values
-  const actualPosition = isMobile && mobilePosition ? mobilePosition : position
-  const actualHeight = isMobile && mobileHeight !== undefined ? mobileHeight : height
-  const actualWidth = isMobile && mobileWidth !== undefined ? mobileWidth : width
+  const actualPosition = isMobileOnly && mobilePosition ? mobilePosition : position
+  const actualHeight = isMobileOnly && mobileHeight !== undefined ? mobileHeight : height
+  const actualWidth = isMobileOnly && mobileWidth !== undefined ? mobileWidth : width
 
   useEffect(() => {
     // Create the 3D image plane mesh
@@ -97,6 +97,8 @@ const bicubicFragmentShader = `
   uniform sampler2D map;
   uniform float opacity;
   uniform vec2 textureSize;
+  uniform float borderWidth;
+  uniform vec3 borderColor;
 
   varying vec2 vUv;
   varying float vZoomLevel;
@@ -147,40 +149,74 @@ const bicubicFragmentShader = `
   }
 
   void main() {
-    // Use bicubic filtering as base
-    vec4 texColor = textureBicubic(map, vUv);
+    // Calculate distance from edge in UV space
+    vec2 edgeDist = min(vUv, 1.0 - vUv);
+    float minEdgeDist = min(edgeDist.x, edgeDist.y);
 
-    // Apply blur when zoomed out (zoom closer to 0.15 = more blur)
-    // Map zoom range [0.15, 1.0] to blur strength [1.0, 0.0]
-    // When zoom = 0.15 (max zoomed out), blurStrength = 1.0
-    // When zoom = 1.0 (max zoomed in), blurStrength = 0.0
-    float blurStrength = clamp((1.0 - vZoomLevel) / (1.0 - 0.15), 0.0, 1.0);
+    // Convert border width from pixels to UV space
+    // Border width is in pixels, we need to normalize it by texture size
+    float borderWidthUV = borderWidth / min(textureSize.x, textureSize.y);
 
-    if (blurStrength > 0.01) {
-      // Simple box blur - sample surrounding pixels
-      vec2 texelSize = 1.0 / textureSize;
-      float blurRadius = blurStrength * 1.65; // Max 1.2 pixels of blur (reduced from 2.0)
+    // Check if we're in the border region
+    bool inBorder = borderWidth > 0.0 && minEdgeDist < borderWidthUV;
 
-      vec4 blurred = vec4(0.0);
-      float totalWeight = 0.0;
+    if (inBorder) {
+      // Render border
+      gl_FragColor = vec4(borderColor, opacity);
+    } else if (borderWidth > 0.0 && minEdgeDist < borderWidthUV * 1.5) {
+      // Anti-aliasing transition zone
+      float edgeFactor = smoothstep(borderWidthUV, borderWidthUV * 1.5, minEdgeDist);
+      vec4 texColor = textureBicubic(map, vUv);
 
-      // 3x3 blur kernel
-      for (float y = -1.0; y <= 1.0; y += 1.0) {
-        for (float x = -1.0; x <= 1.0; x += 1.0) {
-          vec2 offset = vec2(x, y) * texelSize * blurRadius;
-          float weight = 1.0;
-          blurred += textureBicubic(map, vUv + offset) * weight;
-          totalWeight += weight;
+      // Apply blur if needed
+      float blurStrength = clamp((1.0 - vZoomLevel) / (1.0 - 0.15), 0.0, 1.0);
+      if (blurStrength > 0.01) {
+        vec2 texelSize = 1.0 / textureSize;
+        float blurRadius = blurStrength * 1.65;
+        vec4 blurred = vec4(0.0);
+        float totalWeight = 0.0;
+        for (float y = -1.0; y <= 1.0; y += 1.0) {
+          for (float x = -1.0; x <= 1.0; x += 1.0) {
+            vec2 offset = vec2(x, y) * texelSize * blurRadius;
+            blurred += textureBicubic(map, vUv + offset);
+            totalWeight += 1.0;
+          }
         }
+        texColor = blurred / totalWeight;
       }
 
-      texColor = blurred / totalWeight;
+      texColor.rgb = pow(texColor.rgb, vec3(1.0 / 2.2));
+      gl_FragColor = mix(vec4(borderColor, opacity), vec4(texColor.rgb, texColor.a * opacity), edgeFactor);
+    } else {
+      // Use bicubic filtering as base
+      vec4 texColor = textureBicubic(map, vUv);
+
+      // Apply blur when zoomed out
+      float blurStrength = clamp((1.0 - vZoomLevel) / (1.0 - 0.15), 0.0, 1.0);
+
+      if (blurStrength > 0.01) {
+        vec2 texelSize = 1.0 / textureSize;
+        float blurRadius = blurStrength * 1.65;
+
+        vec4 blurred = vec4(0.0);
+        float totalWeight = 0.0;
+
+        for (float y = -1.0; y <= 1.0; y += 1.0) {
+          for (float x = -1.0; x <= 1.0; x += 1.0) {
+            vec2 offset = vec2(x, y) * texelSize * blurRadius;
+            blurred += textureBicubic(map, vUv + offset);
+            totalWeight += 1.0;
+          }
+        }
+
+        texColor = blurred / totalWeight;
+      }
+
+      // Convert from linear to sRGB for proper color display
+      texColor.rgb = pow(texColor.rgb, vec3(1.0 / 2.2));
+
+      gl_FragColor = vec4(texColor.rgb, texColor.a * opacity);
     }
-
-    // Convert from linear to sRGB for proper color display
-    texColor.rgb = pow(texColor.rgb, vec3(1.0 / 2.2));
-
-    gl_FragColor = vec4(texColor.rgb, texColor.a * opacity);
   }
 `
 
@@ -216,23 +252,38 @@ function ImagePlaneMesh({
     return new THREE.Vector2(image.width, image.height)
   }, [texture])
 
-  // Create shader material uniforms (zoom is now extracted from modelViewMatrix)
-  const uniforms = useMemo(() => ({
-    map: { value: texture },
-    opacity: { value: opacity },
-    textureSize: { value: textureSize }
-  }), [texture, opacity, textureSize])
+  // Create shader material once and reuse it (prevents expensive shader recompilation)
+  const material = useMemo(() => {
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        map: { value: texture },
+        opacity: { value: opacity },
+        textureSize: { value: textureSize },
+        borderWidth: { value: 0 },
+        borderColor: { value: new THREE.Vector3(0, 0, 0) }
+      },
+      vertexShader: bicubicVertexShader,
+      fragmentShader: bicubicFragmentShader,
+      transparent: true,
+      side: THREE.DoubleSide
+    })
+    return mat
+  }, [texture, opacity, textureSize])
+
+  // Update uniforms when dependencies change (no recompilation needed)
+  useEffect(() => {
+    if (material) {
+      material.uniforms.map.value = texture
+      material.uniforms.opacity.value = opacity
+      material.uniforms.textureSize.value = textureSize
+      material.needsUpdate = false // Don't recompile, just update uniforms
+    }
+  }, [material, texture, opacity, textureSize])
 
   return (
     <mesh ref={meshRef} name={planeId} position={[position[0], -position[1], position[2]]}>
       <planeGeometry args={[width, height]} />
-      <shaderMaterial
-        uniforms={uniforms}
-        vertexShader={bicubicVertexShader}
-        fragmentShader={bicubicFragmentShader}
-        transparent={true}
-        side={THREE.DoubleSide}
-      />
+      <primitive object={material} attach="material" />
     </mesh>
   )
 }

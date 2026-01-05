@@ -1,6 +1,6 @@
-import './HomeIslandSkeleton.scss'
+import './TheHillIslandSkeleton.scss'
 
-export function HomeIslandSkeleton() {
+export function TheHillIslandSkeleton() {
   return (
     <div className="home-island-skeleton">
       <div className="home-skeleton-content">

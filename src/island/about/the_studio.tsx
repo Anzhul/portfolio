@@ -1,6 +1,6 @@
 import { Island } from '../../components/world/Island'
 
-export function AboutIsland() {
+export function TheStudioIsland() {
   return (
     <Island
       id="the_studio"

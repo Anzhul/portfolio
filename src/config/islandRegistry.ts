@@ -13,18 +13,16 @@ export interface IslandConfig {
 }
 
 // Lazy-loaded island components
-const HomeIsland = lazy(() => import('../island/home/home').then(m => ({ default: m.HomeIsland })))
-const AboutIsland = lazy(() => import('../island/about/about').then(m => ({ default: m.AboutIsland })))
+const TheHillIsland = lazy(() => import('../island/home/the_hill').then(m => ({ default: m.TheHillIsland })))
+const TheStudioIsland = lazy(() => import('../island/about/the_studio').then(m => ({ default: m.TheStudioIsland })))
 // Add more islands here as you create them:
 // const ProjectsIsland = lazy(() => import('../island/projects/projects').then(m => ({ default: m.ProjectsIsland })))
-// const AboutIsland = lazy(() => import('../island/about/about').then(m => ({ default: m.AboutIsland })))
 
 // Skeleton components (loaded immediately, lightweight)
-import { HomeIslandSkeleton } from '../island/home/HomeIslandSkeleton'
-import { AboutIslandSkeleton } from '../island/about/AboutIslandSkeleton'
+import { TheHillIslandSkeleton } from '../island/home/TheHillIslandSkeleton'
+import { TheStudioIslandSkeleton } from '../island/about/TheStudioIslandSkeleton'
 // Import more skeletons here:
 // import { ProjectsIslandSkeleton } from '../island/projects/ProjectsIslandSkeleton'
-// import { AboutIslandSkeleton } from '../island/about/AboutIslandSkeleton'
 
 export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
   the_hill: {
@@ -35,8 +33,8 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
       loadRadius: 3000,
       activeRadius: 1600,
     },
-    component: HomeIsland,
-    skeleton: HomeIslandSkeleton,
+    component: TheHillIsland,
+    skeleton: TheHillIslandSkeleton,
     // loadImmediately: true,  // Disabled - home island now lazy loads like others
   },
 
@@ -48,8 +46,8 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
       loadRadius: 3000,
       activeRadius: 1600,
     },
-    component: AboutIsland,
-    skeleton: AboutIslandSkeleton,
+    component: TheStudioIsland,
+    skeleton: TheStudioIslandSkeleton,
   }
   // Add more islands here:
   // projects: {

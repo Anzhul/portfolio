@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useScene } from '../../../context/SceneContext'
-import { useMenu } from '../../../context/MenuContext'
+import { useViewport } from '../../../context/ViewportContext'
 
 interface PlaneProps {
   position?: [number, number, number]
@@ -26,13 +26,13 @@ export function Plane({
   emmissive = 0.0
 }: PlaneProps) {
   const { addObject, removeObject } = useScene()
-  const { isMobile } = useMenu()
+  const { isMobileOnly } = useViewport()
   const planeId = useRef(`test-plane-${Math.random()}`).current
 
   // Use mobile values if provided and on mobile, otherwise use desktop values
-  const actualPosition = isMobile && mobilePosition ? mobilePosition : position
-  const actualHeight = isMobile && mobileHeight !== undefined ? mobileHeight : height
-  const actualWidth = isMobile && mobileWidth !== undefined ? mobileWidth : width
+  const actualPosition = isMobileOnly && mobilePosition ? mobilePosition : position
+  const actualHeight = isMobileOnly && mobileHeight !== undefined ? mobileHeight : height
+  const actualWidth = isMobileOnly && mobileWidth !== undefined ? mobileWidth : width
 
   useEffect(() => {
     // Create the 3D plane mesh

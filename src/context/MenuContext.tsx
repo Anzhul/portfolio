@@ -28,32 +28,12 @@ const theme = useTheme()  // Custom hook (cleaner)
 interface MenuContextType {
   isMenuOpen: boolean
   setIsMenuOpen: (isOpen: boolean) => void
-  isMobile: boolean
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined)
 
 export function MenuProvider({ children }: { children: ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  // Track mobile/desktop state
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false // SSR safety
-    return window.matchMedia('(max-width: 768px)').matches
-  })
-
-  // Listen for viewport changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 768px)')
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsMobile(e.matches)
-    }
-
-    mediaQuery.addEventListener('change', handleChange)
-
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
 
   // Prevent body scroll when menu is open
   useEffect(() => {
@@ -70,7 +50,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
 
   return (
     //"Broadcast tower"
-    <MenuContext.Provider value={{ isMenuOpen, setIsMenuOpen, isMobile }}>
+    <MenuContext.Provider value={{ isMenuOpen, setIsMenuOpen }}>
       {children}
     </MenuContext.Provider>
   )

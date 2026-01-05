@@ -6,7 +6,7 @@ import { Projects } from './pages/lightweight/Projects'
 import { Links } from './pages/lightweight/Links'
 import Navigation from './components/UI/navigation/Navigation'
 import Toolbar from './components/UI/toolbar/Toolbar'
-import { MenuProvider } from './context/MenuContext'
+import { ViewportProvider } from './context/ViewportContext'
 import { ToolbarProvider } from './context/ToolbarContext'
 import { NavigationProvider } from './context/NavigationContext'
 
@@ -67,13 +67,13 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <NavigationProvider>
-        <MenuProvider>
+      <ViewportProvider>
+        <NavigationProvider>
           <ToolbarProvider>
             <AppContent />
           </ToolbarProvider>
-        </MenuProvider>
-      </NavigationProvider>
+        </NavigationProvider>
+      </ViewportProvider>
     </BrowserRouter>
   )
 }

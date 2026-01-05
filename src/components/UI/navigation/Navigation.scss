@@ -5,16 +5,11 @@ $phi-squared: 2.618034;
 $background: white;
 $primary: #222222;
 
-// Desktop Navigation - Hidden on mobile
-.desktop-navigation {
+// Unified responsive Navigation - Works on all screen sizes
+.navigation {
   position: fixed;
   z-index: 1000;
   pointer-events: auto;
-
-  // Hide on mobile
-  @media (max-width: 768px) {
-    display: none;
-  }
 
   .navigation-header {
     position: fixed;
@@ -25,7 +20,6 @@ $primary: #222222;
     display: flex;
     flex-direction: row;
     align-items: center;
-    //background-color: red;
   }
 
   .name-button-container {
@@ -38,6 +32,12 @@ $primary: #222222;
     color: $primary;
     display: flex;
     align-items: center;
+
+    // Responsive adjustment for mobile
+    @media (max-width: 767px) {
+      left: 1rem;
+      font-size: 1rem;
+    }
 
     a {
       text-decoration: none;
@@ -66,9 +66,14 @@ $primary: #222222;
     &:hover {
       opacity: 0.7;
     }
+
+    // Responsive font size for mobile
+    @media (max-width: 767px) {
+      font-size: 0.9rem;
+    }
   }
 
-  .projects-button{
+  .projects-button {
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
     font-size: 1rem;
     font-weight: 400;
@@ -81,6 +86,11 @@ $primary: #222222;
     &:hover {
       opacity: 0.7;
     }
+
+    // Responsive font size for mobile
+    @media (max-width: 767px) {
+      font-size: 0.9rem;
+    }
   }
 
   .nav-links {
@@ -89,6 +99,12 @@ $primary: #222222;
     right: $phi-squared * 1rem + 1rem;
     gap: 2rem;
     align-items: center;
+
+    // Responsive adjustments for mobile
+    @media (max-width: 767px) {
+      right: 1rem;
+      gap: 1rem;
+    }
 
     .nav-link {
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
@@ -104,6 +120,11 @@ $primary: #222222;
 
       &:visited {
         color: $primary;
+      }
+
+      // Responsive font size for mobile
+      @media (max-width: 767px) {
+        font-size: 0.9rem;
       }
     }
   }

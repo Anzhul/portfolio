@@ -137,7 +137,9 @@ export function RouteSync({ cameraViewportRef, isActive }: RouteSyncProps) {
       const unsubscribe = manager.onRouteChange((entity) => {
         console.log(`🗺️ BoundaryManager route change:`, entity)
         if (!entity) {
-          debouncedNavigate('/')
+          // Don't navigate away from 3D experience when no islands are nearby
+          // Just keep the current URL/island to avoid exiting to lightweight home
+          console.log(`📍 No nearby islands - keeping current route`)
           return
         }
 
