@@ -23,10 +23,13 @@ export const Home: React.FC = () => {
           componentProps={{
             penScale: 0.03,
             capScale: 0.03,
+            inkScale: 0.13,
             // Positions [x, y, z]
-            penPosition: [3.75, 1, 0],    // Pen on the right
-            capPosition: [2.75, 2, 0],    // Cap on the left
+            penPosition: [4.5, 1, 0],    // Pen on the right
+            capPosition: [3.5, 2, 0],    // Cap on the left
+            inkPosition: [2, 0.5, 0],      // Ink in the center lower
             // Rotations [x, y, z] in radians
+            inkRotation: [Math.PI/2, -4.6, 0],
             penRotation: [-Math.PI/2, Math.PI/10, 36],
             capRotation: [-Math.PI/2, -Math.PI/20, 0.5],
             penMaterialOverrides: [
@@ -63,6 +66,25 @@ export const Home: React.FC = () => {
                 roughness: 0.1,
               }
             ],
+            inkMaterialOverrides: [
+              {
+                materialName: 'Sticker',  // Use the exact material name from your ink.glb
+                map: '/ink_Sticker.png',
+                emissiveMap: '/ink_Sticker.png',
+                emissive: '#ffffff',
+                emissiveIntensity: 0,
+                flipX: true,  // Flip horizontally
+                // Optional: adjust texture repeat/offset if needed
+                // mapRepeat: [1, 1],
+                // mapOffset: [0, 0],
+              },
+              {
+                materialName: 'Default style',
+                color: '#DCDCDC',
+                metalness: 0.8,
+                roughness: 0.1,
+              }
+            ]
           }}
           className="home-scene-container"
           placeholder={null}

@@ -1,20 +1,25 @@
 import { Canvas, useLoader, useThree } from '@react-three/fiber'
-import { useRef, useEffect, Suspense } from 'react'
+import { useRef, useEffect, Suspense, useState } from 'react'
 import { ticker } from '../../../utils/AnimationTicker'
 import { useViewport } from '../../../context/ViewportContext'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { applyMaterialOverrides, type MaterialOverride } from './materialUtils'
+import { Animation, Easing } from '../../../utils/Animation'
 
 export interface HomeSceneProps {
   penScale?: number
   capScale?: number
+  inkScale?: number
   penPosition?: [number, number, number]
   capPosition?: [number, number, number]
+  inkPosition?: [number, number, number]
   penRotation?: [number, number, number]
   capRotation?: [number, number, number]
+  inkRotation?: [number, number, number]
   penMaterialOverrides?: MaterialOverride[]
   capMaterialOverrides?: MaterialOverride[]
+  inkMaterialOverrides?: MaterialOverride[]
 }
 
 /**
@@ -87,6 +92,107 @@ function CapMesh({
   )
 }
 
+function InkMesh({
+  scale = 1,
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  materialOverrides = []
+}: {
+  scale: number
+  position: [number, number, number]
+  rotation: [number, number, number]
+  materialOverrides?: MaterialOverride[]
+}) {
+  const groupRef = useRef<THREE.Group>(null!)
+  const gltf = useLoader(GLTFLoader, '/ink.glb')
+
+  // Check if animation should play (only once per session)
+  const hasPlayedAnimation = sessionStorage.getItem('inkAnimationPlayed')
+
+  const [animatedPosition, setAnimatedPosition] = useState<[number, number, number]>(
+    hasPlayedAnimation
+      ? position  // If already played, start at final position
+      : [position[0] - 5, position[1] + 3, position[2]]  // Otherwise start off-screen
+  )
+  const [animatedRotation, setAnimatedRotation] = useState<[number, number, number]>(
+    hasPlayedAnimation
+      ? rotation  // If already played, start at final rotation
+      : [rotation[0], rotation[1] + Math.PI * 2, rotation[2]]  // Otherwise start with extra rotation
+  )
+  const animationRef = useRef<Animation<any> | null>(null)
+
+  // Apply rotation and material overrides
+  useEffect(() => {
+    if (gltf.scene) {
+      // Apply material overrides
+      applyMaterialOverrides(gltf.scene, materialOverrides)
+
+      // Apply rotation directly to the loaded scene
+      gltf.scene.rotation.set(animatedRotation[0], animatedRotation[1], animatedRotation[2])
+    }
+  }, [gltf, animatedRotation, materialOverrides])
+
+  // Animate ink into view after loading (only on first visit)
+  useEffect(() => {
+    if (gltf.scene) {
+      // Check if animation has already been played this session
+      const hasPlayedAnimation = sessionStorage.getItem('inkAnimationPlayed')
+
+      if (!hasPlayedAnimation) {
+        // Start animation after a short delay
+        const timeoutId = setTimeout(() => {
+          animationRef.current = new Animation({
+            from: {
+              x: position[0] - 5,
+              y: position[1] + 3,
+              z: position[2],
+              rotX: rotation[0],
+              rotY: rotation[1] + Math.PI * 2,
+              rotZ: rotation[2]
+            },
+            to: {
+              x: position[0],
+              y: position[1],
+              z: position[2],
+              rotX: rotation[0],
+              rotY: rotation[1],
+              rotZ: rotation[2]
+            },
+            duration: 1200, // 1.2 seconds
+            easing: Easing.easeOutCubic,
+            onUpdate: (value) => {
+              setAnimatedPosition([value.x, value.y, value.z])
+              setAnimatedRotation([value.rotX, value.rotY, value.rotZ])
+            },
+            onComplete: () => {
+              // Mark animation as played for this session
+              sessionStorage.setItem('inkAnimationPlayed', 'true')
+            }
+          })
+          animationRef.current.start()
+        }, 100) // Small delay to ensure everything is loaded
+
+        return () => {
+          clearTimeout(timeoutId)
+          if (animationRef.current) {
+            animationRef.current.stop()
+          }
+        }
+      } else {
+        // Skip animation - set final position immediately
+        setAnimatedPosition(position)
+        setAnimatedRotation(rotation)
+      }
+    }
+  }, [gltf, position, rotation])
+
+  return (
+    <group ref={groupRef} scale={scale} position={animatedPosition}>
+      <primitive object={gltf.scene} />
+    </group>
+  )
+}
+
 /**
  * CameraController - Adjusts camera position based on viewport width
  * Zooms out on smaller screens to keep models in view
@@ -100,9 +206,13 @@ function CameraController() {
       // Adjust camera Z position based on viewport width
       // Mobile: farther away, Desktop: closer
       let zPosition = 8 // Default desktop
+      let xPosition = 0
+      let yPosition = 0
 
       if (isMobileOnly) {
         // Mobile (< 768px): zoom way out
+        xPosition = 2.5
+        yPosition = -2
         zPosition = 12
       } else if (isTabletDown) {
         // Tablet (768px - 1023px): zoom out a bit
@@ -112,7 +222,8 @@ function CameraController() {
         zPosition = 9
       }
       // Wide (>= 1440px): use default (8)
-
+      camera.position.x = xPosition
+      camera.position.y = yPosition
       camera.position.z = zPosition
       camera.updateProjectionMatrix()
     }
@@ -146,12 +257,16 @@ function RenderTrigger() {
 function Scene({
   penScale,
   capScale,
+  inkScale,
   penPosition = [3, 0, 0],
   capPosition = [-3, 0, 0],
+  inkPosition = [0, 0, 0],
   penRotation = [0, 0, 0],
   capRotation = [0, 0, 0],
+  inkRotation = [0, 0, 0],
   penMaterialOverrides,
   capMaterialOverrides,
+  inkMaterialOverrides,
 }: HomeSceneProps) {
   return (
     <>
@@ -185,6 +300,16 @@ function Scene({
           rotation={capRotation}
           materialOverrides={capMaterialOverrides}
         />
+
+        {/* Ink model */}
+        {inkScale && (
+          <InkMesh
+            scale={inkScale}
+            position={inkPosition}
+            rotation={inkRotation}
+            materialOverrides={inkMaterialOverrides}
+          />
+        )}
       </Suspense>
     </>
   )
@@ -216,12 +341,16 @@ function Scene({
 function HomeScene({
   penScale = 2,
   capScale = 1.5,
+  inkScale,
   penPosition = [3, 0, 0],
   capPosition = [-3, 0, 0],
+  inkPosition = [0, 0, 0],
   penRotation = [0, 0, 0],
   capRotation = [0, 0, 0],
+  inkRotation = [0, 0, 0],
   penMaterialOverrides,
   capMaterialOverrides,
+  inkMaterialOverrides,
 }: HomeSceneProps) {
   return (
     <Canvas
@@ -237,12 +366,16 @@ function HomeScene({
       <Scene
         penScale={penScale}
         capScale={capScale}
+        inkScale={inkScale}
         penPosition={penPosition}
         capPosition={capPosition}
+        inkPosition={inkPosition}
         penRotation={penRotation}
         capRotation={capRotation}
+        inkRotation={inkRotation}
         penMaterialOverrides={penMaterialOverrides}
         capMaterialOverrides={capMaterialOverrides}
+        inkMaterialOverrides={inkMaterialOverrides}
       />
     </Canvas>
   )

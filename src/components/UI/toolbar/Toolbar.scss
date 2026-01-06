@@ -17,7 +17,8 @@ $border: #c6c6c6;
 .toolbar {
   position: fixed;
   bottom: $phi-squared * 1rem;
-  right: $phi-squared * 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: red;
   height: 2.4rem;
   width: 10rem;

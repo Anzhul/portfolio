@@ -108,7 +108,7 @@ export function TheHillIsland() {
       />
 
       <ImagePlane
-        position={[-1650, 1000, 200]}
+        position={[-1650, 1000, 300]}
         mobilePosition={[-1000, -200, 80]}
         width={3200}
         height={1600}

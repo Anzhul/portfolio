@@ -84,7 +84,7 @@ export function Map({ cameraViewportRef, isVisible = false }: MapProps) {
       <div className="map-inner">
         <div
           className="map-header"
-          onMouseDown={handleMouseDown}
+          //onMouseDown={handleMouseDown}
         >
           <h3>Map</h3>
         </div>
