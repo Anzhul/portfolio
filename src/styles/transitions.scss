@@ -1,0 +1,39 @@
+// Page transition animations
+// Apply these classes to page containers for exit/enter animations
+
+.page-transition {
+  // Base state - all content visible
+  &.page-exit {
+    animation: fadeOut 500ms ease-out forwards;
+  }
+
+  &.page-enter {
+    animation: fadeIn 500ms ease-out forwards;
+  }
+}
+
+// Keyframes for page transitions
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Exempt navigation from transitions
+.navigation {
+  // Navigation stays visible during all transitions
+  opacity: 1 !important;
+  animation: none !important;
+}

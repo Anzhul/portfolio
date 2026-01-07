@@ -1,13 +1,16 @@
 import React, { lazy } from 'react';
 import './Home.scss';
 import { Lazy3DObject } from '../../components/lazy/Lazy3DObject';
+import { usePageTransition } from '../../context/PageTransitionContext';
 
 // Lazy load combined 3D scene with both models
 const HomeScene = lazy(() => import('../../components/canvas/home/HomeScene'));
 
 export const Home: React.FC = () => {
+  const { transitionState } = usePageTransition();
+
   return (
-    <div className="home">
+    <div className={`home page-transition ${transitionState === 'exiting' ? 'page-exit' : ''} ${transitionState === 'entering' ? 'page-enter' : ''}`}>
       <div className="home-intro">
         <header className="home-header">
           <h1>Hi,</h1>
@@ -15,7 +18,7 @@ export const Home: React.FC = () => {
           <p className="tagline">An artist who has wandered into development and design.</p>
         </header>
 
-        {/* Combined 3D scene with pen and cap - loads after 1.5 seconds */}
+        {/* Combined 3D scene with pen and cap - always mounted, transitions between active/inactive */}
         <Lazy3DObject
           loadStrategy="delayed"
           delay={10}

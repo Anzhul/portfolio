@@ -1,7 +1,10 @@
 import React from 'react';
 import './Links.scss';
+import { usePageTransition } from '../../context/PageTransitionContext';
 
 export const Links: React.FC = () => {
+  const { transitionState } = usePageTransition();
+
   // Example links - replace with your actual social/professional links
   const links = [
     {
@@ -49,7 +52,7 @@ export const Links: React.FC = () => {
   ];
 
   return (
-    <div className="links-page">
+    <div className={`links-page page-transition ${transitionState === 'exiting' ? 'page-exit' : ''} ${transitionState === 'entering' ? 'page-enter' : ''}`}>
       <header className="links-header">
         <nav className="breadcrumb">
           <a href="/">Home</a>

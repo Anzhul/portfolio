@@ -38,20 +38,104 @@ function PenMesh({
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/pen.glb')
+  const timeRef = useRef(0)
+  const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
 
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragRotation, setDragRotation] = useState(0)
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null)
+  const baseRotationRef = useRef(rotation[2])
   // Apply rotation and material overrides
   useEffect(() => {
     if (gltf.scene) {
       // Apply material overrides
       applyMaterialOverrides(gltf.scene, materialOverrides)
 
-      // Apply rotation directly to the loaded scene
-      gltf.scene.rotation.set(rotation[0], rotation[1], rotation[2])
+      // Apply rotation with drag rotation added
+      gltf.scene.rotation.set(rotation[0], rotation[1], rotation[2] + dragRotation)
     }
-  }, [gltf, rotation, materialOverrides])
+  }, [gltf, rotation, materialOverrides, dragRotation])
+
+  // Hovering animation
+  useEffect(() => {
+    const hover = () => {
+      if (groupRef.current && !isDragging) {
+        timeRef.current += 0.008
+        const offsetX = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.08
+        const offsetY = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
+        const offsetZ = Math.cos(timeRef.current * 0.6) * 0.02
+
+        groupRef.current.position.set(
+          position[0] + offsetX,
+          position[1] + offsetY,
+          position[2] + offsetZ
+        )
+      }
+    }
+
+    ticker.add(hover)
+    return () => {
+      ticker.remove(hover)
+    }
+  }, [position, isDragging])
+
+  const handlePointerDown = (e: any) => {
+    e.stopPropagation()
+    setIsDragging(true)
+    dragStartRef.current = { x: e.clientX, y: e.clientY }
+    baseRotationRef.current = dragRotation
+    document.body.style.cursor = 'grabbing'
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMove = (e: MouseEvent) => {
+        if (dragStartRef.current) {
+          const deltaX = e.clientX - dragStartRef.current.x
+
+          // Rotation based solely on horizontal movement
+          const rotationAmount = deltaX / 100
+
+          setDragRotation(baseRotationRef.current + rotationAmount)
+        }
+      }
+
+      const handleGlobalUp = () => {
+        setIsDragging(false)
+        dragStartRef.current = null
+        // Reset cursor - check if still hovering over the pen
+        document.body.style.cursor = 'auto'
+      }
+
+      window.addEventListener('mousemove', handleGlobalMove)
+      window.addEventListener('mouseup', handleGlobalUp)
+
+      return () => {
+        window.removeEventListener('mousemove', handleGlobalMove)
+        window.removeEventListener('mouseup', handleGlobalUp)
+      }
+    }
+  }, [isDragging])
 
   return (
-    <group ref={groupRef} scale={scale} position={position}>
+    <group
+      ref={groupRef}
+      scale={scale}
+      position={position}
+      onPointerDown={handlePointerDown}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        if (!isDragging) {
+          document.body.style.cursor = 'grab'
+        }
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation()
+        if (!isDragging) {
+          document.body.style.cursor = 'auto'
+        }
+      }}
+    >
       <primitive object={gltf.scene} />
     </group>
   )
@@ -73,6 +157,8 @@ function CapMesh({
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/cap.glb')
+  const timeRef = useRef(0)
+  const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
 
   // Apply rotation and material overrides
   useEffect(() => {
@@ -84,6 +170,27 @@ function CapMesh({
       gltf.scene.rotation.set(rotation[0], rotation[1], rotation[2])
     }
   }, [gltf, rotation, materialOverrides])
+
+  // Hovering animation
+  useEffect(() => {
+    const hover = () => {
+      if (groupRef.current) {
+        timeRef.current += 0.008
+        const offsetX = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.06
+        const offsetY = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
+        const offsetZ = Math.cos(timeRef.current * 0.6) * 0.02
+
+        groupRef.current.position.set(
+          position[0] + offsetX,
+          position[1] + offsetY,
+          position[2] + offsetZ
+        )
+      }
+    }
+
+    ticker.add(hover)
+    return () => ticker.remove(hover)
+  }, [position])
 
   return (
     <group ref={groupRef} scale={scale} position={position}>
@@ -106,20 +213,11 @@ function InkMesh({
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/ink.glb')
 
-  // Check if animation should play (only once per session)
-  const hasPlayedAnimation = sessionStorage.getItem('inkAnimationPlayed')
-
-  const [animatedPosition, setAnimatedPosition] = useState<[number, number, number]>(
-    hasPlayedAnimation
-      ? position  // If already played, start at final position
-      : [position[0] - 5, position[1] + 3, position[2]]  // Otherwise start off-screen
-  )
-  const [animatedRotation, setAnimatedRotation] = useState<[number, number, number]>(
-    hasPlayedAnimation
-      ? rotation  // If already played, start at final rotation
-      : [rotation[0], rotation[1] + Math.PI * 2, rotation[2]]  // Otherwise start with extra rotation
-  )
-  const animationRef = useRef<Animation<any> | null>(null)
+  const [animatedRotation, setAnimatedRotation] = useState<[number, number, number]>(rotation)
+  const clickAnimationRef = useRef<Animation<any> | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const timeRef = useRef(0)
+  const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
 
   // Apply rotation and material overrides
   useEffect(() => {
@@ -129,65 +227,89 @@ function InkMesh({
 
       // Apply rotation directly to the loaded scene
       gltf.scene.rotation.set(animatedRotation[0], animatedRotation[1], animatedRotation[2])
+
+      // Ensure all meshes in the scene can receive pointer events
+      gltf.scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh
+          mesh.raycast = THREE.Mesh.prototype.raycast
+        }
+      })
     }
   }, [gltf, animatedRotation, materialOverrides])
 
-  // Animate ink into view after loading (only on first visit)
+  // Hovering animation
   useEffect(() => {
-    if (gltf.scene) {
-      // Check if animation has already been played this session
-      const hasPlayedAnimation = sessionStorage.getItem('inkAnimationPlayed')
+    const hover = () => {
+      if (groupRef.current) {
+        timeRef.current += 0.008
+        const offsetX = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.08
+        const offsetY = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
+        const offsetZ = Math.cos(timeRef.current * 0.6) * 0.02
 
-      if (!hasPlayedAnimation) {
-        // Start animation after a short delay
-        const timeoutId = setTimeout(() => {
-          animationRef.current = new Animation({
-            from: {
-              x: position[0] - 5,
-              y: position[1] + 3,
-              z: position[2],
-              rotX: rotation[0],
-              rotY: rotation[1] + Math.PI * 2,
-              rotZ: rotation[2]
-            },
-            to: {
-              x: position[0],
-              y: position[1],
-              z: position[2],
-              rotX: rotation[0],
-              rotY: rotation[1],
-              rotZ: rotation[2]
-            },
-            duration: 1200, // 1.2 seconds
-            easing: Easing.easeOutCubic,
-            onUpdate: (value) => {
-              setAnimatedPosition([value.x, value.y, value.z])
-              setAnimatedRotation([value.rotX, value.rotY, value.rotZ])
-            },
-            onComplete: () => {
-              // Mark animation as played for this session
-              sessionStorage.setItem('inkAnimationPlayed', 'true')
-            }
-          })
-          animationRef.current.start()
-        }, 100) // Small delay to ensure everything is loaded
-
-        return () => {
-          clearTimeout(timeoutId)
-          if (animationRef.current) {
-            animationRef.current.stop()
-          }
-        }
-      } else {
-        // Skip animation - set final position immediately
-        setAnimatedPosition(position)
-        setAnimatedRotation(rotation)
+        groupRef.current.position.set(
+          position[0] + offsetX,
+          position[1] + offsetY,
+          position[2] + offsetZ
+        )
       }
     }
-  }, [gltf, position, rotation])
+
+    ticker.add(hover)
+    return () => ticker.remove(hover)
+  }, [position])
+
+  // Handle click to rotate on z-axis
+  const handleClick = () => {
+    if (isAnimating) return // Prevent multiple clicks during animation
+
+    setIsAnimating(true)
+
+    // Stop any existing click animation
+    if (clickAnimationRef.current) {
+      clickAnimationRef.current.stop()
+    }
+
+    // Get current rotation
+    const currentRotation = animatedRotation
+
+    clickAnimationRef.current = new Animation({
+      from: {
+        rotZ: currentRotation[2]
+      },
+      to: {
+        rotZ: currentRotation[2] + Math.PI // 180 degrees
+      },
+      duration: 500,
+      easing: Easing.easeInOutCubic,
+      onUpdate: (value) => {
+        setAnimatedRotation([currentRotation[0], currentRotation[1], value.rotZ])
+      },
+      onComplete: () => {
+        setIsAnimating(false)
+      }
+    })
+    clickAnimationRef.current.start()
+  }
 
   return (
-    <group ref={groupRef} scale={scale} position={animatedPosition}>
+    <group
+      ref={groupRef}
+      scale={scale}
+      position={position}
+      onClick={(e) => {
+        e.stopPropagation()
+        handleClick()
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'auto'
+      }}
+    >
       <primitive object={gltf.scene} />
     </group>
   )
@@ -266,7 +388,7 @@ function Scene({
   inkRotation = [0, 0, 0],
   penMaterialOverrides,
   capMaterialOverrides,
-  inkMaterialOverrides,
+  inkMaterialOverrides
 }: HomeSceneProps) {
   return (
     <>
@@ -350,7 +472,7 @@ function HomeScene({
   inkRotation = [0, 0, 0],
   penMaterialOverrides,
   capMaterialOverrides,
-  inkMaterialOverrides,
+  inkMaterialOverrides
 }: HomeSceneProps) {
   return (
     <Canvas

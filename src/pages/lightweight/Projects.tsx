@@ -1,7 +1,10 @@
 import React from 'react';
 import './Projects.scss';
+import { usePageTransition } from '../../context/PageTransitionContext';
 
 export const Projects: React.FC = () => {
+  const { transitionState } = usePageTransition();
+
   // Example project data - replace with your actual projects
   const projects = [
     {
@@ -15,7 +18,7 @@ export const Projects: React.FC = () => {
   ];
 
   return (
-    <div className="projects">
+    <div className={`projects page-transition ${transitionState === 'exiting' ? 'page-exit' : ''} ${transitionState === 'entering' ? 'page-enter' : ''}`}>
       <header className="projects-header">
         <h1>Projects</h1>
         <p>A collection of my work and experiments</p>

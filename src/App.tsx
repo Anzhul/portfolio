@@ -9,6 +9,7 @@ import Toolbar from './components/UI/toolbar/Toolbar'
 import { ViewportProvider } from './context/ViewportContext'
 import { ToolbarProvider } from './context/ToolbarContext'
 import { NavigationProvider } from './context/NavigationContext'
+import { PageTransitionProvider } from './context/PageTransitionContext'
 
 // Lazy load the heavy 3D experience - only loads when user navigates to 3D routes
 const Experience3D = lazy(() =>
@@ -69,9 +70,11 @@ function App() {
     <BrowserRouter>
       <ViewportProvider>
         <NavigationProvider>
-          <ToolbarProvider>
-            <AppContent />
-          </ToolbarProvider>
+          <PageTransitionProvider>
+            <ToolbarProvider>
+              <AppContent />
+            </ToolbarProvider>
+          </PageTransitionProvider>
         </NavigationProvider>
       </ViewportProvider>
     </BrowserRouter>

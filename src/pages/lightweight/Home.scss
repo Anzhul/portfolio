@@ -28,7 +28,7 @@
     padding-left: 1.618034 * 2rem;
     padding-right: 1.618034 * 2rem;
     text-align: left;
-    z-index: 2;
+    z-index: 0;
     //background-color: yellow;
 
     // Tablet and below (< 1024px)
@@ -93,6 +93,7 @@
     canvas {
       width: 100% !important;
       height: 100% !important;
+      pointer-events: auto; // Enable pointer events for the canvas
     }
 
     // Mobile only (< 768px)
