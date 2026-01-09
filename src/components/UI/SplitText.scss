@@ -1,0 +1,17 @@
+.split-text {
+  display: inline-block;
+
+  .char, .word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(2rem);
+    transition: opacity var(--char-duration, 0.6s) cubic-bezier(0.33, 1, 0.68, 1) var(--char-delay, 0s),
+                transform var(--char-duration, 0.75s) linear(0, 0.39 5.4%, 0.684 11.4%, 0.887 18.1%, 0.957 21.8%, 1.008 25.8%, 1.049 31.9%, 1.062 39.2%, 1.008 71.1%, 1) var(--char-delay, 0s);
+  }
+
+  &.animate .char,
+  &.animate .word {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

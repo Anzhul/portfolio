@@ -1,89 +1,80 @@
 import React from 'react';
-import './Projects.scss';
+import './Portfolio.scss';
 import { usePageTransition } from '../../context/PageTransitionContext';
 import { PortfolioCard } from '../../components/portfolio/PortfolioCard';
 
-export const Projects: React.FC = () => {
+export const Portfolio: React.FC = () => {
   const { transitionState } = usePageTransition();
 
-  // Example project data - replace with your actual projects
-  const projects = [
+  // Example portfolio data - replace with your actual projects
+  const portfolioItems = [
     {
       id: 1,
       title: 'Mountain Range Explorer',
       date: 'January 2026',
       tags: ['React', 'Three.js', 'TypeScript'],
-      image: '/mountains.png',
-      gridWidth: 2 as const,
-      gridHeight: 1 as const
+      image: '/mountains.png'
     },
     {
       id: 2,
       title: 'Lunar Landscape',
       date: 'December 2025',
       tags: ['WebGL', 'Shaders', 'React'],
-      image: '/moon.webp',
-      gridWidth: 1 as const,
-      gridHeight: 2 as const
+      image: '/moon.webp'
     },
     {
       id: 3,
       title: 'Space Navigation',
       date: 'November 2025',
       tags: ['Three.js', 'Animation', 'Canvas'],
-      image: '/spaceship.webp',
-      gridWidth: 1 as const,
-      gridHeight: 1 as const
+      image: '/spaceship.webp'
     },
     {
       id: 4,
       title: 'Natural Environments',
       date: 'October 2025',
       tags: ['3D Modeling', 'React', 'WebGL'],
-      image: '/tree.webp',
-      gridWidth: 1 as const,
-      gridHeight: 1 as const
+      image: '/tree.webp'
     },
     {
       id: 5,
       title: 'Hill Visualization',
       date: 'September 2025',
       tags: ['D3.js', 'Canvas', 'TypeScript'],
-      image: '/Hill.png',
-      gridWidth: 2 as const,
-      gridHeight: 2 as const
+      image: '/Hill.png'
     },
     {
       id: 6,
       title: 'Terrain Generator',
       date: 'August 2025',
       tags: ['Procedural', 'WebGL', 'Shaders'],
-      image: '/Range.png',
-      gridWidth: 1 as const,
-      gridHeight: 1 as const
+      image: '/Range.png'
     },
   ];
 
   return (
-    <div className={`projects page-transition ${transitionState === 'exiting' ? 'page-exit' : ''} ${transitionState === 'entering' ? 'page-enter' : ''}`}>
-      <header className="projects-header">
-        <h1>Projects</h1>
-        <p>A collection of my work and experiments</p>
+    <div className={`portfolio-page page-transition ${transitionState === 'exiting' ? 'page-exit' : ''} ${transitionState === 'entering' ? 'page-enter' : ''}`}>
+      <header className="portfolio-header">
+        <h1>Portfolio</h1>
+        <p>A collection of selected works</p>
       </header>
 
-      <main className="projects-content">
-        <div className="projects-grid">
-          {projects.map((project) => (
+      <main className="portfolio-content">
+        <div className="portfolio-grid">
+          {portfolioItems.map((item) => (
             <PortfolioCard
-              key={project.id}
-              gridWidth={project.gridWidth}
-              gridHeight={project.gridHeight}
+              key={item.id}
             >
               {/* Add your own custom div structure here */}
             </PortfolioCard>
           ))}
         </div>
       </main>
+
+      <footer className="portfolio-footer">
+        <a href="/">← Back to Home</a>
+        <a href="/links">View Links →</a>
+      </footer>
     </div>
   );
 };

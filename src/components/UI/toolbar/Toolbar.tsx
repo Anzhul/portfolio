@@ -24,7 +24,7 @@ function Toolbar({ loaded = false }: ToolbarProps) {
           </svg>
         </button>
         <button className={`toolbar-button ${isMapVisible ? 'active' : ''}`} onClick={onToggleMap} aria-label="Toggle Map">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
             <g id="Group_55" data-name="Group 55" transform="translate(-1785 -1023)">
             <g id="Ellipse_48" data-name="Ellipse 48" transform="translate(1785 1023)" fill="none" stroke="#707070" strokeWidth="1">
             <circle cx="9" cy="9" r="9" stroke="none"/>
@@ -42,7 +42,7 @@ function Toolbar({ loaded = false }: ToolbarProps) {
           </svg>
         </button>
         <button className="toolbar-button" onClick={() => {}} aria-label="Pan Mode">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14.449" height="16.717" viewBox="0 0 14.449 16.717">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15.137 17.227">
           <path id="Hand" d="M12.08,2.31a1.791,1.791,0,0,0-1.186.444V1.734A1.777,1.777,0,0,0,7.349,1.6a1.8,1.8,0,0,0-1.911-.3A1.735,1.735,0,0,0,4.384,2.892V8.765L3.315,6.949A1.8,1.8,0,0,0,.891,6.3,1.717,1.717,0,0,0,.208,8.634l.025.044c2.346,4.842,3.9,7.532,7.407,7.532,3.392.034,6.215,0,6.215-5.5V4.047a1.759,1.759,0,0,0-1.776-1.741ZM13.266,10.7c0,4.985-2.553,4.956-5.623,4.925-2.735,0-4.185-1.654-6.878-7.211L.755,8.4A1.144,1.144,0,0,1,1.16,6.83l.028-.016A1.2,1.2,0,0,1,2.8,7.238L4.425,9.987a.3.3,0,0,0,.333.135.29.29,0,0,0,.217-.28V2.889a1.186,1.186,0,0,1,2.368,0V7.81a.3.3,0,1,0,.592,0V1.734a1.186,1.186,0,0,1,2.368,0v6.08a.3.3,0,1,0,.592,0V4.047a1.186,1.186,0,0,1,2.368,0Z" transform="translate(0.344 0.255)" fill="#6e6e6c" stroke="#6e6e6c" strokeWidth="0.5"/>
         </svg>
         </button>

@@ -9,6 +9,7 @@ export interface IslandConfig {
   boundaries: BoundaryConfig
   component: ComponentType
   skeleton: ComponentType
+  subGroup?: string
   loadImmediately?: boolean  // For home island
 }
 
@@ -35,6 +36,7 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
     },
     component: TheHillIsland,
     skeleton: TheHillIslandSkeleton,
+    subGroup: 'about'
     // loadImmediately: true,  // Disabled - home island now lazy loads like others
   },
 
@@ -48,6 +50,7 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
     },
     component: TheStudioIsland,
     skeleton: TheStudioIslandSkeleton,
+    subGroup: 'about'
   }
   // Add more islands here:
   // projects: {

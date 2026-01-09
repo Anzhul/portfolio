@@ -4,6 +4,7 @@ import './App.scss'
 import { Home } from './pages/lightweight/Home'
 import { Projects } from './pages/lightweight/Projects'
 import { Links } from './pages/lightweight/Links'
+import { Portfolio } from './pages/lightweight/Portfolio'
 import Navigation from './components/UI/navigation/Navigation'
 import Toolbar from './components/UI/toolbar/Toolbar'
 import { ViewportProvider } from './context/ViewportContext'
@@ -19,7 +20,7 @@ const Experience3D = lazy(() =>
 )
 
 // Lightweight page routes that don't use 3D
-const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links']
+const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links', '/portfolio']
 
 function AppContent() {
   const location = useLocation()
@@ -49,6 +50,7 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/projects" element={<Projects />} />
+        <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/links" element={<Links />} />
 
         {/* Heavy 3D experience - lazy loaded for all other routes */}

@@ -8,6 +8,7 @@ import { applyMaterialOverrides, type MaterialOverride } from './materialUtils'
 import { Animation, Easing } from '../../../utils/Animation'
 
 export interface HomeSceneProps {
+  scrollContainer?: React.RefObject<HTMLDivElement>
   penScale?: number
   capScale?: number
   inkScale?: number
@@ -23,18 +24,31 @@ export interface HomeSceneProps {
 }
 
 /**
+ * Helper to get scroll progress from container ref without causing re-renders
+ */
+const getScrollProgress = (containerRef?: React.RefObject<HTMLDivElement>): number => {
+  if (!containerRef?.current) return 0
+  const container = containerRef.current
+  const scrollTop = container.scrollTop
+  const scrollHeight = container.scrollHeight - container.clientHeight
+  return scrollHeight > 0 ? scrollTop / scrollHeight : 0
+}
+
+/**
  * PenMesh - Renders the pen.glb model in the scene
  */
 function PenMesh({
   scale = 2,
   position = [3, 0, 0],
   rotation = [0, 0, 0],
-  materialOverrides = []
+  materialOverrides = [],
+  scrollContainer
 }: {
   scale: number
   position: [number, number, number]
   rotation: [number, number, number]
   materialOverrides?: MaterialOverride[]
+  scrollContainer?: React.RefObject<HTMLDivElement>
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/pen.glb')
@@ -148,12 +162,14 @@ function CapMesh({
   scale = 1.5,
   position = [-3, 0, 0],
   rotation = [0, 0, 0],
-  materialOverrides = []
+  materialOverrides = [],
+  scrollContainer
 }: {
   scale: number
   position: [number, number, number]
   rotation: [number, number, number]
   materialOverrides?: MaterialOverride[]
+  scrollContainer?: React.RefObject<HTMLDivElement>
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/cap.glb')
@@ -203,12 +219,14 @@ function InkMesh({
   scale = 1,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
-  materialOverrides = []
+  materialOverrides = [],
+  scrollContainer
 }: {
   scale: number
   position: [number, number, number]
   rotation: [number, number, number]
   materialOverrides?: MaterialOverride[]
+  scrollContainer?: React.RefObject<HTMLDivElement>
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/ink.glb')
@@ -377,6 +395,7 @@ function RenderTrigger() {
  * Scene - Wrapper component with Suspense for async loading
  */
 function Scene({
+  scrollContainer,
   penScale,
   capScale,
   inkScale,
@@ -413,6 +432,7 @@ function Scene({
           position={penPosition}
           rotation={penRotation}
           materialOverrides={penMaterialOverrides}
+          scrollContainer={scrollContainer}
         />
 
         {/* Cap model */}
@@ -421,6 +441,7 @@ function Scene({
           position={capPosition}
           rotation={capRotation}
           materialOverrides={capMaterialOverrides}
+          scrollContainer={scrollContainer}
         />
 
         {/* Ink model */}
@@ -430,6 +451,7 @@ function Scene({
             position={inkPosition}
             rotation={inkRotation}
             materialOverrides={inkMaterialOverrides}
+            scrollContainer={scrollContainer}
           />
         )}
       </Suspense>
@@ -461,6 +483,7 @@ function Scene({
  * />
  */
 function HomeScene({
+  scrollContainer,
   penScale = 2,
   capScale = 1.5,
   inkScale,
@@ -486,6 +509,7 @@ function HomeScene({
       }}
     >
       <Scene
+        scrollContainer={scrollContainer}
         penScale={penScale}
         capScale={capScale}
         inkScale={inkScale}

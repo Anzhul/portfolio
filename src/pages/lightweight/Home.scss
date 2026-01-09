@@ -11,7 +11,7 @@
   overflow-x: hidden;
 
   .home-intro{
-    position: absolute;
+    position: relative;
     top:0;
     left:0;
     height:100vh;
@@ -20,7 +20,7 @@
   }
 
   .home-header {
-    position: absolute;
+    position: relative;
     left: 50%;
     transform: translate(-50%, 50%);
     width: calc(100% - 20rem);
@@ -29,7 +29,6 @@
     padding-right: 1.618034 * 2rem;
     text-align: left;
     z-index: 0;
-    //background-color: yellow;
 
     // Tablet and below (< 1024px)
     @media screen and (max-width: 1023px) {
@@ -64,7 +63,6 @@
     .tagline {
       font-size: 1.8rem;
       margin: 1rem 0 0;
-      opacity: 1;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 400;
 
@@ -104,23 +102,22 @@
 
   .home-content {
     width: 100%;
-    height: 300vh;
-    position: absolute;
-    top: 100vh;
+    height: auto;
+    position: relative;
+    top: 0;
     left: 0;
 
     .home-projects {
-      position: absolute;
+      position: relative;
       left: 50%;
       top: 0;
       transform: translate(-50%, 0);
-      width: calc(100% - 26rem);
-      height: 100vh;
+      width: calc(100% - 20rem);
+      height: 60rem;
       padding-left: 1.618034 * 2rem;
       padding-right: 1.618034 * 2rem;
       text-align: left;
       z-index: 2;
-      //background-color: red;
 
       h2{
         position: relative;
@@ -139,20 +136,60 @@
         max-width: 700px;
         margin: 0 auto;
       }
+
+      .project-list {
+        display: flex;
+        top: 50%;
+        transform: translateY(-45%);
+        height: 100%;
+        flex-wrap: wrap;
+        position: relative;
+        gap: 1rem;
+        width: 100%;
+        margin-top: 5rem;
+
+        // Mobile - stack vertically
+        @media screen and (max-width: 767px) {
+          gap: 1.5rem;
+        }
+      } 
+
+      .project-card-content {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.5rem;
+      }
+
+      .project-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        transition: transform 0.3s ease;
+        
+        &:hover {
+          transform: scale(1.05);
+        }
+      }
     }
 
     .home-philosophy {
-      position: absolute;
+      position: relative;
       left: 50%;
-      top: 100vh;
+      top: 0;
       transform: translate(-50%, 0);
-      width: calc(100% - 26rem);
-      height: 100vh;
+      width: calc(100% - 20rem);
+      height: 60rem;
       padding-left: 1.618034 * 2rem;
       padding-right: 1.618034 * 2rem;
       text-align: left;
       z-index: 2;
-      //background-color: red;
+
       h2{
         position: relative;
         top: 2rem;
@@ -161,6 +198,125 @@
         font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
         font-weight: 500;
         letter-spacing: -0.02em;
+      }
+      h3{
+        font-size: 1.5rem;
+        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+        font-weight: 500;
+        margin-left: 2rem;
+        margin-top: 6rem;
+      }
+      p {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        opacity: 0.95;
+        width: 50%;
+        margin-left: 2rem;
+        margin-top: 1rem;
+      }
+    }
+  }
+
+  .home-footer {
+    position: relative;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: calc(100% - 20rem);
+    height: 36rem;
+    padding-left: 1.618034 * 2rem;
+    padding-right: 1.618034 * 2rem;
+    z-index: 2;
+
+    h2 {
+      position: relative;
+      top: 4rem;
+      font-size: 2.5rem;
+      margin: 0;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+
+      // Tablet and below (< 1024px)
+      @media screen and (max-width: 1023px) {
+        font-size: 1.2rem;
+      }
+
+      // Mobile only (< 768px)
+      @media screen and (max-width: 767px) {
+        font-size: 1rem;
+      }
+    }
+
+    p{
+      position: relative;
+      text-align: left;
+      left: 0;
+      font-size: 1rem;
+      margin-left: 0.5rem;
+      line-height: 1.6;
+      opacity: 0.95;
+      max-width: 30rem;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 400;
+    }
+
+    .footer-about {
+      position: relative;
+      text-align: left;
+      top: 7rem;
+      left: 0;
+      height: 16rem;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+
+      .footer-canvas {
+        position: relative;
+        width: 50rem;
+        height: 100%;
+        left: 0;
+        background-image: url('/Level_0.png');
+        background-size: 200%;
+        background-position: center;
+        margin: 0.5rem;
+      }
+
+      .footer-text {
+        position: relative;
+        width: 50%;
+        left: 0;
+      }
+    }
+
+    .footer-links {
+      position: absolute;
+      text-align: left;
+      bottom: 2rem;
+      height: 4rem;
+      width: 100%;
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        gap: 2rem;
+
+        li {
+          font-size: 1.2rem;
+
+          a {
+            text-decoration: none;
+            color: #222222;
+            font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+            font-weight: 400;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
       }
     }
   }

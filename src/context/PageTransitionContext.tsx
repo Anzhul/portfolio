@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 type TransitionState = 'idle' | 'exiting' | 'entering'
 
@@ -14,9 +14,15 @@ const PageTransitionContext = createContext<PageTransitionContextType | undefine
 export const PageTransitionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [transitionState, setTransitionState] = useState<TransitionState>('idle')
   const navigate = useNavigate()
+  const location = useLocation()
   const timeoutRef = useRef<number | null>(null)
 
   const triggerTransition = useCallback((targetRoute: string) => {
+    // If we're already on the target route, don't trigger transition
+    if (location.pathname === targetRoute) {
+      return
+    }
+
     // Clear any pending timeouts to allow interruption
     if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current)
@@ -40,7 +46,7 @@ export const PageTransitionProvider: React.FC<{ children: React.ReactNode }> = (
         timeoutRef.current = null
       }, 500) // Enter duration
     }, 500) // Exit duration
-  }, [navigate])
+  }, [navigate, location.pathname])
 
   return (
     <PageTransitionContext.Provider

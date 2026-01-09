@@ -1,9 +1,9 @@
-.projects {
+.portfolio-page {
   min-height: 100vh;
   background: white;
   color: #222222;
 
-  .projects-header {
+  .portfolio-header {
     position: relative;
     width: 100%;
     padding: 4rem 10rem 2rem 10rem;
@@ -52,7 +52,7 @@
     }
   }
 
-  .projects-content {
+  .portfolio-content {
     position: relative;
     padding: 2rem 10rem 4rem 10rem;
 
@@ -66,15 +66,60 @@
       padding: 1.5rem 1rem 2rem 1rem;
     }
 
-    .projects-grid {
-      display: flex;
-      flex-wrap: wrap;
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 2rem;
       width: 100%;
 
-      // Mobile - stack vertically
-      @media screen and (max-width: 767px) {
+      // Tablet and below - 2 columns
+      @media screen and (max-width: 1023px) {
+        grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
+      }
+
+      // Mobile - 1 column
+      @media screen and (max-width: 767px) {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+  }
+
+  .portfolio-footer {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 10rem 4rem 10rem;
+    border-top: 1px solid #e0e0e0;
+
+    // Tablet and below
+    @media screen and (max-width: 1023px) {
+      padding: 2rem 4rem 3rem 4rem;
+    }
+
+    // Mobile
+    @media screen and (max-width: 767px) {
+      padding: 1.5rem 1rem 2rem 1rem;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    a {
+      font-size: 1.1rem;
+      text-decoration: none;
+      color: #222222;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 400;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.6;
+      }
+
+      @media screen and (max-width: 767px) {
+        font-size: 1rem;
       }
     }
   }
