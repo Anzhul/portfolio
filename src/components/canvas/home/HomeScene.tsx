@@ -345,7 +345,7 @@ function CameraController() {
     if (camera instanceof THREE.PerspectiveCamera) {
       // Adjust camera Z position based on viewport width
       // Mobile: farther away, Desktop: closer
-      let zPosition = 8 // Default desktop
+      let zPosition = 7 // Default desktop
       let xPosition = 0
       let yPosition = 0
 
@@ -359,7 +359,9 @@ function CameraController() {
         zPosition = 10
       } else if (width < 1440) {
         // Desktop (1024px - 1439px): slight zoom out
-        zPosition = 9
+        zPosition = 8
+        xPosition = 1.5
+        yPosition = 0
       }
       // Wide (>= 1440px): use default (8)
       camera.position.x = xPosition
@@ -444,7 +446,7 @@ function Scene({
           scrollContainer={scrollContainer}
         />
 
-        {/* Ink model */}
+        {/* Ink model 
         {inkScale && (
           <InkMesh
             scale={inkScale}
@@ -454,6 +456,7 @@ function Scene({
             scrollContainer={scrollContainer}
           />
         )}
+          */}
       </Suspense>
     </>
   )

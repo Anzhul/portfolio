@@ -10,26 +10,77 @@
   overflow: scroll;
   overflow-x: hidden;
 
+  // Show content when page is loaded
+  &.loaded {
+    .home-scene-container {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 1s;
+    }
+
+    .home-content {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 1.1s;
+    }
+
+    .home-footer {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      transition-delay: 1.2s;
+    }
+  }
+
   .home-intro{
     position: relative;
-    top:0;
-    left:0;
+    left: 50%;
+    transform: translate(-50%, 0);
+    width: clamp( 20rem, calc(100% - 32rem), 1440px);
     height:100vh;
-    width:100vw;
-    //background-color: red;
+    //background-color: blue;
+    display: flex;
+  }
+
+  .home-scene-container {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 40%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    //background-color: green;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      pointer-events: auto; // Enable pointer events for the canvas
+    }
+
+    // Mobile only (< 768px)
+    @media (max-width: 767px) {
+      //opacity: 0.5;
+    }
   }
 
   .home-header {
     position: relative;
-    left: 50%;
-    transform: translate(-50%, 50%);
-    width: calc(100% - 20rem);
+    left: 0;
+    transform: translate(0, 50%);
+    width: calc(60%);
     height: 50%;
     padding-left: 1.618034 * 2rem;
     padding-right: 1.618034 * 2rem;
     text-align: left;
     z-index: 0;
+    //background-color: red;
 
+
+    @media screen and (max-width: 1440px) {
+      width: calc(100% - 16rem);
+    }
     // Tablet and below (< 1024px)
     @media screen and (max-width: 1023px) {
       width: calc(100% - 8rem);
@@ -49,6 +100,10 @@
       font-weight: 500;
       letter-spacing: -0.02em;
 
+
+    @media screen and (max-width: 1440px) {
+      font-size: 4rem;
+    }
       // Tablet and below (< 1024px)
       @media screen and (max-width: 1023px) {
         font-size: 3.5rem;
@@ -66,6 +121,11 @@
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 400;
 
+      
+      @media screen and (max-width: 1440px) {
+        font-size: 1.6rem;
+      }
+
       // Tablet and below (< 1024px)
       @media screen and (max-width: 1023px) {
         font-size: 1.5rem;
@@ -79,26 +139,6 @@
   }
 
   // Combined 3D scene container - spans full hero section
-  .home-scene-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    pointer-events: none;
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-      pointer-events: auto; // Enable pointer events for the canvas
-    }
-
-    // Mobile only (< 768px)
-    @media (max-width: 767px) {
-      //opacity: 0.5;
-    }
-  }
 
   .home-content {
     width: 100%;
@@ -106,19 +146,25 @@
     position: relative;
     top: 0;
     left: 0;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+
 
     .home-projects {
       position: relative;
       left: 50%;
-      top: 0;
+      top: 2rem;
       transform: translate(-50%, 0);
-      width: calc(100% - 20rem);
-      height: 60rem;
+      width: clamp( 40rem, calc(100% - 20rem), 1600px);
+      height: auto;
       padding-left: 1.618034 * 2rem;
       padding-right: 1.618034 * 2rem;
+      padding-bottom: 5rem;
       text-align: left;
       z-index: 2;
-
+      
+      //
       h2{
         position: relative;
         top: 2rem;
@@ -127,6 +173,7 @@
         font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
         font-weight: 500;
         letter-spacing: -0.02em;
+        display: none;
       }
 
       p {
@@ -137,44 +184,166 @@
         margin: 0 auto;
       }
 
+      @media screen and (max-width: 1440px) {
+      width: calc(100% - 16rem);
+      }
+
       .project-list {
-        display: flex;
-        top: 50%;
-        transform: translateY(-45%);
-        height: 100%;
-        flex-wrap: wrap;
+        display: grid;
+        // Use viewport-based sizing for fluid scaling
+        grid-template-columns: repeat(4, 1fr);
+        // Auto rows will size based on content/aspect-ratio
+        grid-auto-rows: 1fr;
         position: relative;
-        gap: 1rem;
+        // Use viewport-relative gaps
+        gap: clamp(0.5rem, 1vw, 1rem);
         width: 100%;
         margin-top: 5rem;
+        // Remove fixed height to allow proper scaling
+        // Maintain square aspect ratio - 4 columns : 2 rows = 2:1 ratio
+        aspect-ratio: 4 / 2;
+        //background-color: red;
+
+        @media screen and (max-width: 1440px) {
+          gap: clamp(0.5rem, 0.8vw, 0.8rem);
+        }
+
+        // Tablet - break into 2 columns
+        @media screen and (max-width: 1023px) {
+          grid-template-columns: repeat(2, 1fr);
+          grid-auto-rows: 1fr;
+          aspect-ratio: 2 / 2; // 2 columns x 2 rows = square
+          gap: clamp(0.5rem, 1vw, 1rem);
+        }
 
         // Mobile - stack vertically
         @media screen and (max-width: 767px) {
+          display: flex;
+          flex-direction: column;
           gap: 1.5rem;
+          aspect-ratio: auto;
         }
-      } 
+      }
 
-      .project-card-content {
-        width: 100%;
-        height: 100%;
+      @keyframes blurOscillate {
+        0%, 100% {
+          filter: blur(4px);
+        }
+        33% {
+          filter: blur(5px);
+        }
+        66% {
+          filter: blur(6px);
+        }
+      }
+
+      .project-card {
         position: relative;
         overflow: hidden;
         border-radius: 0.5rem;
+        transition: 0.3s ease;
+        cursor: pointer;
+
+        &:hover .project-info {
+          opacity: 1;
+        }
+
+        &:hover .project-image {
+          animation: blurOscillate 4s ease-in-out infinite;
+        }
+      }
+
+      .project-card-1 {
+        grid-column: 1 / 3;
+        grid-row: 1 / 3;
+
+        // Tablet - adjust to 2 column grid
+        @media screen and (max-width: 1023px) {
+          grid-column: 1 / 2;
+          grid-row: 1 / 3;
+        }
+      }
+
+      .project-card-2 {
+        grid-column: 3 / 5;
+        grid-row: 2;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+        // Tablet - adjust to 2 column grid
+        @media screen and (max-width: 1023px) {
+          grid-column: 2 / 3;
+          grid-row: 2;
+        }
+      }
+
+      .project-card-3 {
+        grid-column: 3/5;
+        grid-row: 1;
+
+        // Tablet - adjust to 2 column grid
+        @media screen and (max-width: 1023px) {
+          grid-column: 2 / 3;
+          grid-row: 1;
+        }
+      }
+
+      .project-info {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 100%;
+        width: 100%;
+        padding: 1rem;
+        color: white;
+        background-color: rgba(21, 21, 21, 0.361);
+        z-index: 2;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(0, 0);
+        transition: 0.15s ease;
+
+        .project-title {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: bold;
+          font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+          font-weight: 500;
+          text-align: center;
+        }
+
+        .project-date {
+          display: none;
+          margin: 0;
+          font-size: 0.9rem;
+        }
       }
 
       .project-image {
         position: absolute;
-        top: 0;
-        left: 0;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
         width: 100%;
         height: 100%;
         background-size: cover;
         background-position: center;
-        transition: transform 0.3s ease;
-        
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 0.5rem;
+        transform-origin: center;
+        filter: blur(0px) brightness(1);
+
         &:hover {
-          transform: scale(1.05);
+          //transform: translate(-50%, 0) scale(1.15);
+          //filter: blur(2px);
         }
+      }
+
+      .project-image-1 {
+        background-image: url('/Untitled.png');
       }
     }
 
@@ -183,7 +352,7 @@
       left: 50%;
       top: 0;
       transform: translate(-50%, 0);
-      width: calc(100% - 20rem);
+      width: calc(100% - 32rem);
       height: 60rem;
       padding-left: 1.618034 * 2rem;
       padding-right: 1.618034 * 2rem;
@@ -193,17 +362,16 @@
       h2{
         position: relative;
         top: 2rem;
-        font-size: 2.5rem;
+        font-size: 4.5rem;
         margin: 0;
         font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
         font-weight: 500;
         letter-spacing: -0.02em;
       }
       h3{
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
         font-weight: 500;
-        margin-left: 2rem;
         margin-top: 6rem;
       }
       p {
@@ -211,9 +379,12 @@
         line-height: 1.6;
         opacity: 0.95;
         width: 50%;
-        margin-left: 2rem;
         margin-top: 1rem;
       }
+            @media screen and (max-width: 1440px) {
+      width: calc(100% - 16rem);
+      }
+
     }
   }
 
@@ -221,21 +392,27 @@
     position: relative;
     left: 50%;
     top: 0;
-    transform: translateX(-50%);
-    width: calc(100% - 20rem);
-    height: 36rem;
+    transform: translateX(-50%) translateY(20px);
+    width: calc(100% - 32rem);
+    height: 48rem;
     padding-left: 1.618034 * 2rem;
     padding-right: 1.618034 * 2rem;
     z-index: 2;
+    opacity: 0;
+    transition: opacity 0.6s ease, transform 0.6s ease;
 
     h2 {
       position: relative;
       top: 4rem;
-      font-size: 2.5rem;
+      font-size: 4.5rem;
       margin: 0;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 500;
       letter-spacing: -0.02em;
+
+      @media screen and (max-width: 1440px) {
+        font-size: 2rem;
+      }
 
       // Tablet and below (< 1024px)
       @media screen and (max-width: 1023px) {
@@ -260,6 +437,11 @@
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 400;
     }
+
+    @media screen and (max-width: 1440px) {
+      width: calc(100% - 16rem);
+    }
+
 
     .footer-about {
       position: relative;

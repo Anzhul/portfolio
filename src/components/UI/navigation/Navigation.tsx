@@ -9,8 +9,20 @@ function Navigation() {
   const { triggerTransition } = usePageTransition()
 
   useEffect(() => {
-    // Add loaded class after a brief delay to allow initial render
-    setTimeout(() => setLoaded(true), 100)
+    // Wait for all resources to load on initial page load
+    const handleLoad = () => {
+      // Delay before showing navigation
+      setTimeout(() => {
+        setLoaded(true)
+      }, 100)
+    }
+
+    if (document.readyState === 'complete') {
+      handleLoad()
+    } else {
+      window.addEventListener('load', handleLoad)
+      return () => window.removeEventListener('load', handleLoad)
+    }
   }, [])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {

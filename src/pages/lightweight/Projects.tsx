@@ -1,71 +1,12 @@
 import React from 'react';
 import './Projects.scss';
 import { usePageTransition } from '../../context/PageTransitionContext';
-import { PortfolioCard } from '../../components/portfolio/PortfolioCard';
 
 export const Projects: React.FC = () => {
-  const { transitionState } = usePageTransition();
-
-  // Example project data - replace with your actual projects
-  const projects = [
-    {
-      id: 1,
-      title: 'Mountain Range Explorer',
-      date: 'January 2026',
-      tags: ['React', 'Three.js', 'TypeScript'],
-      image: '/mountains.png',
-      gridWidth: 2 as const,
-      gridHeight: 1 as const
-    },
-    {
-      id: 2,
-      title: 'Lunar Landscape',
-      date: 'December 2025',
-      tags: ['WebGL', 'Shaders', 'React'],
-      image: '/moon.webp',
-      gridWidth: 1 as const,
-      gridHeight: 2 as const
-    },
-    {
-      id: 3,
-      title: 'Space Navigation',
-      date: 'November 2025',
-      tags: ['Three.js', 'Animation', 'Canvas'],
-      image: '/spaceship.webp',
-      gridWidth: 1 as const,
-      gridHeight: 1 as const
-    },
-    {
-      id: 4,
-      title: 'Natural Environments',
-      date: 'October 2025',
-      tags: ['3D Modeling', 'React', 'WebGL'],
-      image: '/tree.webp',
-      gridWidth: 1 as const,
-      gridHeight: 1 as const
-    },
-    {
-      id: 5,
-      title: 'Hill Visualization',
-      date: 'September 2025',
-      tags: ['D3.js', 'Canvas', 'TypeScript'],
-      image: '/Hill.png',
-      gridWidth: 2 as const,
-      gridHeight: 2 as const
-    },
-    {
-      id: 6,
-      title: 'Terrain Generator',
-      date: 'August 2025',
-      tags: ['Procedural', 'WebGL', 'Shaders'],
-      image: '/Range.png',
-      gridWidth: 1 as const,
-      gridHeight: 1 as const
-    },
-  ];
+  const { isActive } = usePageTransition();
 
   return (
-    <div className={`projects page-transition ${transitionState === 'exiting' ? 'page-exit' : ''} ${transitionState === 'entering' ? 'page-enter' : ''}`}>
+    <div className={`projects ${isActive ? 'active' : ''}`}>
       <header className="projects-header">
         <h1>Projects</h1>
         <p>A collection of my work and experiments</p>
@@ -73,15 +14,6 @@ export const Projects: React.FC = () => {
 
       <main className="projects-content">
         <div className="projects-grid">
-          {projects.map((project) => (
-            <PortfolioCard
-              key={project.id}
-              gridWidth={project.gridWidth}
-              gridHeight={project.gridHeight}
-            >
-              {/* Add your own custom div structure here */}
-            </PortfolioCard>
-          ))}
         </div>
       </main>
     </div>

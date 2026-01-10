@@ -23,9 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+
 # Public images
-public/*.png
-public/*.jpg
+#public/*.png
+#public/*.jpg
 public/*.jpeg
 public/*.gif
 public/*.webp

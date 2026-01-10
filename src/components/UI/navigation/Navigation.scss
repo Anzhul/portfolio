@@ -34,6 +34,7 @@ $primary: #222222;
     align-items: center;
     opacity: 0;
     transition: opacity 0.6s ease-out;
+    transition-delay: 0s;
 
     // Responsive adjustment for mobile
     @media (max-width: 767px) {

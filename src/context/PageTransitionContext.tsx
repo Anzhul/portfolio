@@ -1,10 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-type TransitionState = 'idle' | 'exiting' | 'entering'
-
 interface PageTransitionContextType {
-  transitionState: TransitionState
+  isActive: boolean
   triggerTransition: (targetRoute: string) => void
   isTransitioning: boolean
 }
@@ -12,7 +10,7 @@ interface PageTransitionContextType {
 const PageTransitionContext = createContext<PageTransitionContextType | undefined>(undefined)
 
 export const PageTransitionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [transitionState, setTransitionState] = useState<TransitionState>('idle')
+  const [isActive, setIsActive] = useState<boolean>(false)
   const navigate = useNavigate()
   const location = useLocation()
   const timeoutRef = useRef<number | null>(null)
@@ -29,29 +27,23 @@ export const PageTransitionProvider: React.FC<{ children: React.ReactNode }> = (
       timeoutRef.current = null
     }
 
-    // Start exit animation
-    setTransitionState('exiting')
+    // Navigate immediately to new route
+    navigate(targetRoute)
 
-    // Wait for exit animation to complete
+    // Set active state
+    setIsActive(true)
+
+    // Wait for animation to complete
     timeoutRef.current = window.setTimeout(() => {
-      // Navigate to new route
-      navigate(targetRoute)
-
-      // Start enter animation
-      setTransitionState('entering')
-
-      // Wait for enter animation to complete
-      timeoutRef.current = window.setTimeout(() => {
-        setTransitionState('idle')
-        timeoutRef.current = null
-      }, 500) // Enter duration
-    }, 500) // Exit duration
+      setIsActive(false)
+      timeoutRef.current = null
+    }, 500) // Animation duration
   }, [navigate, location.pathname])
 
   return (
     <PageTransitionContext.Provider
       value={{
-        transitionState,
+        isActive,
         triggerTransition,
         isTransitioning: timeoutRef.current !== null,
       }}

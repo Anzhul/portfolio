@@ -1,98 +1,64 @@
-import React, { lazy, useRef } from 'react';
+import React, { lazy, useRef, useState, useEffect } from 'react';
 import './Home.scss';
 import { Lazy3DObject } from '../../components/lazy/Lazy3DObject';
 import { usePageTransition } from '../../context/PageTransitionContext';
-import { PortfolioCard } from '../../components/portfolio/PortfolioCard';
-import { SplitText } from '../../components/UI/SplitText';
 
 // Lazy load combined 3D scene with both models
 const HomeScene = lazy(() => import('../../components/canvas/home/HomeScene'));
 
 export const Home: React.FC = () => {
-  const { transitionState } = usePageTransition();
+  const { isActive } = usePageTransition();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isPageLoaded, setIsPageLoaded] = useState(false);
 
-  // Featured projects for home page with grid dimensions
-  const featuredProjects = [
-    {
-      id: 1,
-      title: 'Custom IIIF Viewer',
-      date: 'January 2026',
-      tags: ['React', 'Three.js', 'TypeScript'],
-      image: '/Untitled.png',
-      gridWidth: 2 as const,
-      gridHeight: 2 as const
-    },
-    {
-      id: 3,
-      title: 'Lunar Landscape',
-      date: 'November 2025',
-      tags: ['Three.js', 'Canvas'],
-      image: '/moon.webp',
-      gridWidth: 1 as const,
-      gridHeight: 1 as const
-    },
-  ];
+  useEffect(() => {
+    // Wait for all resources to load
+    const handleLoad = () => {
+      // Small delay to ensure header is visible first
+      setTimeout(() => {
+        setIsPageLoaded(true);
+      }, 100);
+    };
+
+    if (document.readyState === 'complete') {
+      handleLoad();
+    } else {
+      window.addEventListener('load', handleLoad);
+      return () => window.removeEventListener('load', handleLoad);
+    }
+  }, []);
+
 
   return (
     <div
       ref={containerRef}
-      className={`home page-transition ${transitionState === 'exiting' ? 'page-exit' : ''} ${transitionState === 'entering' ? 'page-enter' : ''}`}
+      className={`home ${isActive ? 'active' : ''} ${isPageLoaded ? 'loaded' : ''}`}
     >
       <div className="home-intro">
         <header className="home-header">
-          <h1>
-            <SplitText
-              text="Hi,"
-              animate={transitionState === 'idle'}
-              staggerDelay={0.05}
-            />
-          </h1>
-          <h1>
-            <SplitText
-              text="I'm Anzhu—"
-              animate={transitionState === 'idle'}
-              baseDelay={0.2}
-              staggerDelay={0.05}
-              charConfigs={{
-                4: { delay: 0.5, duration: 0.8 }, // 'A'
-                5: { delay: 0.55, duration: 0.8 }, // 'n'
-                6: { delay: 0.6, duration: 0.8 }, // 'z'
-                7: { delay: 0.65, duration: 0.8 }, // 'h'
-                8: { delay: 0.7, duration: 0.8 }, // 'u'
-              }}
-            />
-          </h1>
-          <p className="tagline">
-            <SplitText
-              text="An artist currently focused on visualization and design."
-              animate={transitionState === 'idle'}
-              baseDelay={1.25}
-              staggerDelay={0.025}
-              baseDuration={0.85}
-              splitBy="word"
-            />
-          </p>
+          <h1>Hi,</h1>
+          <h1>I'm Anzhu—</h1>
+          <p className="tagline">An artist currently focused on visualization and design.</p>
+          <br></br>
         </header>
 
-        {/* Combined 3D scene with pen and cap - always mounted, transitions between active/inactive */}
+        {/* Combined 3D scene with pen and cap */}
         <Lazy3DObject
-          loadStrategy="delayed"
-          delay={10}
+          loadStrategy="immediate"
           component={HomeScene}
           componentProps={{
             scrollContainer: containerRef,
-            penScale: 0.03,
-            capScale: 0.03,
-            inkScale: 0.13,
+            penScale: 0.032,
+            capScale: 0.032,
+            inkScale: 0.12,
             // Positions [x, y, z]
-            penPosition: [4.5, 1, 0],    // Pen on the right
-            capPosition: [3.5, 2, 0],    // Cap on the left
-            inkPosition: [2, 0.5, 0],      // Ink in the center lower
+            penPosition: [0.5, 1.3, 0],    // Pen on the right
+            capPosition: [-0.25, 2.55, 0],    // Cap on the left
+            inkPosition: [1.5, 0.5, 0],      // Ink in the center lower
             // Rotations [x, y, z] in radians
             inkRotation: [Math.PI/2, -4.6, 0],
             penRotation: [-Math.PI/2, Math.PI/10, 36],
-            capRotation: [-Math.PI/2, -Math.PI/20, 0.5],
+            capRotation: [-Math.PI/2, -Math.PI/10, 0.5],
             penMaterialOverrides: [
               {
                 materialName: 'Brown',
@@ -157,20 +123,39 @@ export const Home: React.FC = () => {
         <div className="home-projects">
           <h2>Projects</h2>
           <div className="project-list">
-            {featuredProjects.map((project) => (
-              <PortfolioCard
-                key={project.id}
-                gridWidth={project.gridWidth}
-                gridHeight={project.gridHeight}
-              >
-                <div className="project-card-content">
-                  <div
-                    className="project-image"
-                    style={{ backgroundImage: `url('/Untitled.png')` }}
-                  ></div>
-                </div>
-              </PortfolioCard>
-            ))}
+
+            <div className="project-card project-card-1">
+              <div className="project-info project-info-1">
+                <h3 className="project-title">IIIFViewer</h3>
+                <p className="project-date">January 2026</p>
+              </div>
+              <div
+                className="project-image project-image-1"
+                style={{ backgroundImage: `url('/Untitled.png')` }}
+              ></div>
+            </div>
+
+            <div className="project-card project-card-3">
+              <div className="project-info project-info-3">
+                <h3 className="project-title">Rymdboat</h3>
+                <p className="project-date">November 2025</p>
+              </div>
+              <div
+                className="project-image"
+                style={{ backgroundImage: `url('/spaceship2.png')` }}
+              ></div>
+            </div>
+
+            <div className="project-card project-card-2">
+              <div className="project-info project-info-2">
+                <h3 className="project-title">New Project</h3>
+                <p className="project-date">January 2026</p>
+              </div>
+              <div
+                className="project-image"
+                style={{ backgroundImage: `url('/placeholder.png')` }}
+              ></div>
+            </div>
           </div>
         </div>
 
@@ -194,7 +179,7 @@ export const Home: React.FC = () => {
         </div>
         </div>
         <div className="footer-links">
-        <ul>  
+        <ul>
           <li><a href="https://github.com/anzhul">GitHub</a></li>
           <li><a href="https://instagram.com/anzhul/">Instagram</a></li>
           <li><a href="mailto:anzhul@umich.edu">anzhul@umich.edu</a></li>
