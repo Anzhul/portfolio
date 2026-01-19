@@ -6,10 +6,19 @@ import { usePageTransition } from '../../context/PageTransitionContext';
 // Lazy load combined 3D scene with both models
 const HomeScene = lazy(() => import('../../components/canvas/home/HomeScene'));
 
-export const Home: React.FC = () => {
-  const { isActive } = usePageTransition();
+interface HomeProps {
+  isVisible?: boolean;
+}
+
+export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
+  const { isActive, triggerTransition } = usePageTransition();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
+
+  const handleProjectClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    e.preventDefault();
+    triggerTransition(path);
+  };
 
   useEffect(() => {
     // Wait for all resources to load
@@ -36,10 +45,12 @@ export const Home: React.FC = () => {
     >
       <div className="home-intro">
         <header className="home-header">
-          <h1>Hi,</h1>
-          <h1>I'm Anzhu—</h1>
-          <p className="tagline">An artist currently focused on visualization and design.</p>
-          <br></br>
+          <div className="home-intro-content">
+            <h1>Hi,</h1>
+            <h1>I'm Anzhu—</h1>
+            <p className="tagline">An artist currently entangled with design and development.</p>
+            <br></br>
+          </div>
         </header>
 
         {/* Combined 3D scene with pen and cap */}
@@ -47,14 +58,15 @@ export const Home: React.FC = () => {
           loadStrategy="immediate"
           component={HomeScene}
           componentProps={{
+            isVisible,
             scrollContainer: containerRef,
-            penScale: 0.032,
-            capScale: 0.032,
-            inkScale: 0.12,
+            penScale: 0.03,
+            capScale: 0.03,
+            inkScale: 0.1,
             // Positions [x, y, z]
-            penPosition: [0.5, 1.3, 0],    // Pen on the right
-            capPosition: [-0.25, 2.55, 0],    // Cap on the left
-            inkPosition: [1.5, 0.5, 0],      // Ink in the center lower
+            penPosition: [1.0, 1.3, 0],    // Pen on the right
+            capPosition: [0, 2.55, 0],    // Cap on the left
+            inkPosition: [-0.725, 0.5, 0],      // Ink in the center lower
             // Rotations [x, y, z] in radians
             inkRotation: [Math.PI/2, -4.6, 0],
             penRotation: [-Math.PI/2, Math.PI/10, 36],
@@ -124,19 +136,19 @@ export const Home: React.FC = () => {
           <h2>Projects</h2>
           <div className="project-list">
 
-            <div className="project-card project-card-1">
+            <a href="/iiifviewer" onClick={(e) => handleProjectClick(e, '/iiifviewer')} className="project-card project-card-1">
               <div className="project-info project-info-1">
-                <h3 className="project-title">IIIFViewer</h3>
+                <h3 className="project-title">Juniper</h3>
                 <p className="project-date">January 2026</p>
               </div>
               <div
                 className="project-image project-image-1"
                 style={{ backgroundImage: `url('/Untitled.png')` }}
               ></div>
-            </div>
+            </a>
 
-            <div className="project-card project-card-3">
-              <div className="project-info project-info-3">
+            <a href="/rydmboat" onClick={(e) => handleProjectClick(e, '/rydmboat')} className="project-card project-card-2">
+              <div className="project-info project-info-2">
                 <h3 className="project-title">Rymdboat</h3>
                 <p className="project-date">November 2025</p>
               </div>
@@ -144,17 +156,32 @@ export const Home: React.FC = () => {
                 className="project-image"
                 style={{ backgroundImage: `url('/spaceship2.png')` }}
               ></div>
-            </div>
+            </a>
 
-            <div className="project-card project-card-2">
-              <div className="project-info project-info-2">
-                <h3 className="project-title">New Project</h3>
-                <p className="project-date">January 2026</p>
+            <div className="project-card project-card-3">
+              <div className="project-info project-info-3">
+                <h3 className="project-title">Syrte World</h3>
+                <p className="project-date">November 2025</p>
               </div>
               <div
                 className="project-image"
-                style={{ backgroundImage: `url('/placeholder.png')` }}
+                style={{ backgroundImage: `url('/syrte1.png')` }}
               ></div>
+            </div>
+            <div className="project-card project-card-4">
+              <div className="project-info project-info-4">
+                <h3 className="project-title">Arcade Ship</h3>
+                <p className="project-date">November 2025</p>
+              </div>
+              <video
+                className="project-video"
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src="/arcade.webm" type="video/webm" />
+              </video>
             </div>
           </div>
         </div>
@@ -187,5 +214,6 @@ export const Home: React.FC = () => {
         </div>
       </footer>
     </div>
+    
   );
 };

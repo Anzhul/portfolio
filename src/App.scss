@@ -11,3 +11,18 @@ $border: #22222267;
   overflow: hidden;
 }
 
+// Persistent page wrapper - keeps pages mounted but toggles visibility
+.persistent-page {
+  &.visible {
+    display: block;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  &.hidden {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+

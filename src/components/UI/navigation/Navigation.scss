@@ -20,13 +20,17 @@ $primary: #222222;
     display: flex;
     flex-direction: row;
     align-items: center;
+
+    @media screen and (max-width: 1024px) {
+      background-color: white;
+    }
   }
 
   .name-button-container {
     position: absolute;
     left: $phi-squared * 1rem + 1rem;
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     height: 100%;
     font-weight: 500;
     color: $primary;

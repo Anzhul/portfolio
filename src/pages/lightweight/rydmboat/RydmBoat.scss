@@ -1,9 +1,9 @@
-.portfolio-page {
+.rydmboat-page {
   min-height: 100vh;
   background: white;
   color: #222222;
 
-  .portfolio-header {
+  .rydmboat-header {
     position: relative;
     width: 100%;
     padding: 4rem 10rem 2rem 10rem;
@@ -52,7 +52,7 @@
     }
   }
 
-  .portfolio-content {
+  .rydmboat-content {
     position: relative;
     padding: 2rem 10rem 4rem 10rem;
 
@@ -66,27 +66,12 @@
       padding: 1.5rem 1rem 2rem 1rem;
     }
 
-    .portfolio-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
+    .rydmboat-details {
       width: 100%;
-
-      // Tablet and below - 2 columns
-      @media screen and (max-width: 1023px) {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-      }
-
-      // Mobile - 1 column
-      @media screen and (max-width: 767px) {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
     }
   }
 
-  .portfolio-footer {
+  .rydmboat-footer {
     position: relative;
     display: flex;
     justify-content: space-between;

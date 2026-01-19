@@ -8,6 +8,7 @@ import { applyMaterialOverrides, type MaterialOverride } from './materialUtils'
 import { Animation, Easing } from '../../../utils/Animation'
 
 export interface HomeSceneProps {
+  isVisible?: boolean
   scrollContainer?: React.RefObject<HTMLDivElement>
   penScale?: number
   capScale?: number
@@ -42,13 +43,15 @@ function PenMesh({
   position = [3, 0, 0],
   rotation = [0, 0, 0],
   materialOverrides = [],
-  scrollContainer
+  scrollContainer,
+  isVisible = true
 }: {
   scale: number
   position: [number, number, number]
   rotation: [number, number, number]
   materialOverrides?: MaterialOverride[]
   scrollContainer?: React.RefObject<HTMLDivElement>
+  isVisible?: boolean
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/pen.glb')
@@ -70,8 +73,10 @@ function PenMesh({
     }
   }, [gltf, rotation, materialOverrides, dragRotation])
 
-  // Hovering animation
+  // Hovering animation - only runs when visible
   useEffect(() => {
+    if (!isVisible) return
+
     const hover = () => {
       if (groupRef.current && !isDragging) {
         timeRef.current += 0.008
@@ -91,7 +96,7 @@ function PenMesh({
     return () => {
       ticker.remove(hover)
     }
-  }, [position, isDragging])
+  }, [position, isDragging, isVisible])
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation()
@@ -163,13 +168,15 @@ function CapMesh({
   position = [-3, 0, 0],
   rotation = [0, 0, 0],
   materialOverrides = [],
-  scrollContainer
+  scrollContainer,
+  isVisible = true
 }: {
   scale: number
   position: [number, number, number]
   rotation: [number, number, number]
   materialOverrides?: MaterialOverride[]
   scrollContainer?: React.RefObject<HTMLDivElement>
+  isVisible?: boolean
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/cap.glb')
@@ -187,8 +194,10 @@ function CapMesh({
     }
   }, [gltf, rotation, materialOverrides])
 
-  // Hovering animation
+  // Hovering animation - only runs when visible
   useEffect(() => {
+    if (!isVisible) return
+
     const hover = () => {
       if (groupRef.current) {
         timeRef.current += 0.008
@@ -206,7 +215,7 @@ function CapMesh({
 
     ticker.add(hover)
     return () => ticker.remove(hover)
-  }, [position])
+  }, [position, isVisible])
 
   return (
     <group ref={groupRef} scale={scale} position={position}>
@@ -220,13 +229,15 @@ function InkMesh({
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   materialOverrides = [],
-  scrollContainer
+  scrollContainer,
+  isVisible = true
 }: {
   scale: number
   position: [number, number, number]
   rotation: [number, number, number]
   materialOverrides?: MaterialOverride[]
   scrollContainer?: React.RefObject<HTMLDivElement>
+  isVisible?: boolean
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const gltf = useLoader(GLTFLoader, '/ink.glb')
@@ -256,8 +267,10 @@ function InkMesh({
     }
   }, [gltf, animatedRotation, materialOverrides])
 
-  // Hovering animation
+  // Hovering animation - only runs when visible
   useEffect(() => {
+    if (!isVisible) return
+
     const hover = () => {
       if (groupRef.current) {
         timeRef.current += 0.008
@@ -275,7 +288,7 @@ function InkMesh({
 
     ticker.add(hover)
     return () => ticker.remove(hover)
-  }, [position])
+  }, [position, isVisible])
 
   // Handle click to rotate on z-axis
   const handleClick = () => {
@@ -356,11 +369,12 @@ function CameraController() {
         zPosition = 12
       } else if (isTabletDown) {
         // Tablet (768px - 1023px): zoom out a bit
+        xPosition = 0
         zPosition = 10
       } else if (width < 1440) {
         // Desktop (1024px - 1439px): slight zoom out
-        zPosition = 8
-        xPosition = 1.5
+        zPosition = 10
+        xPosition = 0
         yPosition = 0
       }
       // Wide (>= 1440px): use default (8)
@@ -377,18 +391,21 @@ function CameraController() {
 /**
  * RenderTrigger - Triggers manual renders for frameloop="never"
  * Uses the global AnimationTicker for synchronized rendering
+ * Only renders when isVisible is true
  */
-function RenderTrigger() {
+function RenderTrigger({ isVisible = true }: { isVisible?: boolean }) {
   const { gl, scene, camera } = useThree()
 
   useEffect(() => {
+    if (!isVisible) return
+
     const render = () => {
       gl.render(scene, camera)
     }
 
     ticker.add(render)
     return () => ticker.remove(render)
-  }, [gl, scene, camera])
+  }, [gl, scene, camera, isVisible])
 
   return null
 }
@@ -397,6 +414,7 @@ function RenderTrigger() {
  * Scene - Wrapper component with Suspense for async loading
  */
 function Scene({
+  isVisible = true,
   scrollContainer,
   penScale,
   capScale,
@@ -416,8 +434,8 @@ function Scene({
       {/* Camera controller for responsive zoom */}
       <CameraController />
 
-      {/* Render trigger for manual frameloop */}
-      <RenderTrigger />
+      {/* Render trigger for manual frameloop - pauses when not visible */}
+      <RenderTrigger isVisible={isVisible} />
 
       {/* Lighting setup */}
       <ambientLight intensity={1} />
@@ -435,6 +453,7 @@ function Scene({
           rotation={penRotation}
           materialOverrides={penMaterialOverrides}
           scrollContainer={scrollContainer}
+          isVisible={isVisible}
         />
 
         {/* Cap model */}
@@ -444,9 +463,9 @@ function Scene({
           rotation={capRotation}
           materialOverrides={capMaterialOverrides}
           scrollContainer={scrollContainer}
+          isVisible={isVisible}
         />
 
-        {/* Ink model 
         {inkScale && (
           <InkMesh
             scale={inkScale}
@@ -454,9 +473,9 @@ function Scene({
             rotation={inkRotation}
             materialOverrides={inkMaterialOverrides}
             scrollContainer={scrollContainer}
+            isVisible={isVisible}
           />
         )}
-          */}
       </Suspense>
     </>
   )
@@ -486,6 +505,7 @@ function Scene({
  * />
  */
 function HomeScene({
+  isVisible = true,
   scrollContainer,
   penScale = 2,
   capScale = 1.5,
@@ -512,6 +532,7 @@ function HomeScene({
       }}
     >
       <Scene
+        isVisible={isVisible}
         scrollContainer={scrollContainer}
         penScale={penScale}
         capScale={capScale}

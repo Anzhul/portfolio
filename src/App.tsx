@@ -4,7 +4,8 @@ import './App.scss'
 import { Home } from './pages/lightweight/Home'
 import { Projects } from './pages/lightweight/Projects'
 import { Links } from './pages/lightweight/Links'
-import { Portfolio } from './pages/lightweight/Portfolio'
+import { RydmBoat } from './pages/lightweight/rydmboat/RydmBoat'
+import { IIIFViewer } from './pages/lightweight/iiifviewer/IIIFViewer'
 import Navigation from './components/UI/navigation/Navigation'
 import Toolbar from './components/UI/toolbar/Toolbar'
 import { ViewportProvider } from './context/ViewportContext'
@@ -20,15 +21,40 @@ const Experience3D = lazy(() =>
 )
 
 // Lightweight page routes that don't use 3D
-const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links', '/portfolio']
+const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links', '/rydmboat', '/iiifviewer']
+
+// Configuration for persistent pages
+const PERSISTENT_PAGES = [
+  { path: '/', component: Home },
+  { path: '/projects', component: Projects },
+  { path: '/links', component: Links },
+  { path: '/rydmboat', component: RydmBoat },
+  { path: '/iiifviewer', component: IIIFViewer },
+] as const
 
 function AppContent() {
   const location = useLocation()
   const [has3DLoaded, setHas3DLoaded] = useState(false)
+  const [visitedPages, setVisitedPages] = useState<Set<string>>(() => new Set())
+
+  // Normalize path (treat /home as /)
+  const currentPath = location.pathname === '/home' ? '/' : location.pathname
 
   // Determine if current route is lightweight or 3D
   const isLightweightRoute = LIGHTWEIGHT_ROUTES.includes(location.pathname)
   const should3DBeActive = !isLightweightRoute
+
+  // Track visited lightweight pages
+  useEffect(() => {
+    if (isLightweightRoute && currentPath !== '/home') {
+      setVisitedPages(prev => {
+        if (prev.has(currentPath)) return prev
+        const next = new Set(prev)
+        next.add(currentPath)
+        return next
+      })
+    }
+  }, [currentPath, isLightweightRoute])
 
   // Once 3D loads, keep track so we can keep it mounted
   useEffect(() => {
@@ -45,17 +71,28 @@ function AppContent() {
       {/* Toolbar - loads immediately but only functional in 3D routes */}
       <Toolbar loaded={true} />
 
+      {/* Redirect /home to / */}
       <Routes>
-        {/* Lightweight pages - no 3D library loaded */}
-        <Route path="/" element={<Home />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/links" element={<Links />} />
-
-        {/* Heavy 3D experience - lazy loaded for all other routes */}
         <Route path="/*" element={null} />
       </Routes>
+
+      {/* Persistent lightweight pages - stay mounted once visited */}
+      <div className="persistent-pages-container">
+        {PERSISTENT_PAGES.map(({ path, component: Component }) => {
+          const isVisited = visitedPages.has(path)
+          const isVisible = currentPath === path
+
+          return (
+            <div
+              key={path}
+              className={`persistent-page ${isVisible ? 'visible' : 'hidden'}`}
+            >
+              {isVisited && <Component isVisible={isVisible} />}
+            </div>
+          )
+        })}
+      </div>
 
       {/* Keep Experience3D mounted once loaded, just toggle visibility */}
       {(should3DBeActive || has3DLoaded) && (
