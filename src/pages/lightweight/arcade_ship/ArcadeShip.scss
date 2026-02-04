@@ -1,0 +1,111 @@
+.arcadeship-page {
+  min-height: 100vh;
+  background: white;
+  color: #222222;
+
+  .arcadeship-header {
+    position: relative;
+    width: 100%;
+    padding: 4rem 10rem 2rem 10rem;
+    text-align: left;
+
+    // Tablet and below
+    @media screen and (max-width: 1023px) {
+      padding: 3rem 4rem 1.5rem 4rem;
+    }
+
+    // Mobile
+    @media screen and (max-width: 767px) {
+      padding: 2rem 1rem 1rem 1rem;
+    }
+
+    h1 {
+      font-size: 3.5rem;
+      margin: 0;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+
+      @media screen and (max-width: 1023px) {
+        font-size: 3rem;
+      }
+
+      @media screen and (max-width: 767px) {
+        font-size: 2.5rem;
+      }
+    }
+
+    p {
+      font-size: 1.5rem;
+      margin: 1rem 0 0;
+      opacity: 0.8;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 400;
+
+      @media screen and (max-width: 1023px) {
+        font-size: 1.3rem;
+      }
+
+      @media screen and (max-width: 767px) {
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  .arcadeship-content {
+    position: relative;
+    padding: 2rem 10rem 4rem 10rem;
+
+    // Tablet and below
+    @media screen and (max-width: 1023px) {
+      padding: 2rem 4rem 3rem 4rem;
+    }
+
+    // Mobile
+    @media screen and (max-width: 767px) {
+      padding: 1.5rem 1rem 2rem 1rem;
+    }
+
+    .arcadeship-details {
+      width: 100%;
+    }
+  }
+
+  .arcadeship-footer {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 10rem 4rem 10rem;
+    border-top: 1px solid #e0e0e0;
+
+    // Tablet and below
+    @media screen and (max-width: 1023px) {
+      padding: 2rem 4rem 3rem 4rem;
+    }
+
+    // Mobile
+    @media screen and (max-width: 767px) {
+      padding: 1.5rem 1rem 2rem 1rem;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    a {
+      font-size: 1.1rem;
+      text-decoration: none;
+      color: #222222;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 400;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.6;
+      }
+
+      @media screen and (max-width: 767px) {
+        font-size: 1rem;
+      }
+    }
+  }
+}

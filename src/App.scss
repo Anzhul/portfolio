@@ -5,14 +5,36 @@ $border: #22222267;
 .app {
   position: relative;
   width: 100%;
-  min-height: 100vh;
   background: $background;
   color: $primary;
   overflow: hidden;
 }
 
+// Container for all persistent pages
+.persistent-pages-container {
+  position: relative;
+  width: 100%;
+}
+
 // Persistent page wrapper - keeps pages mounted but toggles visibility
 .persistent-page {
+  width: 100%;
+
+  &.visible {
+    display: block;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  &.hidden {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+// Footer wrapper - keeps footer mounted but toggles visibility
+.footer-wrapper {
   &.visible {
     display: block;
     visibility: visible;

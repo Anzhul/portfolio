@@ -7,7 +7,7 @@ interface NavigationContextType {
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined)
 
-const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links', '/rydmboat', '/iiifviewer']
+const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links', '/rydmboat', '/iiifviewer', '/syrte', '/arcade_ship']
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const location = useLocation()

@@ -6,8 +6,11 @@ import { Projects } from './pages/lightweight/Projects'
 import { Links } from './pages/lightweight/Links'
 import { RydmBoat } from './pages/lightweight/rydmboat/RydmBoat'
 import { IIIFViewer } from './pages/lightweight/iiifviewer/IIIFViewer'
+import { Syrte } from './pages/lightweight/syrte/Syrte'
+import { ArcadeShip } from './pages/lightweight/arcade_ship/ArcadeShip'
 import Navigation from './components/UI/navigation/Navigation'
 import Toolbar from './components/UI/toolbar/Toolbar'
+import { Footer } from './components/UI/footer/Footer'
 import { ViewportProvider } from './context/ViewportContext'
 import { ToolbarProvider } from './context/ToolbarContext'
 import { NavigationProvider } from './context/NavigationContext'
@@ -21,7 +24,7 @@ const Experience3D = lazy(() =>
 )
 
 // Lightweight page routes that don't use 3D
-const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links', '/rydmboat', '/iiifviewer']
+const LIGHTWEIGHT_ROUTES = ['/', '/home', '/projects', '/links', '/rydmboat', '/iiifviewer', '/syrte', '/arcade_ship']
 
 // Configuration for persistent pages
 const PERSISTENT_PAGES = [
@@ -30,6 +33,8 @@ const PERSISTENT_PAGES = [
   { path: '/links', component: Links },
   { path: '/rydmboat', component: RydmBoat },
   { path: '/iiifviewer', component: IIIFViewer },
+  { path: '/syrte', component: Syrte },
+  { path: '/arcade_ship', component: ArcadeShip },
 ] as const
 
 function AppContent() {
@@ -92,6 +97,11 @@ function AppContent() {
             </div>
           )
         })}
+
+        {/* Single persistent footer at bottom of all pages (hidden on 3D explore page) */}
+        <div className={`footer-wrapper ${isLightweightRoute ? 'visible' : 'hidden'}`}>
+          <Footer />
+        </div>
       </div>
 
       {/* Keep Experience3D mounted once loaded, just toggle visibility */}

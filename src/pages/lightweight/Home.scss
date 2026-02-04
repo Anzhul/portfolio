@@ -1,14 +1,9 @@
 .home {
   min-height: 100vh;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
   background: white;
   color: #222222;
-  position: fixed;
-  left: 0;
-  top: 0;
-  overflow: scroll;
-  overflow-x: hidden;
+  position: relative;
 
   // Show content when page is loaded
   &.loaded {
@@ -22,12 +17,6 @@
       opacity: 1;
       transform: translateY(0);
       transition-delay: 1.1s;
-    }
-
-    .home-footer {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-      transition-delay: 1.2s;
     }
   }
 
@@ -185,6 +174,7 @@
       padding-bottom: 5rem;
       text-align: left;
       z-index: 2;
+      //background-color: blue;
 
       @media screen and (max-width: 1440px) {
         width: calc(100% - 16rem);
@@ -401,14 +391,17 @@
     .home-philosophy {
       position: relative;
       left: 50%;
-      top: 5rem;
+      top: 2rem;
       transform: translate(-50%, 0);
-      width: calc(100% - 32rem);
-      height: 60rem;
+      width: clamp( 40rem, calc(100% - 20rem), 1600px);
+      height: auto;
       padding-left: 1.618034 * 2rem;
       padding-right: 1.618034 * 2rem;
+      padding-top: 5rem;
+      padding-bottom: 8rem;
       text-align: left;
       z-index: 2;
+      //background-color: red;
 
       h2{
         position: relative;
@@ -423,16 +416,17 @@
         font-size: 1.8rem;
         font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
         font-weight: 500;
-        margin-top: 6rem;
-        margin-left: 1rem;
+        margin-top: 8rem;
+        margin-left: 2rem;
       }
       p {
         font-size: 1.25rem;
         line-height: 1.6;
         opacity: 0.95;
         width: 50%;
-        margin-top: 1rem;
-        margin-left: 1rem;
+        margin-top: 1.5rem;
+        margin-left: 2rem;
+        margin-bottom: 2rem;
         
       }
             @media screen and (max-width: 1440px) {

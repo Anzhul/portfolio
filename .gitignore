@@ -32,3 +32,14 @@ public/*.gif
 public/*.webp
 public/*.svg
 public/*.ico
+public/*.avif
+public/*.tiff
+public/*.tif
+public/*.bmp
+public/*.psd
+public/*.tga
+public/*.hdr
+public/*.exr
+public/*.glb
+public/*.gltf
+public/*.gltf2

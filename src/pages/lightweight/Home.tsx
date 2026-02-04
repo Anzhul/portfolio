@@ -158,7 +158,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
               ></div>
             </a>
 
-            <div className="project-card project-card-3">
+            <a href="/syrte" onClick={(e) => handleProjectClick(e, '/syrte')} className="project-card project-card-3">
               <div className="project-info project-info-3">
                 <h3 className="project-title">Syrte World</h3>
                 <p className="project-date">November 2025</p>
@@ -167,8 +167,8 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
                 className="project-image"
                 style={{ backgroundImage: `url('/syrte1.png')` }}
               ></div>
-            </div>
-            <div className="project-card project-card-4">
+            </a>
+            <a href="/arcade_ship" onClick={(e) => handleProjectClick(e, '/arcade_ship')} className="project-card project-card-4">
               <div className="project-info project-info-4">
                 <h3 className="project-title">Arcade Ship</h3>
                 <p className="project-date">November 2025</p>
@@ -182,7 +182,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
               >
                 <source src="/arcade.webm" type="video/webm" />
               </video>
-            </div>
+            </a>
           </div>
         </div>
 
@@ -196,23 +196,6 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
           <p>Design is a conversation between creator and user. Understanding the needs, desires, and limitations of the audience is crucial to crafting meaningful experiences that resonate on a personal level.</p>
         </div>
       </main>
-
-
-      <footer className="home-footer">
-        <h2>Those who believe in telekinetics, raise my hand.</h2>
-        <div className ="footer-about">
-        <div className ="footer-canvas">
-
-        </div>
-        </div>
-        <div className="footer-links">
-        <ul>
-          <li><a href="https://github.com/anzhul">GitHub</a></li>
-          <li><a href="https://instagram.com/anzhul/">Instagram</a></li>
-          <li><a href="mailto:anzhul@umich.edu">anzhul@umich.edu</a></li>
-        </ul>
-        </div>
-      </footer>
     </div>
     
   );

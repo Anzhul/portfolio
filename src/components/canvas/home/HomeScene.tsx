@@ -62,6 +62,34 @@ function PenMesh({
   const [dragRotation, setDragRotation] = useState(0)
   const dragStartRef = useRef<{ x: number; y: number } | null>(null)
   const baseRotationRef = useRef(rotation[2])
+  const isDraggingRef = useRef(false)
+  
+  // Rise-up animation on mount
+  const [riseOffset, setRiseOffset] = useState(-3)
+  const hasAnimatedRef = useRef(false)
+  
+  // Rise-up animation on first load
+  useEffect(() => {
+    if (!hasAnimatedRef.current && isVisible) {
+      hasAnimatedRef.current = true
+      
+      // Add delay for staggered effect
+      setTimeout(() => {
+        const riseAnimation = new Animation({
+          from: -3,
+          to: 0,
+          duration: 1200,
+          easing: Easing.easeOutCubic,
+          onUpdate: (value) => {
+            setRiseOffset(value)
+          }
+        })
+        
+        riseAnimation.start()
+      }, 450)
+    }
+  }, [isVisible])
+  
   // Apply rotation and material overrides
   useEffect(() => {
     if (gltf.scene) {
@@ -78,17 +106,20 @@ function PenMesh({
     if (!isVisible) return
 
     const hover = () => {
-      if (groupRef.current && !isDragging) {
-        timeRef.current += 0.008
-        const offsetX = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.08
-        const offsetY = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
-        const offsetZ = Math.cos(timeRef.current * 0.6) * 0.02
+      if (groupRef.current) {
+        // Use ref to check current dragging state
+        if (!isDraggingRef.current) {
+          timeRef.current += 0.008
+          const offsetX = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.08
+          const offsetY = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
+          const offsetZ = Math.cos(timeRef.current * 0.6) * 0.02
 
-        groupRef.current.position.set(
-          position[0] + offsetX,
-          position[1] + offsetY,
-          position[2] + offsetZ
-        )
+          groupRef.current.position.set(
+            position[0] + offsetX,
+            position[1] + offsetY + riseOffset,
+            position[2] + offsetZ
+          )
+        }
       }
     }
 
@@ -96,11 +127,13 @@ function PenMesh({
     return () => {
       ticker.remove(hover)
     }
-  }, [position, isDragging, isVisible])
+  }, [position, isVisible, riseOffset])
+
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation()
     setIsDragging(true)
+    isDraggingRef.current = true
     dragStartRef.current = { x: e.clientX, y: e.clientY }
     baseRotationRef.current = dragRotation
     document.body.style.cursor = 'grabbing'
@@ -120,6 +153,7 @@ function PenMesh({
       }
 
       const handleGlobalUp = () => {
+        isDraggingRef.current = false
         setIsDragging(false)
         dragStartRef.current = null
         // Reset cursor - check if still hovering over the pen
@@ -140,7 +174,6 @@ function PenMesh({
     <group
       ref={groupRef}
       scale={scale}
-      position={position}
       onPointerDown={handlePointerDown}
       onPointerOver={(e) => {
         e.stopPropagation()
@@ -182,6 +215,32 @@ function CapMesh({
   const gltf = useLoader(GLTFLoader, '/cap.glb')
   const timeRef = useRef(0)
   const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
+  
+  // Rise-up animation on mount
+  const [riseOffset, setRiseOffset] = useState(-3)
+  const hasAnimatedRef = useRef(false)
+
+  // Rise-up animation on first load
+  useEffect(() => {
+    if (!hasAnimatedRef.current && isVisible) {
+      hasAnimatedRef.current = true
+      
+      // Add slight delay for staggered effect
+      setTimeout(() => {
+        const riseAnimation = new Animation({
+          from: -3,
+          to: 0,
+          duration: 1200,
+          easing: Easing.easeOutCubic,
+          onUpdate: (value) => {
+            setRiseOffset(value)
+          }
+        })
+        
+        riseAnimation.start()
+      }, 150)
+    }
+  }, [isVisible])
 
   // Apply rotation and material overrides
   useEffect(() => {
@@ -207,7 +266,7 @@ function CapMesh({
 
         groupRef.current.position.set(
           position[0] + offsetX,
-          position[1] + offsetY,
+          position[1] + offsetY + riseOffset,
           position[2] + offsetZ
         )
       }
@@ -215,10 +274,10 @@ function CapMesh({
 
     ticker.add(hover)
     return () => ticker.remove(hover)
-  }, [position, isVisible])
+  }, [position, isVisible, riseOffset])
 
   return (
-    <group ref={groupRef} scale={scale} position={position}>
+    <group ref={groupRef} scale={scale}>
       <primitive object={gltf.scene} />
     </group>
   )
@@ -247,6 +306,32 @@ function InkMesh({
   const [isAnimating, setIsAnimating] = useState(false)
   const timeRef = useRef(0)
   const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
+  
+  // Rise-up animation on mount
+  const [riseOffset, setRiseOffset] = useState(-3)
+  const hasAnimatedRef = useRef(false)
+
+  // Rise-up animation on first load
+  useEffect(() => {
+    if (!hasAnimatedRef.current && isVisible) {
+      hasAnimatedRef.current = true
+      
+      // Add slight delay for staggered effect
+      setTimeout(() => {
+        const riseAnimation = new Animation({
+          from: -3,
+          to: 0,
+          duration: 1200,
+          easing: Easing.easeOutCubic,
+          onUpdate: (value) => {
+            setRiseOffset(value)
+          }
+        })
+        
+        riseAnimation.start()
+      }, 300) // 300ms delay after cap
+    }
+  }, [isVisible])
 
   // Apply rotation and material overrides
   useEffect(() => {
@@ -280,7 +365,7 @@ function InkMesh({
 
         groupRef.current.position.set(
           position[0] + offsetX,
-          position[1] + offsetY,
+          position[1] + offsetY + riseOffset,
           position[2] + offsetZ
         )
       }
@@ -288,7 +373,7 @@ function InkMesh({
 
     ticker.add(hover)
     return () => ticker.remove(hover)
-  }, [position, isVisible])
+  }, [position, isVisible, riseOffset])
 
   // Handle click to rotate on z-axis
   const handleClick = () => {
@@ -327,7 +412,6 @@ function InkMesh({
     <group
       ref={groupRef}
       scale={scale}
-      position={position}
       onClick={(e) => {
         e.stopPropagation()
         handleClick()

@@ -36,6 +36,7 @@ $primary: #222222;
     color: $primary;
     display: flex;
     align-items: center;
+    gap: 0.5rem;
     opacity: 0;
     transition: opacity 0.6s ease-out;
     transition-delay: 0s;
@@ -122,6 +123,9 @@ $primary: #222222;
       color: $primary;
       text-decoration: none;
       transition: opacity 0.2s ease;
+      display: flex;
+      align-items: center;
+      position: relative;
 
       &:hover {
         opacity: 0.7;
@@ -136,6 +140,17 @@ $primary: #222222;
         font-size: 0.9rem;
       }
     }
+  }
+
+  .nav-dot {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 5px;
+    background-color: $primary;
+    border-radius: 50%;
   }
 
   &.loaded {
