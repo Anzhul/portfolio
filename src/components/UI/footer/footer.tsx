@@ -1,23 +1,17 @@
 import React, { useState } from 'react';
+import { FooterCanvas } from './FooterCanvas';
 import './footer.scss';
 
 export const Footer: React.FC = () => {
-  const [count, setCount] = useState(0);
 
   return (
     <footer className="footer">
-      <h2>Those who believe in telekinetics, raise my hand.</h2>
-      
-      {/* Temporary counter to test persistence */}
-      <div className="footer-counter">
-        <button onClick={() => setCount(count - 1)}>-</button>
-        <span className="counter-value">{count}</span>
-        <button onClick={() => setCount(count + 1)}>+</button>
-      </div>
+      <h2>Here we are, trapped in the amber of the moment.</h2>
+
 
       <div className="footer-about">
         <div className="footer-canvas">
-          {/* Space for future content */}
+          <FooterCanvas />
         </div>
       </div>
       <div className="footer-links">
