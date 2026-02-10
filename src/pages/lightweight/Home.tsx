@@ -1,7 +1,8 @@
-import React, { lazy, useRef, useState, useEffect } from 'react';
+import React, { lazy, useRef, useState, useEffect, useMemo } from 'react';
 import './Home.scss';
 import { Lazy3DObject } from '../../components/lazy/Lazy3DObject';
 import { usePageTransition } from '../../context/PageTransitionContext';
+import { useViewport } from '../../context/ViewportContext';
 
 // Lazy load combined 3D scene with both models
 const HomeScene = lazy(() => import('../../components/canvas/home/HomeScene'));
@@ -12,6 +13,7 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
   const { isActive, triggerTransition } = usePageTransition();
+  const { breakpoint } = useViewport();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
@@ -19,6 +21,49 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
     e.preventDefault();
     triggerTransition(path);
   };
+
+  // Breakpoint-specific pen/cap positions and rotations
+  const { penPosition, capPosition, penRotation, capRotation, penScale, capScale } = useMemo(() => {
+    switch (breakpoint) {
+      case 'mobile':
+        return {
+          penPosition: [0, 1.0, 0] as [number, number, number],
+          capPosition: [0, 2.5, 0] as [number, number, number],
+          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
+          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
+          penScale: 0.025,
+          capScale: 0.025,
+        };
+      case 'tablet':
+        return {
+          penPosition: [0, 1.0, 0] as [number, number, number],
+          capPosition: [0, 2.5, 0] as [number, number, number],
+          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
+          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
+          penScale: 0.025,
+          capScale: 0.025,
+        };
+      case 'desktop': // 1024–1439px
+        return {
+          penPosition: [0, 1.0, 0] as [number, number, number],
+          capPosition: [0, 2.5, 0] as [number, number, number],
+          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
+          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
+          penScale: 0.025,
+          capScale: 0.025,
+        };
+      case 'wide': // 1440px+
+      default:
+        return {
+          penPosition: [-0.25, 0.75, 0] as [number, number, number],
+          capPosition: [-0.25, 2.0, 0] as [number, number, number],
+          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
+          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
+          penScale: 0.025,
+          capScale: 0.025,
+        };
+    }
+  }, [breakpoint]);
 
   useEffect(() => {
     // Wait for all resources to load
@@ -43,6 +88,69 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
       ref={containerRef}
       className={`home ${isActive ? 'active' : ''} ${isPageLoaded ? 'loaded' : ''}`}
     >
+      {/* Full-screen canvas with pen and cap */}
+      <Lazy3DObject
+        loadStrategy="immediate"
+        component={HomeScene}
+        componentProps={{
+          isVisible,
+          scrollContainer: containerRef,
+          penScale,
+          capScale,
+          penPosition,
+          capPosition,
+          penRotation,
+          capRotation,
+          penMaterialOverrides: [
+            {
+              materialName: 'Brown',
+              color: '#A0624A',
+              roughness: 0.3,
+              metalness: 0.2,
+              //map: '/pen_text.png',
+              flipX: true,
+            },
+            {
+              materialName: 'Brown2',
+              color: '#A0624A',
+              roughness: 0.3,
+              metalness: 0.2,
+              //map: '/pen_text.png',
+              flipX: true,
+            },
+            {
+              materialName: 'Yellow',
+              color: '#FDBC65',
+              roughness: 0.3,
+              metalness: 0.2,
+            },
+            {
+              materialName: 'Metal',
+              color: '#DCDCDC',
+              metalness: 0.8,
+              roughness: 0.1,
+            }
+          ],
+          capMaterialOverrides: [
+            {
+              materialName: 'Brown.001',
+              color: '#A0624A',
+              roughness: 0.3,
+              metalness: 0.2,
+            },
+            {
+              materialName: 'Default style',
+              color: '#DCDCDC',
+              metalness: 0.8,
+              roughness: 0.1,
+            }
+          ]
+        }}
+        className="home-scene-container"
+        placeholder={null}
+        loadingFallback={null}
+      />
+
       <div className="home-intro">
         <header className="home-header">
           <div className="home-intro-content">
@@ -52,83 +160,6 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
             <br></br>
           </div>
         </header>
-
-        {/* Combined 3D scene with pen and cap */}
-        <Lazy3DObject
-          loadStrategy="immediate"
-          component={HomeScene}
-          componentProps={{
-            isVisible,
-            scrollContainer: containerRef,
-            penScale: 0.03,
-            capScale: 0.03,
-            inkScale: 0.1,
-            // Positions [x, y, z]
-            penPosition: [1.0, 1.3, 0],    // Pen on the right
-            capPosition: [0, 2.55, 0],    // Cap on the left
-            inkPosition: [-0.725, 0.5, 0],      // Ink in the center lower
-            // Rotations [x, y, z] in radians
-            inkRotation: [Math.PI/2, -4.6, 0],
-            penRotation: [-Math.PI/2, Math.PI/10, 36],
-            capRotation: [-Math.PI/2, -Math.PI/10, 0.5],
-            penMaterialOverrides: [
-              {
-                materialName: 'Brown',
-                color: '#A0624A',
-                roughness: 0.3,
-                metalness: 0.2,
-              },
-              {
-                materialName: 'Yellow',
-                color: '#FDBC65',
-                roughness: 0.3,
-                metalness: 0.2,
-              },
-              {
-                materialName: 'Metal',
-                color: '#DCDCDC',
-                metalness: 0.8,
-                roughness: 0.1,
-              }
-            ],
-            capMaterialOverrides: [
-              {
-                materialName: 'Brown.001',
-                color: '#A0624A',
-                roughness: 0.3,
-                metalness: 0.2,
-              },
-              {
-                materialName: 'Default style',
-                color: '#DCDCDC',
-                metalness: 0.8,
-                roughness: 0.1,
-              }
-            ],
-            inkMaterialOverrides: [
-              {
-                materialName: 'Sticker',  // Use the exact material name from your ink.glb
-                map: '/ink_Sticker.png',
-                emissiveMap: '/ink_Sticker.png',
-                emissive: '#ffffff',
-                emissiveIntensity: 0,
-                flipX: true,  // Flip horizontally
-                // Optional: adjust texture repeat/offset if needed
-                // mapRepeat: [1, 1],
-                // mapOffset: [0, 0],
-              },
-              {
-                materialName: 'Default style',
-                color: '#DCDCDC',
-                metalness: 0.8,
-                roughness: 0.1,
-              }
-            ]
-          }}
-          className="home-scene-container"
-          placeholder={null}
-          loadingFallback={null}
-        />
       </div>
 
       <main className="home-content">

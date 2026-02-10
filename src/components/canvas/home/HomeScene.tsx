@@ -12,16 +12,12 @@ export interface HomeSceneProps {
   scrollContainer?: React.RefObject<HTMLDivElement>
   penScale?: number
   capScale?: number
-  inkScale?: number
   penPosition?: [number, number, number]
   capPosition?: [number, number, number]
-  inkPosition?: [number, number, number]
   penRotation?: [number, number, number]
   capRotation?: [number, number, number]
-  inkRotation?: [number, number, number]
   penMaterialOverrides?: MaterialOverride[]
   capMaterialOverrides?: MaterialOverride[]
-  inkMaterialOverrides?: MaterialOverride[]
 }
 
 /**
@@ -34,6 +30,12 @@ const getScrollProgress = (containerRef?: React.RefObject<HTMLDivElement>): numb
   const scrollHeight = container.scrollHeight - container.clientHeight
   return scrollHeight > 0 ? scrollTop / scrollHeight : 0
 }
+
+/**
+ * Normalize angle `a` to be within ±π of `ref` so interpolation takes the shortest path
+ */
+const normalizeAngle = (a: number, ref: number): number =>
+  a - Math.round((a - ref) / (2 * Math.PI)) * 2 * Math.PI
 
 /**
  * PenMesh - Renders the pen.glb model in the scene
@@ -54,25 +56,34 @@ function PenMesh({
   isVisible?: boolean
 }) {
   const groupRef = useRef<THREE.Group>(null!)
-  const gltf = useLoader(GLTFLoader, '/pen.glb')
+  const gltf = useLoader(GLTFLoader, '/pen2.glb')
+  const { camera } = useThree()
   const timeRef = useRef(0)
   const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
 
   const [isDragging, setIsDragging] = useState(false)
-  const [dragRotation, setDragRotation] = useState(0)
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null)
-  const baseRotationRef = useRef(rotation[2])
   const isDraggingRef = useRef(false)
-  
+
+  // Animated rotation tracked via ref for performance
+  const currentRotationRef = useRef({ x: rotation[0], y: rotation[1], z: rotation[2] })
+  // Drag world position (non-null while dragging or returning)
+  const dragPositionRef = useRef<{ x: number; y: number; z: number } | null>(null)
+  // Raw cursor target for eased drag following
+  const dragTargetRef = useRef<{ x: number; y: number; z: number } | null>(null)
+  // Animation instance refs so we can stop them
+  const rotationAnimRef = useRef<Animation<{ x: number; y: number; z: number }> | null>(null)
+
+  const DRAG_ROTATION: [number, number, number] = [Math.PI / 0.32, -Math.PI / 20, -36]
+
   // Rise-up animation on mount
   const [riseOffset, setRiseOffset] = useState(-3)
   const hasAnimatedRef = useRef(false)
-  
+
   // Rise-up animation on first load
   useEffect(() => {
     if (!hasAnimatedRef.current && isVisible) {
       hasAnimatedRef.current = true
-      
+
       // Add delay for staggered effect
       setTimeout(() => {
         const riseAnimation = new Animation({
@@ -84,80 +95,173 @@ function PenMesh({
             setRiseOffset(value)
           }
         })
-        
+
         riseAnimation.start()
       }, 450)
     }
   }, [isVisible])
-  
-  // Apply rotation and material overrides
+
+  // Apply material overrides
   useEffect(() => {
     if (gltf.scene) {
-      // Apply material overrides
       applyMaterialOverrides(gltf.scene, materialOverrides)
-
-      // Apply rotation with drag rotation added
-      gltf.scene.rotation.set(rotation[0], rotation[1], rotation[2] + dragRotation)
     }
-  }, [gltf, rotation, materialOverrides, dragRotation])
+  }, [gltf, materialOverrides])
 
-  // Hovering animation - only runs when visible
+  // Sync rotation ref when prop changes (only when idle)
+  useEffect(() => {
+    if (!isDraggingRef.current && !rotationAnimRef.current) {
+      currentRotationRef.current = { x: rotation[0], y: rotation[1], z: rotation[2] }
+    }
+  }, [rotation])
+
+  // Hovering animation + rotation application (runs every tick)
   useEffect(() => {
     if (!isVisible) return
 
     const hover = () => {
-      if (groupRef.current) {
-        // Use ref to check current dragging state
-        if (!isDraggingRef.current) {
-          timeRef.current += 0.008
-          const offsetX = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.08
-          const offsetY = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
-          const offsetZ = Math.cos(timeRef.current * 0.6) * 0.02
+      if (!groupRef.current || !gltf.scene) return
+
+      // Always apply current animated rotation
+      const r = currentRotationRef.current
+      gltf.scene.rotation.set(r.x, r.y, r.z)
+
+      // Always advance hover time so phase stays continuous across states
+      timeRef.current += 0.008
+
+      // Compute the live hover target (base + sinusoidal offsets)
+      const ox = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.08
+      const oy = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
+      const oz = Math.cos(timeRef.current * 0.6) * 0.02
+      const hoverX = position[0] + ox
+      const hoverY = position[1] + oy + riseOffset
+      const hoverZ = position[2] + oz
+
+      if (isDraggingRef.current) {
+        // While dragging: ease position toward cursor target
+        if (dragPositionRef.current && dragTargetRef.current) {
+          const dragLerp = 0.18
+          dragPositionRef.current.x += (dragTargetRef.current.x - dragPositionRef.current.x) * dragLerp
+          dragPositionRef.current.y += (dragTargetRef.current.y - dragPositionRef.current.y) * dragLerp
+          dragPositionRef.current.z += (dragTargetRef.current.z - dragPositionRef.current.z) * dragLerp
 
           groupRef.current.position.set(
-            position[0] + offsetX,
-            position[1] + offsetY + riseOffset,
-            position[2] + offsetZ
+            dragPositionRef.current.x,
+            dragPositionRef.current.y,
+            dragPositionRef.current.z
           )
         }
+      } else if (dragPositionRef.current) {
+        // Returning: lerp from drag position toward live hover target
+        const lerpFactor = 0.07
+        dragPositionRef.current.x += (hoverX - dragPositionRef.current.x) * lerpFactor
+        dragPositionRef.current.y += (hoverY - dragPositionRef.current.y) * lerpFactor
+        dragPositionRef.current.z += (hoverZ - dragPositionRef.current.z) * lerpFactor
+
+        groupRef.current.position.set(
+          dragPositionRef.current.x,
+          dragPositionRef.current.y,
+          dragPositionRef.current.z
+        )
+
+        // When close enough, hand off to idle hover seamlessly
+        const dist = Math.abs(hoverX - dragPositionRef.current.x) +
+                     Math.abs(hoverY - dragPositionRef.current.y) +
+                     Math.abs(hoverZ - dragPositionRef.current.z)
+        if (dist < 0.001) {
+          dragPositionRef.current = null
+        }
+      } else {
+        // Idle: gentle hover float
+        groupRef.current.position.set(hoverX, hoverY, hoverZ)
       }
     }
 
     ticker.add(hover)
-    return () => {
-      ticker.remove(hover)
-    }
-  }, [position, isVisible, riseOffset])
+    return () => ticker.remove(hover)
+  }, [position, isVisible, riseOffset, gltf])
 
+  // Convert screen coordinates to world position on the pen's z-plane
+  const screenToWorld = (clientX: number, clientY: number): THREE.Vector3 => {
+    const ndc = new THREE.Vector3(
+      (clientX / window.innerWidth) * 2 - 1,
+      -(clientY / window.innerHeight) * 2 + 1,
+      0.5
+    )
+    ndc.unproject(camera)
+    const dir = ndc.sub(camera.position).normalize()
+    const dist = (position[2] - camera.position.z) / dir.z
+    return camera.position.clone().add(dir.multiplyScalar(dist))
+  }
 
   const handlePointerDown = (e: any) => {
     e.stopPropagation()
     setIsDragging(true)
     isDraggingRef.current = true
-    dragStartRef.current = { x: e.clientX, y: e.clientY }
-    baseRotationRef.current = dragRotation
     document.body.style.cursor = 'grabbing'
+
+    // Stop any in-progress rotation animation
+    rotationAnimRef.current?.stop()
+    dragPositionRef.current = null
+    dragTargetRef.current = null
+
+    // Animate rotation to drag configuration (normalize so each axis takes shortest path)
+    const cur = currentRotationRef.current
+    rotationAnimRef.current = new Animation({
+      from: { ...cur },
+      to: {
+        x: normalizeAngle(DRAG_ROTATION[0], cur.x),
+        y: normalizeAngle(DRAG_ROTATION[1], cur.y),
+        z: normalizeAngle(DRAG_ROTATION[2], cur.z),
+      },
+      duration: 400,
+      easing: Easing.easeOutCubic,
+      onUpdate: (value) => { currentRotationRef.current = value },
+      onComplete: () => { rotationAnimRef.current = null }
+    })
+    rotationAnimRef.current.start()
+
+    // Snap drag position to current group position so there's no jump
+    if (groupRef.current) {
+      const p = groupRef.current.position
+      dragPositionRef.current = { x: p.x, y: p.y, z: p.z }
+    }
   }
 
   useEffect(() => {
     if (isDragging) {
       const handleGlobalMove = (e: MouseEvent) => {
-        if (dragStartRef.current) {
-          const deltaX = e.clientX - dragStartRef.current.x
-
-          // Rotation based solely on horizontal movement
-          const rotationAmount = deltaX / 100
-
-          setDragRotation(baseRotationRef.current + rotationAmount)
-        }
+        const worldPos = screenToWorld(e.clientX, e.clientY)
+        dragTargetRef.current = { x: worldPos.x, y: worldPos.y, z: worldPos.z }
       }
 
       const handleGlobalUp = () => {
         isDraggingRef.current = false
         setIsDragging(false)
-        dragStartRef.current = null
-        // Reset cursor - check if still hovering over the pen
         document.body.style.cursor = 'auto'
+
+        // Stop rotation anim if still running
+        rotationAnimRef.current?.stop()
+
+        // Animate rotation back to rest (normalize so each axis takes shortest path)
+        const curRot = currentRotationRef.current
+        rotationAnimRef.current = new Animation({
+          from: { ...curRot },
+          to: {
+            x: normalizeAngle(rotation[0], curRot.x),
+            y: normalizeAngle(rotation[1], curRot.y),
+            z: normalizeAngle(rotation[2], curRot.z),
+          },
+          duration: 600,
+          easing: Easing.easeOutCubic,
+          onUpdate: (value) => { currentRotationRef.current = value },
+          onComplete: () => { rotationAnimRef.current = null }
+        })
+        rotationAnimRef.current.start()
+
+        // Position return is handled by the hover callback's lerp
+        // dragPositionRef stays non-null so the lerp knows to ease back
+        dragTargetRef.current = null
       }
 
       window.addEventListener('mousemove', handleGlobalMove)
@@ -168,7 +272,7 @@ function PenMesh({
         window.removeEventListener('mouseup', handleGlobalUp)
       }
     }
-  }, [isDragging])
+  }, [isDragging, rotation, position, riseOffset])
 
   return (
     <group
@@ -177,15 +281,11 @@ function PenMesh({
       onPointerDown={handlePointerDown}
       onPointerOver={(e) => {
         e.stopPropagation()
-        if (!isDragging) {
-          document.body.style.cursor = 'grab'
-        }
+        if (!isDragging) document.body.style.cursor = 'grab'
       }}
       onPointerOut={(e) => {
         e.stopPropagation()
-        if (!isDragging) {
-          document.body.style.cursor = 'auto'
-        }
+        if (!isDragging) document.body.style.cursor = 'auto'
       }}
     >
       <primitive object={gltf.scene} />
@@ -283,152 +383,6 @@ function CapMesh({
   )
 }
 
-function InkMesh({
-  scale = 1,
-  position = [0, 0, 0],
-  rotation = [0, 0, 0],
-  materialOverrides = [],
-  scrollContainer,
-  isVisible = true
-}: {
-  scale: number
-  position: [number, number, number]
-  rotation: [number, number, number]
-  materialOverrides?: MaterialOverride[]
-  scrollContainer?: React.RefObject<HTMLDivElement>
-  isVisible?: boolean
-}) {
-  const groupRef = useRef<THREE.Group>(null!)
-  const gltf = useLoader(GLTFLoader, '/ink.glb')
-
-  const [animatedRotation, setAnimatedRotation] = useState<[number, number, number]>(rotation)
-  const clickAnimationRef = useRef<Animation<any> | null>(null)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const timeRef = useRef(0)
-  const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
-  
-  // Rise-up animation on mount
-  const [riseOffset, setRiseOffset] = useState(-3)
-  const hasAnimatedRef = useRef(false)
-
-  // Rise-up animation on first load
-  useEffect(() => {
-    if (!hasAnimatedRef.current && isVisible) {
-      hasAnimatedRef.current = true
-      
-      // Add slight delay for staggered effect
-      setTimeout(() => {
-        const riseAnimation = new Animation({
-          from: -3,
-          to: 0,
-          duration: 1200,
-          easing: Easing.easeOutCubic,
-          onUpdate: (value) => {
-            setRiseOffset(value)
-          }
-        })
-        
-        riseAnimation.start()
-      }, 300) // 300ms delay after cap
-    }
-  }, [isVisible])
-
-  // Apply rotation and material overrides
-  useEffect(() => {
-    if (gltf.scene) {
-      // Apply material overrides
-      applyMaterialOverrides(gltf.scene, materialOverrides)
-
-      // Apply rotation directly to the loaded scene
-      gltf.scene.rotation.set(animatedRotation[0], animatedRotation[1], animatedRotation[2])
-
-      // Ensure all meshes in the scene can receive pointer events
-      gltf.scene.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh
-          mesh.raycast = THREE.Mesh.prototype.raycast
-        }
-      })
-    }
-  }, [gltf, animatedRotation, materialOverrides])
-
-  // Hovering animation - only runs when visible
-  useEffect(() => {
-    if (!isVisible) return
-
-    const hover = () => {
-      if (groupRef.current) {
-        timeRef.current += 0.008
-        const offsetX = Math.sin(timeRef.current * 0.7 + offsetRef.current.x) * 0.08
-        const offsetY = Math.sin(timeRef.current * 0.5 + offsetRef.current.y) * 0.1
-        const offsetZ = Math.cos(timeRef.current * 0.6) * 0.02
-
-        groupRef.current.position.set(
-          position[0] + offsetX,
-          position[1] + offsetY + riseOffset,
-          position[2] + offsetZ
-        )
-      }
-    }
-
-    ticker.add(hover)
-    return () => ticker.remove(hover)
-  }, [position, isVisible, riseOffset])
-
-  // Handle click to rotate on z-axis
-  const handleClick = () => {
-    if (isAnimating) return // Prevent multiple clicks during animation
-
-    setIsAnimating(true)
-
-    // Stop any existing click animation
-    if (clickAnimationRef.current) {
-      clickAnimationRef.current.stop()
-    }
-
-    // Get current rotation
-    const currentRotation = animatedRotation
-
-    clickAnimationRef.current = new Animation({
-      from: {
-        rotZ: currentRotation[2]
-      },
-      to: {
-        rotZ: currentRotation[2] + Math.PI // 180 degrees
-      },
-      duration: 500,
-      easing: Easing.easeInOutCubic,
-      onUpdate: (value) => {
-        setAnimatedRotation([currentRotation[0], currentRotation[1], value.rotZ])
-      },
-      onComplete: () => {
-        setIsAnimating(false)
-      }
-    })
-    clickAnimationRef.current.start()
-  }
-
-  return (
-    <group
-      ref={groupRef}
-      scale={scale}
-      onClick={(e) => {
-        e.stopPropagation()
-        handleClick()
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation()
-        document.body.style.cursor = 'pointer'
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation()
-        document.body.style.cursor = 'auto'
-      }}
-    >
-      <primitive object={gltf.scene} />
-    </group>
-  )
-}
 
 /**
  * CameraController - Adjusts camera position based on viewport width
@@ -440,28 +394,28 @@ function CameraController() {
 
   useEffect(() => {
     if (camera instanceof THREE.PerspectiveCamera) {
-      // Adjust camera Z position based on viewport width
-      // Mobile: farther away, Desktop: closer
+      // Adjust camera position based on viewport width
+      // Canvas is full-screen, so offset camera X to keep models on the right
       let zPosition = 7 // Default desktop
-      let xPosition = 0
+      let xPosition = -2 // Offset left so models appear on the right
       let yPosition = 0
 
       if (isMobileOnly) {
-        // Mobile (< 768px): zoom way out
+        // Mobile (< 768px): zoom way out, center models
         xPosition = 2.5
         yPosition = -2
         zPosition = 12
       } else if (isTabletDown) {
-        // Tablet (768px - 1023px): zoom out a bit
-        xPosition = 0
+        // Tablet (768px - 1023px): zoom out, slight offset
+        xPosition = -1.5
         zPosition = 10
       } else if (width < 1440) {
         // Desktop (1024px - 1439px): slight zoom out
         zPosition = 10
-        xPosition = 0
+        xPosition = -1.5
         yPosition = 0
       }
-      // Wide (>= 1440px): use default (8)
+      // Wide (>= 1440px): use defaults (x=-2, z=7)
       camera.position.x = xPosition
       camera.position.y = yPosition
       camera.position.z = zPosition
@@ -502,16 +456,12 @@ function Scene({
   scrollContainer,
   penScale,
   capScale,
-  inkScale,
   penPosition = [3, 0, 0],
   capPosition = [-3, 0, 0],
-  inkPosition = [0, 0, 0],
   penRotation = [0, 0, 0],
   capRotation = [0, 0, 0],
-  inkRotation = [0, 0, 0],
   penMaterialOverrides,
-  capMaterialOverrides,
-  inkMaterialOverrides
+  capMaterialOverrides
 }: HomeSceneProps) {
   return (
     <>
@@ -550,16 +500,6 @@ function Scene({
           isVisible={isVisible}
         />
 
-        {inkScale && (
-          <InkMesh
-            scale={inkScale}
-            position={inkPosition}
-            rotation={inkRotation}
-            materialOverrides={inkMaterialOverrides}
-            scrollContainer={scrollContainer}
-            isVisible={isVisible}
-          />
-        )}
       </Suspense>
     </>
   )
@@ -593,16 +533,12 @@ function HomeScene({
   scrollContainer,
   penScale = 2,
   capScale = 1.5,
-  inkScale,
   penPosition = [3, 0, 0],
   capPosition = [-3, 0, 0],
-  inkPosition = [0, 0, 0],
   penRotation = [0, 0, 0],
   capRotation = [0, 0, 0],
-  inkRotation = [0, 0, 0],
   penMaterialOverrides,
-  capMaterialOverrides,
-  inkMaterialOverrides
+  capMaterialOverrides
 }: HomeSceneProps) {
   return (
     <Canvas
@@ -620,16 +556,12 @@ function HomeScene({
         scrollContainer={scrollContainer}
         penScale={penScale}
         capScale={capScale}
-        inkScale={inkScale}
         penPosition={penPosition}
         capPosition={capPosition}
-        inkPosition={inkPosition}
         penRotation={penRotation}
         capRotation={capRotation}
-        inkRotation={inkRotation}
         penMaterialOverrides={penMaterialOverrides}
         capMaterialOverrides={capMaterialOverrides}
-        inkMaterialOverrides={inkMaterialOverrides}
       />
     </Canvas>
   )

@@ -139,18 +139,55 @@ $primary: #222222;
       @media (max-width: 767px) {
         font-size: 0.9rem;
       }
-    }
-  }
 
-  .nav-dot {
-    position: absolute;
-    right: -12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 5px;
-    height: 5px;
-    background-color: $primary;
-    border-radius: 50%;
+      .nav-underline {
+        position: absolute;
+        bottom: -0.2rem;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        border-radius: 1px;
+        overflow: hidden;
+        pointer-events: none;
+
+        .underline-inner1 {
+          width: 100%;
+          height: 100%;
+          background-color: #222222;
+//#407c80;
+          /* Start off-screen right by default */
+          transform: translateX(101%);
+          transition: none;
+
+          /* Utility state used to ensure first render doesn't animate */
+          &.initial {
+            transition: none;
+          }
+
+          /* Pre-enter state: explicitly off-screen without transition */
+          &.pre-enter {
+            transform: translateX(101%);
+            transition: none;
+          }
+
+          /* Active (enter) — only animate when not the initial render */
+          &.active:not(.initial) {
+            transform: translateX(0);
+            transition: transform 0.45s cubic-bezier(0.6, -0.28, 0.735, 0.045);
+          }
+
+          /* Exiting: slide left using an animation; JS will remove the class on animationend to reset */
+          &.exiting {
+            animation: navUnderlineExit 0.45s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+          }
+        }
+      }
+
+      @keyframes navUnderlineExit {
+        from { transform: translateX(0); }
+        to { transform: translateX(-101%); }
+      }
+    }
   }
 
   &.loaded {

@@ -9,7 +9,6 @@
   &.loaded {
     .home-scene-container {
       opacity: 1;
-      transform: translateY(-50%);
       transition-delay: 1s;
     }
 
@@ -26,8 +25,7 @@
     transform: translate(-50%, 0);
     width: clamp( 20rem, calc(100% - 32rem), 1440px);
     height: clamp(200px, 100vh, 80rem);
-    //background-color: blue;
-    display: flex;
+    z-index: 2;
 
     @media (max-width: 1440px) {
        width: clamp( 20rem, calc(100% - 24rem), 1440px);
@@ -46,32 +44,21 @@
   }
 
   .home-scene-container {
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 0;
-    width: 40%;
-    height: clamp(600px, 100vh, 60rem);
-    z-index: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: clamp(200px, 100vh, 80rem);
+    z-index: 5;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.6s ease;
+    //background-color: red;
 
     canvas {
       width: 100% !important;
       height: 100% !important;
-      pointer-events: auto; // Enable pointer events for the canvas
-    }
-
-    @media (max-width: 1440px) {
-      width: 45%;
-    }
-    @media screen and (max-width: 1024px) {
-      width: 40%;
-    }
-    // Mobile only (< 768px)
-    @media (max-width: 767px) {
-      //opacity: 0.5;
+      pointer-events: auto;
     }
   }
 

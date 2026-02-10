@@ -1,7 +1,7 @@
 import { Canvas, useLoader, useThree, useFrame } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
-import { useMemo, useEffect, useRef, useState } from 'react';
+import { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { ticker } from '../../../utils/AnimationTicker';
 import { Html } from '@react-three/drei';
 
@@ -137,7 +137,7 @@ interface PhysicsPlayerProps {
 }
 
 function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize, mapWidth, mapHeight, playerPositionRef }: PhysicsPlayerProps) {
-  const { camera, viewport } = useThree();
+  const { camera, viewport, gl } = useThree();
   const meshRef = useRef<THREE.Mesh>(null!);
   const velocityRef = useRef({ x: 0, y: 0 });
   const keysRef = useRef({ left: false, right: false, up: false });
@@ -282,6 +282,55 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+
+  // Touch/Drag controls
+  useEffect(() => {
+    let startX = 0;
+    let isDragging = false;
+    const threshold = 20; // pixels to drag before moving
+
+    const handlePointerDown = (e: PointerEvent) => {
+      startX = e.clientX;
+      isDragging = true;
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isDragging) return;
+      
+      const currentX = e.clientX;
+      const diff = currentX - startX;
+
+      if (diff > threshold) {
+        keysRef.current.right = true;
+        keysRef.current.left = false;
+      } else if (diff < -threshold) {
+        keysRef.current.left = true;
+        keysRef.current.right = false;
+      } else {
+        keysRef.current.left = false;
+        keysRef.current.right = false;
+      }
+    };
+
+    const handlePointerUp = () => {
+      isDragging = false;
+      keysRef.current.left = false;
+      keysRef.current.right = false;
+    };
+
+    const canvas = gl.domElement;
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [gl.domElement]);
 
   // Physics update loop
   useEffect(() => {
@@ -452,19 +501,81 @@ function FloatingSprite({ position }: { position: [number, number, number] }) {
   );
 }
 
-function TextBox({ visible, text }: { visible: boolean, text: string }) {
+function TextBox({ visible, text, type = 'interact', faceSprite, onClose }: { visible: boolean, text: string, type?: 'interact' | 'dialogue', faceSprite?: string, onClose: () => void }) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      if (type === 'dialogue') {
+        setDisplayedText('');
+        setIsTyping(true);
+        let index = 0;
+        
+        if (timerRef.current) clearInterval(timerRef.current);
+        
+        timerRef.current = setInterval(() => {
+          if (index < text.length) {
+            index++;
+            setDisplayedText(text.slice(0, index));
+          } else {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setIsTyping(false);
+          }
+        }, 30);
+      } else {
+        setDisplayedText(text);
+        setIsTyping(false);
+      }
+    } else {
+      setDisplayedText('');
+      setIsTyping(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [visible, text]);
+
+  const handleInteract = useCallback(() => {
+    if (isTyping) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setDisplayedText(text);
+      setIsTyping(false);
+    } else {
+      onClose();
+    }
+  }, [isTyping, text, onClose]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleInteract();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible, handleInteract]);
+
   if (!visible) return null;
 
   return (
     <Html fullscreen className="footer-textbox-container" zIndexRange={[100, 0]}>
-      <div className="footer-textbox">
-        {text}
+      <div className="footer-textbox-wrapper" onClick={handleInteract}>
+        <div className={`footer-textbox ${type}`}>
+          {faceSprite && <img src={faceSprite} alt="Speaker" className="textbox-face" />}
+          <div className="textbox-content">
+            {displayedText}
+          </div>
+        </div>
       </div>
     </Html>
   );
 }
 
-function InteractionZone({ targetPosition, playerPositionRef, text, children }: { targetPosition: [number, number, number], playerPositionRef: React.MutableRefObject<THREE.Vector3>, text: string, children?: React.ReactNode }) {
+function InteractionZone({ targetPosition, playerPositionRef, text, children, type = 'interact', faceSprite }: { targetPosition: [number, number, number], playerPositionRef: React.MutableRefObject<THREE.Vector3>, text: string, children?: React.ReactNode, type?: 'interact' | 'dialogue', faceSprite?: string }) {
   const [inRange, setInRange] = useState(false);
   const [showText, setShowText] = useState(false);
 
@@ -492,29 +603,29 @@ function InteractionZone({ targetPosition, playerPositionRef, text, children }: 
   }, [targetPosition, inRange, playerPositionRef]);
 
   useEffect(() => {
-    if (!inRange) return;
+    if (!inRange || showText) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
-        setShowText(prev => !prev);
+        setShowText(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [inRange]);
+  }, [inRange, showText]);
 
   return (
     <>
       <group onClick={(e) => {
         if (inRange) {
           e.stopPropagation();
-          setShowText(prev => !prev);
+          setShowText(true);
         }
       }}>
         {children}
       </group>
-      <TextBox visible={showText} text={text} />
+      <TextBox visible={showText} text={text} type={type} faceSprite={faceSprite} onClose={() => setShowText(false)} />
     </>
   );
 }
@@ -628,7 +739,7 @@ function Scene() {
       <CameraFollower playerPositionRef={playerPositionRef} />
       
       {/* Floating Nostalgia Sprite with Interaction */}
-      <InteractionZone targetPosition={[5, -2, -0.5]} playerPositionRef={playerPositionRef} text="Hello Traveler!">
+      <InteractionZone targetPosition={[5, -2, -0.5]} playerPositionRef={playerPositionRef} text="Hello Traveler!" type="dialogue" faceSprite="/footer-env/Nostalgia.png">
         <FloatingSprite position={[5, -2.5, -0.5]} />
       </InteractionZone>
 
@@ -660,7 +771,7 @@ export const FooterCanvas: React.FC = () => {
         far: 1000
       }}
       gl={{ alpha: false, antialias: false }}
-      style={{ width: '100%', height: '100%', backgroundColor: '#000000' }}
+      style={{ width: '100%', height: '100%', backgroundColor: '#000000', touchAction: 'pan-y' }}
       frameloop="never"
     >
       <color attach="background" args={['#000000']} />

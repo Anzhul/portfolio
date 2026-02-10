@@ -8,9 +8,10 @@ interface ProjectCardProps {
   title: string;
   tags: string[];
   date: string;
+  size?: '1x1' | '2x2' | '3x3' | '4x4' | '2x4' | '4x2' | '8x4' | '8x2' | string; // Allow custom sizes as well
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ href, image, title, tags, date }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ href, image, title, tags, date, size = '1x1' }) => {
   const { triggerTransition } = usePageTransition();
 
   const handleClick = (e: React.MouseEvent) => {
@@ -21,7 +22,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ href, image, title, tags, dat
   const isVideo = image.endsWith('.webm') || image.endsWith('.mp4');
 
   return (
-    <a href={href} onClick={handleClick} className="project-card">
+    <a
+      href={href}
+      onClick={handleClick}
+      className={`project-card project-size-${size}`}
+    >
       <div className="project-media-wrapper">
         {isVideo ? (
           <video
@@ -39,15 +44,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ href, image, title, tags, dat
         )}
         <div className="project-info">
           <h3 className="project-title">{title}</h3>
+          <p className="project-date">{date}</p>
+          <div className="project-tags">
+            {tags.map((tag, index) => (
+              <span key={tag} className="project-tag">{tag}{index < tags.length - 1 && ','}</span>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="project-card-info">
-        <div className="project-tags">
-          {tags.map((tag, index) => (
-            <span key={tag} className="project-tag">{tag}{index < tags.length - 1 && ','}</span>
-          ))}
-        </div>
-        <span className="project-date">{date}</span>
       </div>
     </a>
   );
@@ -66,30 +69,34 @@ export const Projects: React.FC = () => {
             title="Juniper"
             tags={['React', 'TypeScript']}
             date="2026"
+            size="4x4"
           />
           <ProjectCard
             href="/rydmboat"
             image="/spaceship2.png"
             title="Rymdboat"
-            tags={['3D', 'WebGL', 'Three.js']}
+            tags={["3D", "WebGL", "Three.js"]}
             date="2025"
+            size="4x2"
           />
           <ProjectCard
             href="/syrte"
             image="/syrte1.png"
             title="Syrte World"
-            tags={['3D', 'WebGL']}
+            tags={["3D", "WebGL"]}
             date="2025"
+            size="2x2"
           />
           <ProjectCard
             href="/arcade_ship"
             image="/arcade.webm"
             title="Arcade Ship"
-            tags={['3D', 'WebGL']}
+            tags={["3D", "WebGL"]}
             date="2025"
+            size="2x2"
           />
         </div>
       </main>
     </div>
   );
-};
+}
