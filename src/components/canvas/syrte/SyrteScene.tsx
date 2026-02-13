@@ -115,7 +115,7 @@ function ZoomIn({ ready }: { ready: boolean }) {
  * TerrainModel - Loads a GLTF/GLB terrain model with an optional color map overlay
  */
 function TerrainModel({
-  modelPath = '/syrte_terrain.glb',
+  modelPath = '/syrte/syrte_terrain.glb',
   colorMapPath,
   colorMapTifPath,
   onTextureLoaded,
@@ -128,6 +128,7 @@ function TerrainModel({
   visible?: boolean
 }) {
   const gltf = useLoader(GLTFLoader, modelPath)
+  const groupRef = useRef<THREE.Group>(null!)
 
   // Recompute smooth normals to soften faceted shading
   useEffect(() => {
@@ -137,6 +138,17 @@ function TerrainModel({
       }
     })
   }, [gltf])
+
+  // Rotate slowly around Z-axis
+  useEffect(() => {
+    const animate = (_t: number, dt: number) => {
+      if (groupRef.current) {
+        groupRef.current.rotation.y += 0.00005 * dt
+      }
+    }
+    ticker.add(animate)
+    return () => ticker.remove(animate)
+  }, [])
 
   useEffect(() => {
     const mapPath = colorMapTifPath || colorMapPath
@@ -178,7 +190,11 @@ function TerrainModel({
     })
   }, [gltf, colorMapPath, colorMapTifPath, onTextureLoaded])
 
-  return <primitive object={gltf.scene} visible={visible} />
+  return (
+    <group ref={groupRef}>
+      <primitive object={gltf.scene} visible={visible} />
+    </group>
+  )
 }
 
 /**
@@ -232,7 +248,7 @@ function SyrteScene({
     <Canvas
       className="syrte-scene-canvas"
       frameloop="never"
-      camera={{ position: [0, 8, 14], fov: 50 }}
+      camera={{ position: [0, 0, 10], fov: 50 }}
       gl={{
         alpha: true,
         antialias: true,

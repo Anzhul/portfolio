@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import { loadingManager } from '../../utils/SimpleLoadingManager'
 import { CameraProvider } from '../../context/CameraContext'
 import { WorldProvider } from '../../context/WorldContext'
@@ -8,9 +8,16 @@ import { SceneProvider } from '../../context/SceneContext'
 import { CameraViewport, type CameraViewportHandle } from '../../components/canvas/CameraViewport'
 import { IslandLoader } from '../../components/loading/IslandLoader'
 import { ISLAND_REGISTRY } from '../../config/islandRegistry'
+import { SECTION_REGISTRY } from '../../config/sectionRegistry'
 import { RouteSync } from '../../components/routing/RouteSync'
 import { Map } from '../../components/UI/map/Map'
 import { useToolbar } from '../../context/ToolbarContext'
+
+interface NavigationTarget {
+  id: string
+  position: [number, number, number]
+  name: string
+}
 
 interface Experience3DContentProps {
   cameraViewportRef: React.RefObject<CameraViewportHandle | null>
@@ -53,18 +60,67 @@ interface Experience3DProps {
 export function Experience3D({ isVisible }: Experience3DProps) {
   const cameraViewportRef = useRef<CameraViewportHandle>(null)
   const [isMapVisible, setIsMapVisible] = useState(false)
+  const currentIndexRef = useRef(0)
   const { setToolbarHandlers } = useToolbar()
 
-  const handleZoomIn = () => {
-    if (cameraViewportRef.current) {
-      cameraViewportRef.current.zoomIn()
+  // Build ordered list of all navigable targets (islands + sections)
+  const navigationTargets = useMemo<NavigationTarget[]>(() => {
+    const targets: NavigationTarget[] = []
+
+    for (const island of Object.values(ISLAND_REGISTRY)) {
+      targets.push({
+        id: island.id,
+        position: island.position,
+        name: island.name,
+      })
     }
+
+    for (const section of Object.values(SECTION_REGISTRY)) {
+      const parentIsland = ISLAND_REGISTRY[section.islandId]
+      const pos: [number, number, number] =
+        section.positionMode === 'relative' && parentIsland
+          ? [
+              parentIsland.position[0] + section.position[0],
+              parentIsland.position[1] + section.position[1],
+              parentIsland.position[2] + section.position[2],
+            ]
+          : section.position
+      targets.push({
+        id: section.id,
+        position: pos,
+        name: section.name,
+      })
+    }
+
+    return targets
+  }, [])
+
+  const navigateToIndex = (index: number) => {
+    const target = navigationTargets[index]
+    if (!target || !cameraViewportRef.current) return
+    currentIndexRef.current = index
+    cameraViewportRef.current.moveToIsland(
+      target.position[0],
+      target.position[1],
+      target.position[2],
+      { animated: true, easing: 'easeOutQuart' }
+    )
   }
 
-  const handleZoomOut = () => {
-    if (cameraViewportRef.current) {
-      cameraViewportRef.current.zoomOut()
-    }
+  const handleNavigatePrev = () => {
+    const prevIndex =
+      currentIndexRef.current <= 0
+        ? navigationTargets.length - 1
+        : currentIndexRef.current - 1
+    navigateToIndex(prevIndex)
+  }
+
+  const handleNavigateNext = () => {
+    const nextIndex =
+      currentIndexRef.current >= navigationTargets.length - 1
+        ? 0
+        : currentIndexRef.current + 1
+    navigateToIndex(nextIndex)
   }
 
   const handleToggleMap = () => {
@@ -75,8 +131,8 @@ export function Experience3D({ isVisible }: Experience3DProps) {
   useEffect(() => {
     if (isVisible) {
       setToolbarHandlers({
-        onZoomIn: handleZoomIn,
-        onZoomOut: handleZoomOut,
+        onNavigatePrev: handleNavigatePrev,
+        onNavigateNext: handleNavigateNext,
         onToggleMap: handleToggleMap,
         isMapVisible
       })
@@ -88,7 +144,7 @@ export function Experience3D({ isVisible }: Experience3DProps) {
     return () => {
       setToolbarHandlers({})
     }
-  }, [isMapVisible, isVisible])
+  }, [isMapVisible, isVisible, navigationTargets])
 
   return (
     <WorldProvider>

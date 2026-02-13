@@ -1,26 +1,39 @@
 .arcadeship-page {
   min-height: 100vh;
+  width: 100%;
   background: white;
   color: #222222;
+  position: relative;
+  gap: 2rem;
+  flex-direction: row;
+  justify-content: center;
 
   .arcadeship-header {
     position: relative;
-    width: 100%;
-    padding: 4rem 10rem 2rem 10rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: clamp( 40rem, calc(100% - 20rem), 1600px);
+    height: auto;
+    margin-top: clamp( 5rem, 35vh, 15rem);
+    padding-left: 1.618034 * 2rem;
+    padding-right: 1.618034 * 2rem;
+    padding-bottom: 5rem;
     text-align: left;
 
-    // Tablet and below
-    @media screen and (max-width: 1023px) {
-      padding: 3rem 4rem 1.5rem 4rem;
-    }
+      @media screen and (max-width: 1440px) {
+        width: calc(100% - 16rem);
+        padding: 2rem 4rem 3rem 4rem;
+      }
 
-    // Mobile
-    @media screen and (max-width: 767px) {
-      padding: 2rem 1rem 1rem 1rem;
-    }
+      @media screen and (max-width: 1024px) {
+        width: calc(100% - 2rem);
+        padding: 1.5rem 1rem 2rem 1rem;
+      }
 
     h1 {
-      font-size: 3.5rem;
+      font-size: 4.5rem;
       margin: 0;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 500;
@@ -36,9 +49,9 @@
     }
 
     p {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       margin: 1rem 0 0;
-      opacity: 0.8;
+      opacity: 1;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 400;
 
@@ -53,8 +66,45 @@
   }
 
   .arcadeship-content {
-    position: relative;
-    padding: 2rem 10rem 4rem 10rem;
+      position: relative;
+      margin: 0 auto;
+      top: 2rem;
+      width: clamp( 40rem, calc(100% - 20rem), 1600px);
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      padding-left: 1.618034 * 2rem;
+      padding-right: 1.618034 * 2rem;
+      padding-bottom: 5rem;
+      text-align: left;
+      z-index: 2;
+
+      @media screen and (max-width: 1440px) {
+        width: calc(100% - 16rem);
+      }
+
+      @media screen and (max-width: 1024px) {
+        width: calc(100% - 2rem);
+      }
+
+      h2 {
+        position: relative;
+        top: 2rem;
+        font-size: 2.5rem;
+        margin: 0;
+        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        display: none;
+      }
+
+      p {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        opacity: 0.95;
+        max-width: 700px;
+        margin: 0 auto;
+      }
 
     // Tablet and below
     @media screen and (max-width: 1023px) {
@@ -66,8 +116,52 @@
       padding: 1.5rem 1rem 2rem 1rem;
     }
 
-    .arcadeship-details {
+    .arcadeship-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
       width: 100%;
+
+      @media screen and (max-width: 767px) {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .gallery-item {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        border-radius: 8px;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+      }
+    }
+
+    .arcadeship-details {
+      position: relative;
+      margin-top: 5rem;
+      margin-bottom: 5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: left;
+      gap: 3rem;
+
+      h2 {
+        display: block;
+      }
+
+      p {
+        font-size: 1.25rem;
+        margin: 1rem 0 0;
+        opacity: 1;
+        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+        font-weight: 400;
+      }
     }
   }
 

@@ -49,19 +49,6 @@ export function Map({ cameraViewportRef, isVisible = false }: MapProps) {
     }
   }
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only start drag if clicking on the header
-    if (!(e.target as HTMLElement).closest('.map-header')) return
-
-    setIsDragging(true)
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      initialX: position.x,
-      initialY: position.y
-    }
-  }
-
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return
 

@@ -44,11 +44,11 @@
   }
 
   .home-scene-container {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: clamp(200px, 100vh, 80rem);
+    height: 100vh;
     z-index: 5;
     pointer-events: none;
     opacity: 0;
@@ -58,7 +58,7 @@
     canvas {
       width: 100% !important;
       height: 100% !important;
-      pointer-events: auto;
+      pointer-events: none;
     }
   }
 

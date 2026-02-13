@@ -14,7 +14,7 @@ interface HomeProps {
 export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
   const { isActive, triggerTransition } = usePageTransition();
   const { breakpoint } = useViewport();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const internalRef = useRef<HTMLDivElement>(null);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
   const handleProjectClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -36,27 +36,27 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
         };
       case 'tablet':
         return {
-          penPosition: [0, 1.0, 0] as [number, number, number],
-          capPosition: [0, 2.5, 0] as [number, number, number],
-          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
+          penPosition: [1.25, 1.0, 0] as [number, number, number],
+          capPosition: [1.25, 3.25, 0] as [number, number, number],
+          penRotation: [-Math.PI/2, -Math.PI/7, 36] as [number, number, number],
           capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
-          penScale: 0.025,
-          capScale: 0.025,
+          penScale: 0.035,
+          capScale: 0.035,
         };
       case 'desktop': // 1024–1439px
         return {
-          penPosition: [0, 1.0, 0] as [number, number, number],
-          capPosition: [0, 2.5, 0] as [number, number, number],
+          penPosition: [1.5, 1, 0] as [number, number, number],
+          capPosition: [1.5, 3.25, 0] as [number, number, number],
           penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
           capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
-          penScale: 0.025,
-          capScale: 0.025,
+          penScale: 0.035,
+          capScale: 0.035,
         };
       case 'wide': // 1440px+
       default:
         return {
-          penPosition: [-0.25, 0.75, 0] as [number, number, number],
-          capPosition: [-0.25, 2.0, 0] as [number, number, number],
+          penPosition: [2.0, 0.65, 0] as [number, number, number],
+          capPosition: [2.0, 2.25, 0] as [number, number, number],
           penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
           capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
           penScale: 0.025,
@@ -85,7 +85,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
 
   return (
     <div
-      ref={containerRef}
+      ref={internalRef}
       className={`home ${isActive ? 'active' : ''} ${isPageLoaded ? 'loaded' : ''}`}
     >
       {/* Full-screen canvas with pen and cap */}
@@ -94,7 +94,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
         component={HomeScene}
         componentProps={{
           isVisible,
-          scrollContainer: containerRef,
+          scrollContainer: internalRef,
           penScale,
           capScale,
           penPosition,
@@ -155,7 +155,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
         <header className="home-header">
           <div className="home-intro-content">
             <h1>Hi,</h1>
-            <h1>I'm Anzhu—</h1>
+            <h1>I'm <span>Anzhu</span>—</h1>
             <p className="tagline">An artist currently entangled with design and development.</p>
             <br></br>
           </div>
@@ -196,7 +196,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
               </div>
               <div
                 className="project-image"
-                style={{ backgroundImage: `url('/syrte1.png')` }}
+                style={{ backgroundImage: `url('/syrte/syrte1.png')` }}
               ></div>
             </a>
             <a href="/arcade_ship" onClick={(e) => handleProjectClick(e, '/arcade_ship')} className="project-card project-card-4">

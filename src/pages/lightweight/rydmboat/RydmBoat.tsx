@@ -7,9 +7,13 @@ import { Lazy3DObject } from '../../../components/lazy/Lazy3DObject';
 // Lazy load the 3D scene
 const RydmBoatScene = lazy(() => import('../../../components/canvas/rydmboat/RydmBoatScene'));
 
-export const RydmBoat: React.FC = () => {
+interface RydmBoatProps {
+  isVisible?: boolean;
+}
+
+export const RydmBoat: React.FC<RydmBoatProps> = ({ isVisible = true }) => {
   const { isActive } = usePageTransition();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const internalRef = useRef<HTMLDivElement>(null);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
   useEffect(() => {
@@ -28,7 +32,7 @@ export const RydmBoat: React.FC = () => {
   return (
     <ScrollProvider>
       <div
-        ref={containerRef}
+        ref={internalRef}
         className={`rydmboat-page ${isActive ? 'active' : ''} ${isPageLoaded ? 'loaded' : ''}`}
       >
         {/* Fixed 3D Scene - stays in viewport while content scrolls */}
@@ -37,8 +41,8 @@ export const RydmBoat: React.FC = () => {
             loadStrategy="immediate"
             component={RydmBoatScene}
             componentProps={{
-              isVisible: true,
-              scrollContainer: containerRef.current,
+              isVisible,
+              scrollContainer: internalRef.current,
               // Add your boat model here when available:
               // modelPath: '/boat.glb',
               modelScale: 1.2,

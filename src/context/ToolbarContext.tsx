@@ -1,14 +1,14 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
 interface ToolbarContextType {
-  onZoomIn?: () => void
-  onZoomOut?: () => void
+  onNavigatePrev?: () => void
+  onNavigateNext?: () => void
   onToggleMap?: () => void
   isMapVisible?: boolean
   is3DActive?: boolean
   setToolbarHandlers: (handlers: {
-    onZoomIn?: () => void
-    onZoomOut?: () => void
+    onNavigatePrev?: () => void
+    onNavigateNext?: () => void
     onToggleMap?: () => void
     isMapVisible?: boolean
   }) => void
@@ -28,8 +28,8 @@ interface ToolbarProviderProps {
 
 export function ToolbarProvider({ children }: ToolbarProviderProps) {
   const [handlers, setHandlers] = useState<{
-    onZoomIn?: () => void
-    onZoomOut?: () => void
+    onNavigatePrev?: () => void
+    onNavigateNext?: () => void
     onToggleMap?: () => void
     isMapVisible?: boolean
   }>({})
@@ -39,7 +39,7 @@ export function ToolbarProvider({ children }: ToolbarProviderProps) {
   }
 
   // 3D experience is active if any handlers are set
-  const is3DActive = !!(handlers.onZoomIn || handlers.onZoomOut || handlers.onToggleMap)
+  const is3DActive = !!(handlers.onNavigatePrev || handlers.onNavigateNext || handlers.onToggleMap)
 
   return (
     <ToolbarContext.Provider value={{ ...handlers, setToolbarHandlers, is3DActive }}>

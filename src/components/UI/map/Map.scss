@@ -10,9 +10,9 @@ $phi-inverse: 0.618034;
 $phi-inverse-squared: 0.381966;
 $phi-inverse-cubed: 0.236068;
 
-$background: white;
-$primary: #222222;
-$border: #c6c6c6;
+$background: #222222;
+$primary: white;
+$border: #555555;
 
 .map-container {
   position: fixed;
@@ -37,7 +37,7 @@ $border: #c6c6c6;
     position: fixed;
     bottom: $phi-squared * 1rem;
     left: calc(50% + 6rem);
-    background: rgb(255, 255, 255);
+    background: $background;
     border-radius: 0.25rem;
     padding: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -152,7 +152,7 @@ $border: #c6c6c6;
     text-align: left;
 
     &:hover {
-      color: #474747;
+      color: #cccccc;
     }
 
     .island-icon {

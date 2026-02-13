@@ -12,42 +12,133 @@ $phi-inverse-cubed: 0.236068;
 
 $background: white;
 $primary: #222222;
-$border: #c6c6c6;
+$border: #222222;
 
 .toolbar {
   position: fixed;
-  bottom: $phi-squared * 1rem;
+  bottom: $phi-squared * 1.25rem;
   left: 50%;
   transform: translateX(-50%);
-  //background-color: rgb(193, 41, 201);
-  height: 2.4rem;
-  width: 10rem;
   z-index: 1000;
   pointer-events: auto;
   border-radius: 0.2rem;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  height: 4rem;
+  width: 6rem;
 
   &.active {
     opacity: 1;
     visibility: visible;
   }
 
-  .toolbar-content {
+  // When repositioned via drag, override default centering
+  &.toolbar--positioned {
+    bottom: auto;
+    transform: none;
+  }
+
+  &.dragging {
+    user-select: none;
+  }
+
+  // --- Top section: work button | gap | drag handle ---
+  .toolbar-top {
+    position: absolute;
+    top: 0;
+    height: 47.5%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+
+    .toolbar-button-tab {
+      width: 65%;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: white;
+      background-color: #222222;
+      border: none;
+      cursor: pointer;
+      padding: 0 0.5rem;
+      border-radius: 0.2rem;
+      white-space: nowrap;
+      transition: background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+
+      &:hover {
+        background-color: #333333;
+      }
+
+      &.active {
+        background-color: #333333;
+      }
+    }
+
+    .toolbar-top-gap {
+      width: 5%;
+      flex-shrink: 0;
+    }
+
+    .toolbar-drag {
+      width: 30%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      background-color: #222222;
+      border-radius: 0.2rem;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #333333;
+      }
+
+      &:active {
+        cursor: grabbing;
+      }
+
+      svg {
+        display: block;
+        opacity: 0.5;
+      }
+    }
+  }
+
+  // --- Bottom section ---
+  .toolbar-bottom {
+    position: absolute;
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-evenly;
-    gap: 0.25rem;
-    height: 100%;
+    height: 47.5%;
     width: 100%;
-    background-color: $background;
     border-radius: 0.2rem;
-    box-shadow: #22222233 0px 2px 6px;
-    padding: 0 0.5rem;
+    bottom: 0;
+    background-color: #222222;
   }
 
+  .toolbar-nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    height: 100%;
+
+    .toolbar-button {
+      width: 47.5%;
+    }
+  }
+
+  // --- Buttons ---
   .toolbar-button {
     font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
     font-size: 0.8rem;
@@ -58,11 +149,10 @@ $border: #c6c6c6;
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 0.15rem;
-    transition: background-color 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
+    width: 50%;
     height: 2rem;
     flex-shrink: 0;
 
@@ -73,18 +163,15 @@ $border: #c6c6c6;
       width: auto;
       height: auto;
       object-fit: contain;
+      transition: opacity 0.2s ease;
     }
 
-    &:hover {
-      background-color: #f0f0f0;
+    &:hover svg {
+      opacity: 0.5;
     }
 
-    &:active {
-      background-color: #e0e0e0;
-    }
-
-    &.active {
-      background-color: #f0f0f0;
+    &:active svg {
+      opacity: 0.35;
     }
   }
 }
