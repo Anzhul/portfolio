@@ -18,6 +18,7 @@ export interface HomeSceneProps {
   capRotation?: [number, number, number]
   penMaterialOverrides?: MaterialOverride[]
   capMaterialOverrides?: MaterialOverride[]
+  onReady?: () => void
 }
 
 /**
@@ -52,6 +53,11 @@ function PenMesh({
   const { camera, gl } = useThree()
   const timeRef = useRef(0)
   const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
+
+  // Set rotation synchronously so it's correct before first paint
+  useMemo(() => {
+    gltf.scene.rotation.set(rotation[0], rotation[1], rotation[2])
+  }, [gltf, rotation])
 
   // Pre-allocated objects for tip position computation (no GC pressure)
   const tipOffsetVec = useRef(new THREE.Vector3())
@@ -90,31 +96,8 @@ function PenMesh({
 
   const DRAG_ROTATION: [number, number, number] = [Math.PI / 0.32, -Math.PI / 20, -36]
 
-  // Rise-up animation on mount
-  const [riseOffset, setRiseOffset] = useState(-3)
-  const hasAnimatedRef = useRef(false)
-
-  // Rise-up animation on first load
-  useEffect(() => {
-    if (!hasAnimatedRef.current && isVisible) {
-      hasAnimatedRef.current = true
-
-      // Add delay for staggered effect
-      setTimeout(() => {
-        const riseAnimation = new Animation({
-          from: -3,
-          to: 0,
-          duration: 1200,
-          easing: Easing.easeOutCubic,
-          onUpdate: (value) => {
-            setRiseOffset(value)
-          }
-        })
-
-        riseAnimation.start()
-      }, 450)
-    }
-  }, [isVisible])
+  // Rise offset (no longer animated — page-level translateY handles the entrance)
+  const riseOffset = 0
 
   // Apply material overrides
   useEffect(() => {
@@ -331,6 +314,7 @@ function PenMesh({
   return (
     <group
       ref={groupRef}
+      position={adjustedPosition}
       scale={scale}
       onPointerDown={handlePointerDown}
       onPointerOver={(e) => {
@@ -492,6 +476,11 @@ function CapMesh({
   const timeRef = useRef(0)
   const offsetRef = useRef({ x: Math.random() * Math.PI * 2, y: Math.random() * Math.PI * 2 })
 
+  // Set rotation synchronously so it's correct before first paint
+  useMemo(() => {
+    gltf.scene.rotation.set(rotation[0], rotation[1], rotation[2])
+  }, [gltf, rotation])
+
   // Viewport-dependent position and rotation (same pattern as CameraController)
   const { isMobileOnly, isTabletDown, width } = useViewport()
 
@@ -509,31 +498,8 @@ function CapMesh({
     return rotation                           // Wide (>= 1440px)
   }, [isMobileOnly, isTabletDown, width, rotation])
 
-  // Rise-up animation on mount
-  const [riseOffset, setRiseOffset] = useState(-3)
-  const hasAnimatedRef = useRef(false)
-
-  // Rise-up animation on first load
-  useEffect(() => {
-    if (!hasAnimatedRef.current && isVisible) {
-      hasAnimatedRef.current = true
-      
-      // Add slight delay for staggered effect
-      setTimeout(() => {
-        const riseAnimation = new Animation({
-          from: -3,
-          to: 0,
-          duration: 1200,
-          easing: Easing.easeOutCubic,
-          onUpdate: (value) => {
-            setRiseOffset(value)
-          }
-        })
-        
-        riseAnimation.start()
-      }, 150)
-    }
-  }, [isVisible])
+  // Rise offset (no longer animated — page-level translateY handles the entrance)
+  const riseOffset = 0
 
   // Apply rotation and material overrides
   useEffect(() => {
@@ -570,7 +536,7 @@ function CapMesh({
   }, [adjustedPosition, isVisible, riseOffset])
 
   return (
-    <group ref={groupRef} scale={scale}>
+    <group ref={groupRef} position={adjustedPosition} scale={scale}>
       <primitive object={gltf.scene} />
     </group>
   )
@@ -660,6 +626,16 @@ function RenderTrigger({ isVisible = true }: { isVisible?: boolean }) {
 }
 
 /**
+ * ReadyNotifier - Signals that models inside Suspense have mounted
+ */
+function ReadyNotifier({ onReady }: { onReady?: () => void }) {
+  useEffect(() => {
+    onReady?.()
+  }, [onReady])
+  return null
+}
+
+/**
  * Scene - Wrapper component with Suspense for async loading
  */
 function Scene({
@@ -672,7 +648,8 @@ function Scene({
   penRotation = [0, 0, 0],
   capRotation = [0, 0, 0],
   penMaterialOverrides,
-  capMaterialOverrides
+  capMaterialOverrides,
+  onReady
 }: HomeSceneProps) {
   const penTipPosRef = useRef(new THREE.Vector3())
   const penDraggingRef = useRef(false)
@@ -719,6 +696,8 @@ function Scene({
           isVisible={isVisible}
         />
 
+        {/* Signal that models have loaded and mounted */}
+        <ReadyNotifier onReady={onReady} />
       </Suspense>
     </>
   )
@@ -757,7 +736,8 @@ function HomeScene({
   penRotation = [0, 0, 0],
   capRotation = [0, 0, 0],
   penMaterialOverrides,
-  capMaterialOverrides
+  capMaterialOverrides,
+  onReady
 }: HomeSceneProps) {
   return (
     <Canvas
@@ -783,6 +763,7 @@ function HomeScene({
         capRotation={capRotation}
         penMaterialOverrides={penMaterialOverrides}
         capMaterialOverrides={capMaterialOverrides}
+        onReady={onReady}
       />
     </Canvas>
   )

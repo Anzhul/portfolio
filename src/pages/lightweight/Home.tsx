@@ -1,4 +1,4 @@
-import React, { lazy, useRef, useState, useEffect, useMemo } from 'react';
+import React, { lazy, useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import './Home.scss';
 import { Lazy3DObject } from '../../components/lazy/Lazy3DObject';
 import { usePageTransition } from '../../context/PageTransitionContext';
@@ -65,21 +65,15 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
     }
   }, [breakpoint]);
 
+  // Disable scroll until 3D models are ready
   useEffect(() => {
-    // Wait for all resources to load
-    const handleLoad = () => {
-      // Small delay to ensure header is visible first
-      setTimeout(() => {
-        setIsPageLoaded(true);
-      }, 100);
-    };
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
-    if (document.readyState === 'complete') {
-      handleLoad();
-    } else {
-      window.addEventListener('load', handleLoad);
-      return () => window.removeEventListener('load', handleLoad);
-    }
+  const handleSceneReady = useCallback(() => {
+    setIsPageLoaded(true);
+    document.body.style.overflow = '';
   }, []);
 
 
@@ -95,6 +89,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
         componentProps={{
           isVisible,
           scrollContainer: internalRef,
+          onReady: handleSceneReady,
           penScale,
           capScale,
           penPosition,

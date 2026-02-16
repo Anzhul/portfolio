@@ -28,7 +28,7 @@ $border: #222222;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  height: 4rem;
+  height: 4.5rem;
   width: 6rem;
 
   &.active {
@@ -58,9 +58,10 @@ $border: #222222;
     gap: 0;
 
     .toolbar-button-tab {
-      width: 65%;
+      width: 70%;
+      height: 100%;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.8rem;
       font-weight: 400;
       letter-spacing: 0.04em;
       color: white;
@@ -90,6 +91,7 @@ $border: #222222;
 
     .toolbar-drag {
       width: 30%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -127,11 +129,14 @@ $border: #222222;
   }
 
   .toolbar-nav {
+    position: relative;
     display: flex;
+    left: 0.8rem;
     flex-direction: row;
     align-items: center;
-    gap: 0;
+    gap: 0.1rem;
     height: 100%;
+    //background-color: red;
 
     .toolbar-button {
       width: 47.5%;
@@ -147,7 +152,7 @@ $border: #222222;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 0;
     border-radius: 0.15rem;
     display: flex;
     align-items: center;
@@ -172,6 +177,14 @@ $border: #222222;
 
     &:active svg {
       opacity: 0.35;
+    }
+  }
+
+  .toolbar-button-fullscreen {
+    cursor: not-allowed;
+
+    svg {
+      opacity: 0.2;
     }
   }
 }

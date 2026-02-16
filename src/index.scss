@@ -6,6 +6,15 @@
   box-sizing: border-box;
 }
 
+html, body {
+  scrollbar-width: none; // Firefox
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; // Chrome, Safari, Edge
+}
+
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   line-height: 1.5;

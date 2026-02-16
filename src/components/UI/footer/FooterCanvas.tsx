@@ -1,9 +1,11 @@
-import { Canvas, useLoader, useThree } from '@react-three/fiber';
+import { Canvas, useLoader, useThree, createPortal } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { ticker } from '../../../utils/AnimationTicker';
 import { Html } from '@react-three/drei';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { applyMaterialOverrides, type MaterialOverride } from '../../canvas/home/materialUtils';
 
 // Import all Z layer JSON files
 import Z0Data from '../../../data/Z0.json';
@@ -148,10 +150,12 @@ interface PhysicsPlayerProps {
   mapWidth: number;
   mapHeight: number;
   playerPositionRef: React.MutableRefObject<THREE.Vector3>;
+  gameCamera: THREE.OrthographicCamera;
+  gameViewportWidth: number;
 }
 
-function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize, mapWidth, mapHeight, playerPositionRef }: PhysicsPlayerProps) {
-  const { camera, viewport, gl } = useThree();
+function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize, mapWidth, mapHeight, playerPositionRef, gameCamera, gameViewportWidth }: PhysicsPlayerProps) {
+  const { gl } = useThree();
   const meshRef = useRef<THREE.Mesh>(null!);
   const velocityRef = useRef({ x: 0, y: 0 });
   const keysRef = useRef({ left: false, right: false, up: false });
@@ -361,9 +365,9 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
       const currentPos = meshRef.current.position;
       
       // Calculate camera boundaries
-      const halfWidth = viewport.width / 2;
-      const cameraLeftEdge = camera.position.x - halfWidth;
-      const cameraRightEdge = camera.position.x + halfWidth;
+      const halfWidth = gameViewportWidth / 2;
+      const cameraLeftEdge = gameCamera.position.x - halfWidth;
+      const cameraRightEdge = gameCamera.position.x + halfWidth;
       const { minX, maxX } = boundsRef.current;
 
       // Horizontal movement
@@ -473,7 +477,7 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
 
     ticker.add(updatePhysics);
     return () => ticker.remove(updatePhysics);
-  }, [collisionTiles, collisionPosition, tileSize, pixelSize, planeWidth, planeHeight, runTextures, idleTexture, camera, viewport]);
+  }, [collisionTiles, collisionPosition, tileSize, pixelSize, planeWidth, planeHeight, runTextures, idleTexture, gameCamera, gameViewportWidth]);
 
   return (
     <mesh ref={meshRef} position={[playerPositionRef.current.x, playerPositionRef.current.y, playerPositionRef.current.z]}>
@@ -1132,41 +1136,35 @@ function NostalgiaDialogue({ position, playerPositionRef, onStartBattle }: { pos
 }
 
 // Camera follower component
-function CameraFollower({ playerPositionRef }: { playerPositionRef: React.MutableRefObject<THREE.Vector3> }) {
-  const { camera, viewport } = useThree();
+function CameraFollower({ playerPositionRef, gameCamera }: { playerPositionRef: React.MutableRefObject<THREE.Vector3>; gameCamera: THREE.OrthographicCamera }) {
 
   useEffect(() => {
     // Lock camera rotation to look straight ahead
-    camera.rotation.set(0, 0, 0);
-    camera.updateProjectionMatrix();
-  }, [camera]);
+    gameCamera.rotation.set(0, 0, 0);
+    gameCamera.updateProjectionMatrix();
+  }, [gameCamera]);
 
   useEffect(() => {
     const updateCamera = () => {
       const targetX = playerPositionRef.current.x;
       const targetY = playerPositionRef.current.y;
-      
+
       // Smooth camera follow with lerp (only position, not rotation)
-      camera.position.x = targetX;
-      camera.position.y = targetY + 5; // Keep offset from player
-      
+      gameCamera.position.x = targetX;
+      gameCamera.position.y = targetY + 5; // Keep offset from player
+
       // Ensure camera maintains forward-facing orientation
-      camera.rotation.set(0, 0, 0);
+      gameCamera.rotation.set(0, 0, 0);
     };
 
     ticker.add(updateCamera);
     return () => ticker.remove(updateCamera);
-  }, [camera, playerPositionRef, viewport]);
+  }, [gameCamera, playerPositionRef]);
 
   return null;
 }
 
-function Scene({ onStartBattle }: { onStartBattle: (onResult: (result: 'victory' | 'defeat') => void) => void }) {
-  const { gl, scene, camera } = useThree();
-
-  // Disable tone mapping — R3F defaults to ACESFilmicToneMapping which shifts pixel art colors
-  gl.toneMapping = THREE.NoToneMapping;
-
+function GameContent({ onStartBattle, gameCamera, gameViewportWidth }: { onStartBattle: (onResult: (result: 'victory' | 'defeat') => void) => void; gameCamera: THREE.OrthographicCamera; gameViewportWidth: number }) {
   // Texture loading once
   const spritesheetTexture = useLoader(THREE.TextureLoader, "/footer-env/spritesheet.png");
   useMemo(() => {
@@ -1220,15 +1218,6 @@ function Scene({ onStartBattle }: { onStartBattle: (onResult: (result: 'victory'
   const startY = collisionPosition[1] + 10;
   const playerPositionRef = useRef(new THREE.Vector3(startX, startY, collisionPosition[2] + 0.05));
 
-  // Render loop using AnimationTicker
-  useEffect(() => {
-    const onTick = () => {
-      gl.render(scene, camera);
-    };
-    ticker.add(onTick);
-    return () => ticker.remove(onTick);
-  }, [gl, scene, camera]);
-
   return (
     <group>
       {/* Physics player with collision - Update this first so ref is fresh for others */}
@@ -1240,10 +1229,12 @@ function Scene({ onStartBattle }: { onStartBattle: (onResult: (result: 'victory'
         mapWidth={Z1Data.mapWidth}
         mapHeight={Z1Data.mapHeight}
         playerPositionRef={playerPositionRef}
+        gameCamera={gameCamera}
+        gameViewportWidth={gameViewportWidth}
       />
 
       {/* Camera follows player */}
-      <CameraFollower playerPositionRef={playerPositionRef} />
+      <CameraFollower playerPositionRef={playerPositionRef} gameCamera={gameCamera} />
       
       {/* Floating Nostalgia Sprite with Dialogue Sequence */}
       <NostalgiaDialogue position={[5, -2, -0.5]} playerPositionRef={playerPositionRef} onStartBattle={onStartBattle} />
@@ -1262,6 +1253,234 @@ function Scene({ onStartBattle }: { onStartBattle: (onResult: (result: 'victory'
         />
       ))}
     </group>
+  );
+}
+
+// CRT screen shader
+const crtVertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const crtFragmentShader = `
+  uniform sampler2D map;
+  uniform float time;
+  uniform float emissiveIntensity;
+  varying vec2 vUv;
+
+  // Pseudo-random noise
+  float rand(vec2 co) {
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+  }
+
+  void main() {
+    // Apply UV transform: rotate -90deg around center, then flip horizontally
+    // (replicates texture.rotation = -PI/2, repeat.set(-1,1), center(0.5,0.5))
+    vec2 centered = vUv - 0.5;
+    vec2 rotated = vec2(-centered.y, centered.x); // -90 deg rotation
+    vec2 uv = vec2(-rotated.x, rotated.y) + 0.5;  // flip X + uncenter
+
+    // Subtle scanlines
+    float scanline = sin(uv.y * 400.0) * 0.01;
+
+    // Slight chromatic aberration
+    float offset = 0.002;
+    float r = texture2D(map, uv + vec2(offset, 0.0)).r;
+    float g = texture2D(map, uv).g;
+    float b = texture2D(map, uv - vec2(offset, 0.0)).b;
+    vec3 color = vec3(r, g, b);
+
+    // Noise grain
+    float noise = rand(uv + fract(time)) * 0.06;
+
+    // Combine: base color + emissive boost + scanlines + noise
+    vec3 emissive = color * emissiveIntensity;
+    vec3 final = emissive - scanline + noise;
+
+    gl_FragColor = vec4(final, 1.0);
+  }
+`;
+
+// TV Model - loads tv.glb and applies game texture to screen
+function TVModel({ screenTexture, position = [0, 0, 0] as [number, number, number], scale = 1, materialOverrides = [] }: { screenTexture: THREE.Texture; position?: [number, number, number]; scale?: number; materialOverrides?: MaterialOverride[] }) {
+  const gltf = useLoader(GLTFLoader, '/tv.glb');
+  const screenMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  useEffect(() => {
+    screenTexture.center.set(0.5, 0.5);
+    screenTexture.rotation = -Math.PI / 2;
+    screenTexture.repeat.set(-1, 1);
+    screenTexture.wrapS = THREE.RepeatWrapping;
+
+    // Apply material overrides
+    if (materialOverrides.length > 0) {
+      applyMaterialOverrides(gltf.scene, materialOverrides);
+    }
+
+    // Apply screen texture and glass material
+    gltf.scene.traverse((child: any) => {
+      if (child.isMesh) {
+        const meshName = (child.name || '').toLowerCase();
+        const matName = (child.material?.name || '').toLowerCase();
+        if (meshName.includes('screen') || matName.includes('screen')) {
+          const mat = new THREE.ShaderMaterial({
+            uniforms: {
+              map: { value: screenTexture },
+              time: { value: 0 },
+              emissiveIntensity: { value: 1.5 },
+            },
+            vertexShader: crtVertexShader,
+            fragmentShader: crtFragmentShader,
+            toneMapped: false,
+          });
+          child.material = mat;
+          screenMaterialRef.current = mat;
+        } else if (meshName.includes('glass') || matName.includes('glass')) {
+          child.material = new THREE.MeshPhysicalMaterial({
+            transmission: 1,
+            transparent: true,
+            roughness: 0.05,
+            metalness: 0,
+            ior: 1.5,
+            thickness: 0.5,
+            color: 0xffffff,
+          });
+        }
+      }
+    });
+  }, [gltf, screenTexture, materialOverrides]);
+
+  // Animate the time uniform for noise variation
+  useEffect(() => {
+    const update = () => {
+      if (screenMaterialRef.current) {
+        screenMaterialRef.current.uniforms.time.value = performance.now() * 0.001;
+      }
+    };
+    ticker.add(update);
+    return () => ticker.remove(update);
+  }, []);
+
+  return <primitive object={gltf.scene} position={position} scale={scale} />;
+}
+
+// TV Scene - orchestrates FBO rendering and TV display
+function TVScene({ onStartBattle }: { onStartBattle: (onResult: (result: 'victory' | 'defeat') => void) => void }) {
+  const { gl, scene, camera } = useThree();
+
+  // Disable tone mapping for pixel art
+  gl.toneMapping = THREE.NoToneMapping;
+  gl.autoClear = false;
+
+  const FBO_WIDTH = 768;
+  const FBO_HEIGHT = 1024;
+
+  const gameScene = useMemo(() => {
+    const s = new THREE.Scene();
+    s.background = new THREE.Color(0x000000);
+    return s;
+  }, []);
+
+  const gameCamera = useMemo(() => {
+    const cam = new THREE.OrthographicCamera(
+      FBO_WIDTH / -2, FBO_WIDTH / 2,
+      FBO_HEIGHT / 2, FBO_HEIGHT / -2,
+      0.1, 1000
+    );
+    cam.zoom = 20;
+    cam.position.set(0, 5, 25);
+    cam.updateProjectionMatrix();
+    return cam;
+  }, []);
+
+  const gameViewportWidth = FBO_HEIGHT / 8;
+
+  const fbo = useMemo(() => {
+    return new THREE.WebGLRenderTarget(FBO_WIDTH, FBO_HEIGHT, {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+    });
+  }, []);
+
+  useEffect(() => () => fbo.dispose(), [fbo]);
+
+  // Point camera at the TV
+  useEffect(() => {
+    camera.lookAt(0, 0, 0);
+  }, [camera]);
+
+  // Two-pass rendering
+  useEffect(() => {
+    const render = () => {
+      // Pass 1: Render game scene to FBO
+      gl.setRenderTarget(fbo);
+      gl.setClearColor(0x000000, 1);
+      gl.clear();
+      gl.render(gameScene, gameCamera);
+
+      // Pass 2: Render TV scene to screen
+      gl.setRenderTarget(null);
+      gl.setClearColor(0x000000, 0);
+      gl.clear();
+      gl.render(scene, camera);
+    };
+    ticker.add(render);
+    return () => ticker.remove(render);
+  }, [gl, scene, camera, gameScene, gameCamera, fbo]);
+
+  return (
+    <>
+      {createPortal(
+        <GameContent
+          onStartBattle={onStartBattle}
+          gameCamera={gameCamera}
+          gameViewportWidth={gameViewportWidth}
+        />,
+        gameScene
+      )}
+      <TVModel
+        screenTexture={fbo.texture}
+        position={[0, -1.8, 0]}
+        scale={0.06}
+        materialOverrides={[
+          {
+            materialName: 'Default',
+            color: '#2a2a2a',
+            roughness: 0.6,
+            metalness: 0.1,
+          },
+          {
+            materialName: 'Red',
+            color: '#cc3333',
+            roughness: 0.4,
+            metalness: 0.1,
+          },
+          {
+            materialName: 'White',
+            color: '#e8e8e8',
+            roughness: 0.5,
+            metalness: 0.0,
+          },
+          {
+            materialName: 'Yellow',
+            color: '#FDBC65',
+            roughness: 0.3,
+            metalness: 0.2,
+          },
+          {
+            materialName: 'gold',
+            color: '#D4A843',
+            metalness: 0.7,
+            roughness: 0.2,
+          },
+        ]}
+      />
+      <ambientLight intensity={1} />
+      <directionalLight position={[5, 5, 5]} intensity={1} />
+    </>
   );
 }
 
@@ -1285,19 +1504,17 @@ export const FooterCanvas: React.FC = () => {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Canvas
-        orthographic
         camera={{
-          position: [0, 5, 25],
-          zoom: 8,
+          position: [0, 0, 10],
+          fov: 20,
           near: 0.1,
           far: 1000
         }}
-        gl={{ alpha: false, antialias: false }}
-        style={{ width: '100%', height: '100%', backgroundColor: '#000000', touchAction: 'pan-y' }}
+        gl={{ alpha: true, antialias: true }}
+        style={{ width: '100%', height: '100%', touchAction: 'pan-y' }}
         frameloop="never"
       >
-        <color attach="background" args={['#000000']} />
-        <Scene onStartBattle={startBattle} />
+        <TVScene onStartBattle={startBattle} />
       </Canvas>
       {showBattle && (
         <BattleGame

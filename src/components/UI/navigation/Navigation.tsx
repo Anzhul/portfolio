@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useNavigation } from '../../../context/NavigationContext'
 import { usePageTransition } from '../../../context/PageTransitionContext'
@@ -55,27 +55,9 @@ const NavUnderline = ({ active }: { active: boolean }) => {
 }
 
 function Navigation() {
-  const [loaded, setLoaded] = useState(false)
   const { last3DRoute } = useNavigation()
   const { triggerTransition } = usePageTransition()
   const location = useLocation()
-
-  useEffect(() => {
-    // Wait for all resources to load on initial page load
-    const handleLoad = () => {
-      // Delay before showing navigation
-      setTimeout(() => {
-        setLoaded(true)
-      }, 100)
-    }
-
-    if (document.readyState === 'complete') {
-      handleLoad()
-    } else {
-      window.addEventListener('load', handleLoad)
-      return () => window.removeEventListener('load', handleLoad)
-    }
-  }, [])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
     e.preventDefault()
@@ -93,7 +75,7 @@ function Navigation() {
   }
 
   return (
-    <nav className={`navigation ${loaded ? 'loaded' : ''}`}>
+    <nav className="navigation">
       <div className="navigation-header">
         <div className="name-button-container">
           <a href="/" onClick={(e) => handleNavClick(e, '/')}>
