@@ -203,7 +203,6 @@ const LoadedComponent: React.FC<LoadedComponentProps> = ({
   onLoadComplete
 }) => {
   useEffect(() => {
-    // Call onLoadComplete when component mounts (meaning it's fully loaded)
     onLoadComplete()
   }, [onLoadComplete])
 

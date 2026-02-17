@@ -4,7 +4,7 @@ import { Lazy3DObject } from '../../components/lazy/Lazy3DObject';
 import { usePageTransition } from '../../context/PageTransitionContext';
 import { useViewport } from '../../context/ViewportContext';
 
-// Lazy load combined 3D scene with both models
+// Lazy load combined 3D scene with TV + game
 const HomeScene = lazy(() => import('../../components/canvas/home/HomeScene'));
 
 interface HomeProps {
@@ -22,53 +22,65 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
     triggerTransition(path);
   };
 
-  // Breakpoint-specific pen/cap positions and rotations
-  const { penPosition, capPosition, penRotation, capRotation, penScale, capScale } = useMemo(() => {
+  // Breakpoint-specific TV position and scale
+  const { tvPosition, tvScale, platePosition, plateScale, vasePosition, vaseScale } = useMemo(() => {
     switch (breakpoint) {
       case 'mobile':
         return {
-          penPosition: [0, 1.0, 0] as [number, number, number],
-          capPosition: [0, 2.5, 0] as [number, number, number],
-          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
-          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
-          penScale: 0.025,
-          capScale: 0.025,
+          tvPosition: [0.5, -0.8, 0] as [number, number, number],
+          tvScale: 0.04,
+          platePosition: [-0.5, -1.1, 0.2] as [number, number, number],
+          plateScale: 0.5,
+          vasePosition: [-0.5, -0.8, -0.2] as [number, number, number],
+          vaseScale: 0.4,
         };
       case 'tablet':
         return {
-          penPosition: [1.25, 1.0, 0] as [number, number, number],
-          capPosition: [1.25, 3.25, 0] as [number, number, number],
-          penRotation: [-Math.PI/2, -Math.PI/7, 36] as [number, number, number],
-          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
-          penScale: 0.035,
-          capScale: 0.035,
+          tvPosition: [1.75, -0.8, 0] as [number, number, number],
+          tvScale: 0.05,
+          platePosition: [0.5, -1.1, 0.2] as [number, number, number],
+          plateScale: 0.6,
+          vasePosition: [0.5, -0.8, -0.2] as [number, number, number],
+          vaseScale: 0.5,
         };
-      case 'desktop': // 1024–1439px
+      case 'desktop':
         return {
-          penPosition: [1.5, 1, 0] as [number, number, number],
-          capPosition: [1.5, 3.25, 0] as [number, number, number],
-          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
-          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
-          penScale: 0.035,
-          capScale: 0.035,
+          tvPosition: [2.0, -0.8, 0] as [number, number, number],
+          tvScale: 0.06,
+          platePosition: [0.8, -1.1, 0.2] as [number, number, number],
+          plateScale: 0.7,
+          vasePosition: [0.8, -0.8, -0.2] as [number, number, number],
+          vaseScale: 0.6,
         };
-      case 'wide': // 1440px+
+      case 'wide':
       default:
         return {
-          penPosition: [2.0, 0.65, 0] as [number, number, number],
-          capPosition: [2.0, 2.25, 0] as [number, number, number],
-          penRotation: [-Math.PI/2, -Math.PI/5, 36] as [number, number, number],
-          capRotation: [-Math.PI/2, Math.PI/10, 0.5] as [number, number, number],
-          penScale: 0.025,
-          capScale: 0.025,
+          tvPosition: [1.5, -1.0, 0] as [number, number, number],
+          tvScale: 0.045,
+          platePosition: [4.8, -1.0, 0.2] as [number, number, number],
+          plateScale: 0.0125,
+          vasePosition: [4, -1.06, -6] as [number, number, number],
+          vaseScale: 0.2,
         };
     }
   }, [breakpoint]);
 
-  // Disable scroll until 3D models are ready
+  // Disable scroll until 3D models are ready (with timeout fallback)
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+
+    // Fallback: show page after 5s even if 3D scene hasn't loaded
+    const fallbackTimer = setTimeout(() => {
+      if (!isPageLoaded) {
+        setIsPageLoaded(true);
+        document.body.style.overflow = '';
+      }
+    }, 5000);
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      document.body.style.overflow = '';
+    };
   }, []);
 
   const handleSceneReady = useCallback(() => {
@@ -82,7 +94,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
       ref={internalRef}
       className={`home ${isActive ? 'active' : ''} ${isPageLoaded ? 'loaded' : ''}`}
     >
-      {/* Full-screen canvas with pen and cap */}
+      {/* Canvas with TV + game */}
       <Lazy3DObject
         loadStrategy="immediate"
         component={HomeScene}
@@ -90,56 +102,12 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
           isVisible,
           scrollContainer: internalRef,
           onReady: handleSceneReady,
-          penScale,
-          capScale,
-          penPosition,
-          capPosition,
-          penRotation,
-          capRotation,
-          penMaterialOverrides: [
-            {
-              materialName: 'Brown',
-              color: '#A0624A',
-              roughness: 0.3,
-              metalness: 0.2,
-              //map: '/pen_text.png',
-              flipX: true,
-            },
-            {
-              materialName: 'Brown2',
-              color: '#A0624A',
-              roughness: 0.3,
-              metalness: 0.2,
-              //map: '/pen_text.png',
-              flipX: true,
-            },
-            {
-              materialName: 'Yellow',
-              color: '#FDBC65',
-              roughness: 0.3,
-              metalness: 0.2,
-            },
-            {
-              materialName: 'Metal',
-              color: '#DCDCDC',
-              metalness: 0.8,
-              roughness: 0.1,
-            }
-          ],
-          capMaterialOverrides: [
-            {
-              materialName: 'Brown.001',
-              color: '#A0624A',
-              roughness: 0.3,
-              metalness: 0.2,
-            },
-            {
-              materialName: 'Default style',
-              color: '#DCDCDC',
-              metalness: 0.8,
-              roughness: 0.1,
-            }
-          ]
+          tvScale,
+          tvPosition,
+          plateScale,
+          platePosition,
+          vaseScale,
+          vasePosition,
         }}
         className="home-scene-container"
         placeholder={null}
@@ -223,6 +191,6 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
         </div>
       </main>
     </div>
-    
+
   );
 };

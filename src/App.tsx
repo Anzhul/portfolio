@@ -87,7 +87,6 @@ function AppContent() {
         {PERSISTENT_PAGES.map(({ path, component: Component }) => {
           const isVisited = visitedPages.has(path)
           const isVisible = currentPath === path
-
           return (
             <div
               key={path}
