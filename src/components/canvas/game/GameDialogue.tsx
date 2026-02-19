@@ -284,11 +284,12 @@ export function TextBox({
 
 // --- BattleGame (CanvasTexture plane rendered in game scene) ---
 export function BattleGame({
-  onWin, onLose, gameCamera
+  onWin, onLose, gameCamera, gameInputRef
 }: {
   onWin: () => void
   onLose: () => void
   gameCamera: THREE.OrthographicCamera
+  gameInputRef?: React.RefObject<{ active: boolean; startX: number; currentX: number; startY: number; currentY: number; maxDx: number; startTime: number }>
 }) {
   const meshRef = useRef<THREE.Mesh>(null!)
   const onWinRef = useRef(onWin)
@@ -563,10 +564,22 @@ export function BattleGame({
           spawnWaveBullets()
         }
 
-        if (keys.up) heart.y -= heart.speed
-        if (keys.down) heart.y += heart.speed
-        if (keys.left) heart.x -= heart.speed
-        if (keys.right) heart.x += heart.speed
+        // Drag input from TV (mapped to 4-directional movement)
+        let dragUp = false, dragDown = false, dragLeft = false, dragRight = false
+        if (gameInputRef?.current?.active) {
+          const dx = gameInputRef.current.currentX - gameInputRef.current.startX
+          const dy = gameInputRef.current.currentY - gameInputRef.current.startY
+          const threshold = 20
+          if (dx > threshold) dragRight = true
+          if (dx < -threshold) dragLeft = true
+          if (dy > threshold) dragDown = true
+          if (dy < -threshold) dragUp = true
+        }
+
+        if (keys.up || dragUp) heart.y -= heart.speed
+        if (keys.down || dragDown) heart.y += heart.speed
+        if (keys.left || dragLeft) heart.x -= heart.speed
+        if (keys.right || dragRight) heart.x += heart.speed
 
         heart.x = Math.max(boxX + heart.size, Math.min(boxX + boxW - heart.size, heart.x))
         heart.y = Math.max(boxY + heart.size, Math.min(boxY + boxH - heart.size, heart.y))
@@ -685,11 +698,14 @@ export function BattleGame({
 
 // --- NostalgiaDialogue (battle now renders directly in game scene) ---
 export function NostalgiaDialogue({
-  position, playerPositionRef, gameCamera
+  position, playerPositionRef, gameCamera, npcInRangeRef, autoWalkRef, gameInputRef
 }: {
   position: [number, number, number]
   playerPositionRef: React.MutableRefObject<THREE.Vector3>
   gameCamera: THREE.OrthographicCamera
+  npcInRangeRef?: React.MutableRefObject<boolean>
+  autoWalkRef?: React.MutableRefObject<number | null>
+  gameInputRef?: React.RefObject<{ active: boolean; startX: number; currentX: number; startY: number; currentY: number; maxDx: number; startTime: number }>
 }) {
   const [inRange, setInRange] = useState(false)
   const [dialogueState, setDialogueState] = useState<DialogueState>('idle')
@@ -717,10 +733,21 @@ export function NostalgiaDialogue({
           setDialogueState('idle')
         }
       }
+
+      // Auto-start dialogue when player arrives via auto-walk
+      if (isClose && autoWalkRef?.current !== null && autoWalkRef?.current !== undefined && dialogueState === 'idle') {
+        autoWalkRef.current = null
+        setDialogueState('greeting')
+      }
     }
     ticker.add(checkDistance)
     return () => ticker.remove(checkDistance)
-  }, [position, inRange, playerPositionRef, dialogueState])
+  }, [position, inRange, playerPositionRef, dialogueState, autoWalkRef])
+
+  // Sync dialogue-active state to ref (used by TVModel to gate tap → Enter)
+  useEffect(() => {
+    if (npcInRangeRef) npcInRangeRef.current = dialogueState !== 'idle'
+  }, [dialogueState, npcInRangeRef])
 
   // Enter to start dialogue when in range and idle
   useEffect(() => {
@@ -738,14 +765,7 @@ export function NostalgiaDialogue({
 
   return (
     <>
-      <group onClick={(e) => {
-        if (inRange && dialogueState === 'idle') {
-          e.stopPropagation()
-          setDialogueState('greeting')
-        }
-      }}>
-        <FloatingSprite position={[position[0], position[1] - 0.5, position[2]]} />
-      </group>
+      <FloatingSprite position={[position[0], position[1] - 0.5, position[2]]} />
 
       <TextBox
         visible={dialogueState === 'greeting'}
@@ -783,6 +803,7 @@ export function NostalgiaDialogue({
           onWin={() => setDialogueState('victory')}
           onLose={() => setDialogueState('defeat')}
           gameCamera={gameCamera}
+          gameInputRef={gameInputRef}
         />
       )}
 

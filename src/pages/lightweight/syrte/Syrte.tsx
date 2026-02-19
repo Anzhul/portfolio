@@ -113,10 +113,10 @@ export const Syrte: React.FC = () => {
         </p>
               <div className="syrte-gallery">
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte13.png" alt="Syrte World screenshot 1" />
+            <img loading="lazy" src="/syrte/syrte7.jpg" alt="Syrte World screenshot 1" />
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte14.jpg" alt="Syrte World screenshot 2" />
+            <img loading="lazy" src="/syrte/syrte7.png" alt="Syrte World screenshot 2" />
           </div>
         </div>
         </div>

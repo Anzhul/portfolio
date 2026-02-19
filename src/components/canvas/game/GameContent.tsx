@@ -1,4 +1,4 @@
-import { useLoader, useThree } from '@react-three/fiber';
+import { useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
 import { useMemo, useEffect, useRef, useState } from 'react';
@@ -112,11 +112,11 @@ function LayerPlane({ layerData, zIndex, spritesheetTexture, tilesPerRow, positi
 }
 
 // Physics Player with collision detection
-function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize, mapWidth, mapHeight, playerPositionRef, gameCamera, gameViewportWidth }: PhysicsPlayerProps) {
-  const { gl } = useThree();
+function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize, mapWidth, mapHeight, playerPositionRef, gameCamera, gameViewportWidth, gameInputRef, autoWalkRef, npcInRangeRef }: PhysicsPlayerProps) {
   const meshRef = useRef<THREE.Mesh>(null!);
   const velocityRef = useRef({ x: 0, y: 0 });
   const keysRef = useRef({ left: false, right: false, up: false });
+  const pointerKeysRef = useRef({ left: false, right: false });
   const boundsRef = useRef({ minX: -Infinity, maxX: Infinity });
 
   // Initialize mesh position from ref
@@ -258,59 +258,72 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
     };
   }, []);
 
-  // Touch/Drag controls
-  useEffect(() => {
-    let startX = 0;
-    let isDragging = false;
-    const threshold = 20;
-
-    const handlePointerDown = (e: PointerEvent) => {
-      startX = e.clientX;
-      isDragging = true;
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!isDragging) return;
-
-      const currentX = e.clientX;
-      const diff = currentX - startX;
-
-      if (diff > threshold) {
-        keysRef.current.right = true;
-        keysRef.current.left = false;
-      } else if (diff < -threshold) {
-        keysRef.current.left = true;
-        keysRef.current.right = false;
-      } else {
-        keysRef.current.left = false;
-        keysRef.current.right = false;
-      }
-    };
-
-    const handlePointerUp = () => {
-      isDragging = false;
-      keysRef.current.left = false;
-      keysRef.current.right = false;
-    };
-
-    const canvas = gl.domElement;
-    canvas.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
-
-    return () => {
-      canvas.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
-    };
-  }, [gl.domElement]);
+  // Pointer input from TV clicks (read in physics loop)
 
   // Physics update loop
   useEffect(() => {
     const updatePhysics = () => {
       if (!meshRef.current) return;
+
+      // Freeze player during dialogue/battle
+      if (npcInRangeRef?.current) {
+        velocityRef.current.x = 0;
+        pointerKeysRef.current = { left: false, right: false };
+
+        // Still apply gravity so player doesn't float
+        velocityRef.current.y += gravity;
+        if (velocityRef.current.y < -1) velocityRef.current.y = -1;
+        const pos = meshRef.current.position;
+        const newY = pos.y + velocityRef.current.y;
+        if (checkCollision(pos.x, newY, false)) {
+          velocityRef.current.y = 0;
+        } else {
+          pos.y = newY;
+          playerPositionRef.current.y = newY;
+        }
+
+        // Show idle sprite
+        if (isRunningRef.current) {
+          isRunningRef.current = false;
+          setCurrentTexture(idleTexture);
+        }
+        return;
+      }
+
+      // Update pointer-driven movement from TV drag
+      if (gameInputRef?.current?.active) {
+        const diff = gameInputRef.current.currentX - gameInputRef.current.startX;
+        const threshold = 20;
+        if (diff > threshold) {
+          pointerKeysRef.current = { left: false, right: true };
+        } else if (diff < -threshold) {
+          pointerKeysRef.current = { left: true, right: false };
+        } else {
+          pointerKeysRef.current = { left: false, right: false };
+        }
+      } else {
+        pointerKeysRef.current = { left: false, right: false };
+      }
+
+      // Auto-walk toward target (set when user taps NPC on TV)
+      let autoWalkLeft = false;
+      let autoWalkRight = false;
+      if (autoWalkRef?.current !== null && autoWalkRef?.current !== undefined) {
+        // Cancel auto-walk if user provides manual input
+        if (gameInputRef?.current?.active || keysRef.current.left || keysRef.current.right) {
+          autoWalkRef.current = null;
+        } else {
+          const distToTarget = autoWalkRef.current - meshRef.current.position.x;
+          if (Math.abs(distToTarget) > 2) {
+            if (distToTarget > 0) autoWalkRight = true;
+            else autoWalkLeft = true;
+          }
+          // Don't clear ref here — NostalgiaDialogue clears it when dialogue starts
+        }
+      }
+
+      const leftPressed = keysRef.current.left || pointerKeysRef.current.left || autoWalkLeft;
+      const rightPressed = keysRef.current.right || pointerKeysRef.current.right || autoWalkRight;
 
       const currentPos = meshRef.current.position;
 
@@ -321,14 +334,14 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
       const { minX, maxX } = boundsRef.current;
 
       // Horizontal movement
-      if (keysRef.current.left) {
+      if (leftPressed) {
         if (cameraLeftEdge > minX + 5) {
           velocityRef.current.x = -moveSpeed;
           facingRightRef.current = false;
         } else {
           velocityRef.current.x = 0;
         }
-      } else if (keysRef.current.right) {
+      } else if (rightPressed) {
         if (cameraRightEdge < maxX - 5) {
           velocityRef.current.x = moveSpeed;
           facingRightRef.current = true;
@@ -453,7 +466,7 @@ function CameraFollower({ playerPositionRef, gameCamera }: { playerPositionRef: 
   return null;
 }
 
-export function GameContent({ gameCamera, gameViewportWidth }: { gameCamera: THREE.OrthographicCamera; gameViewportWidth: number }) {
+export function GameContent({ gameCamera, gameViewportWidth, gameInputRef, npcInRangeRef, autoWalkRef }: { gameCamera: THREE.OrthographicCamera; gameViewportWidth: number; gameInputRef?: React.RefObject<{ active: boolean; startX: number; currentX: number; maxDx: number; startTime: number }>; npcInRangeRef?: React.MutableRefObject<boolean>; autoWalkRef?: React.MutableRefObject<number | null> }) {
   // Texture loading once
   const spritesheetTexture = useLoader(THREE.TextureLoader, "/footer-env/spritesheet.png");
   useMemo(() => {
@@ -518,11 +531,14 @@ export function GameContent({ gameCamera, gameViewportWidth }: { gameCamera: THR
         playerPositionRef={playerPositionRef}
         gameCamera={gameCamera}
         gameViewportWidth={gameViewportWidth}
+        gameInputRef={gameInputRef}
+        autoWalkRef={autoWalkRef}
+        npcInRangeRef={npcInRangeRef}
       />
 
       <CameraFollower playerPositionRef={playerPositionRef} gameCamera={gameCamera} />
 
-      <NostalgiaDialogue position={[5, -2, -0.5]} playerPositionRef={playerPositionRef} gameCamera={gameCamera} />
+      <NostalgiaDialogue position={[5, -2, -0.5]} playerPositionRef={playerPositionRef} gameCamera={gameCamera} npcInRangeRef={npcInRangeRef} autoWalkRef={autoWalkRef} gameInputRef={gameInputRef} />
 
       {allLayers.map(({ data, zIndex, position, parallaxFactor }) => (
         <LayerPlane

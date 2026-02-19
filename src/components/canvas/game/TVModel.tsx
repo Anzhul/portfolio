@@ -1,10 +1,11 @@
-import { useLoader } from '@react-three/fiber';
+import { useLoader, useThree } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { ticker } from '../../../utils/AnimationTicker';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { applyMaterialOverrides, type MaterialOverride } from '../home/materialUtils';
+import type { GameInput } from './types';
 
 // CRT screen shader
 export const crtVertexShader = `
@@ -54,10 +55,28 @@ export const crtFragmentShader = `
   }
 `;
 
+// UV → game world mapping (CRT shader: tex_uv = (meshUv.y, meshUv.x))
+const GAME_VIEW_W = 768 / 20; // 38.4 world units (ortho zoom=20)
+const GAME_VIEW_H = 960 / 20; // 48 world units
+const NPC_WORLD_POS: [number, number] = [5, -2];
+const NPC_CLICK_RADIUS = 7;
+
+function screenUvToWorld(meshUv: { x: number; y: number }, cam: THREE.OrthographicCamera): { x: number; y: number } {
+  return {
+    x: cam.position.x + (meshUv.y - 0.5) * GAME_VIEW_W,
+    y: cam.position.y + (meshUv.x - 0.5) * GAME_VIEW_H,
+  };
+}
+
 // TV Model - loads tv.glb and applies game texture to screen
-export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number, number], scale = 1, materialOverrides = [] }: { screenTexture: THREE.Texture; position?: [number, number, number]; scale?: number; materialOverrides?: MaterialOverride[] }) {
+export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number, number], scale = 1, materialOverrides = [], gameInputRef, npcInRangeRef, gameCamera, autoWalkRef }: { screenTexture: THREE.Texture; position?: [number, number, number]; scale?: number; materialOverrides?: MaterialOverride[]; gameInputRef?: React.MutableRefObject<GameInput>; npcInRangeRef?: React.MutableRefObject<boolean>; gameCamera?: THREE.OrthographicCamera; autoWalkRef?: React.MutableRefObject<number | null> }) {
   const gltf = useLoader(GLTFLoader, '/tv.glb');
+  const { camera: rootCamera, gl } = useThree();
   const screenMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const screenMeshRef = useRef<THREE.Mesh | null>(null);
+  const lastTapUvRef = useRef<{ x: number; y: number } | null>(null);
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const pointerVec = useRef(new THREE.Vector2());
 
   useEffect(() => {
     screenTexture.center.set(0.5, 0.5);
@@ -88,6 +107,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
           });
           child.material = mat;
           screenMaterialRef.current = mat;
+          screenMeshRef.current = child;
         } else if (meshName.includes('glass') || matName.includes('glass')) {
           child.material = new THREE.MeshPhysicalMaterial({
             transmission: 1,
@@ -98,6 +118,8 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
             thickness: 0.5,
             color: 0xd8e0ff,
           });
+          // Disable raycasting so clicks/hovers pass through to the screen mesh behind
+          child.raycast = () => {};
         }
       }
     });
@@ -114,7 +136,125 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     return () => ticker.remove(update);
   }, []);
 
-  return <primitive object={gltf.scene} position={position} scale={scale} />;
+  // Game input: click on TV to start drag, tap to interact (Enter)
+  const isHoveredRef = useRef(false);
+
+  // Helper: raycast pointer against screen mesh, return UV if hit
+  const raycastScreenUv = useCallback((e: PointerEvent): { x: number; y: number } | null => {
+    const mesh = screenMeshRef.current;
+    if (!mesh) return null;
+    const rect = gl.domElement.getBoundingClientRect();
+    pointerVec.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    pointerVec.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycasterRef.current.setFromCamera(pointerVec.current, rootCamera);
+    const hits = raycasterRef.current.intersectObject(mesh);
+    return (hits.length > 0 && hits[0].uv) ? { x: hits[0].uv.x, y: hits[0].uv.y } : null;
+  }, [gl, rootCamera]);
+
+  // Check if a UV coordinate is near the NPC
+  const isNpcArea = useCallback((uv: { x: number; y: number }): boolean => {
+    if (!gameCamera) return false;
+    const world = screenUvToWorld(uv, gameCamera);
+    const dx = world.x - NPC_WORLD_POS[0];
+    const dy = world.y - NPC_WORLD_POS[1];
+    return Math.sqrt(dx * dx + dy * dy) < NPC_CLICK_RADIUS;
+  }, [gameCamera]);
+
+  useEffect(() => {
+    if (!gameInputRef) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (gameInputRef.current.active) {
+        // Drag tracking (X + Y)
+        gameInputRef.current.currentX = e.clientX;
+        gameInputRef.current.currentY = e.clientY;
+        const dx = Math.abs(e.clientX - gameInputRef.current.startX);
+        if (dx > gameInputRef.current.maxDx) {
+          gameInputRef.current.maxDx = dx;
+        }
+        return;
+      }
+      // Hover cursor: check if pointer is over the NPC area on the screen
+      if (isHoveredRef.current) {
+        const uv = raycastScreenUv(e);
+        if (uv && isNpcArea(uv)) {
+          document.body.style.cursor = 'pointer';
+        } else {
+          document.body.style.cursor = 'grab';
+        }
+      }
+    };
+
+    const dispatchEnter = () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true })), 50);
+    };
+
+    const handlePointerUp = () => {
+      if (!gameInputRef.current.active) return;
+      const elapsed = Date.now() - gameInputRef.current.startTime;
+      if (gameInputRef.current.maxDx < 10 && elapsed < 300) {
+        if (npcInRangeRef?.current) {
+          // Dialogue already active — tap to advance/close
+          dispatchEnter();
+        } else if (lastTapUvRef.current && isNpcArea(lastTapUvRef.current)) {
+          // Tap on NPC area — auto-walk player to NPC and interact on arrival
+          if (autoWalkRef) autoWalkRef.current = NPC_WORLD_POS[0];
+        }
+      }
+      gameInputRef.current.active = false;
+      document.body.style.cursor = isHoveredRef.current ? 'grab' : '';
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [gameInputRef, npcInRangeRef, gameCamera, raycastScreenUv, isNpcArea]);
+
+  const handleTVPointerDown = useCallback((e: any) => {
+    if (!gameInputRef) return;
+    e.stopPropagation();
+    gameInputRef.current.active = true;
+    gameInputRef.current.startX = e.clientX ?? 0;
+    gameInputRef.current.currentX = gameInputRef.current.startX;
+    gameInputRef.current.startY = e.clientY ?? 0;
+    gameInputRef.current.currentY = gameInputRef.current.startY;
+    gameInputRef.current.maxDx = 0;
+    gameInputRef.current.startTime = Date.now();
+    document.body.style.cursor = 'grabbing';
+    // Store UV if tap hit the screen mesh (for NPC click detection)
+    lastTapUvRef.current = (e.object === screenMeshRef.current && e.uv)
+      ? { x: e.uv.x, y: e.uv.y }
+      : null;
+  }, [gameInputRef]);
+
+  const handleTVPointerOver = useCallback(() => {
+    isHoveredRef.current = true;
+    if (!gameInputRef?.current.active) {
+      document.body.style.cursor = 'grab';
+    }
+  }, [gameInputRef]);
+
+  const handleTVPointerOut = useCallback(() => {
+    isHoveredRef.current = false;
+    if (!gameInputRef?.current.active) {
+      document.body.style.cursor = '';
+    }
+  }, [gameInputRef]);
+
+  return (
+    <primitive
+      object={gltf.scene}
+      position={position}
+      scale={scale}
+      onPointerDown={handleTVPointerDown}
+      onPointerOver={handleTVPointerOver}
+      onPointerOut={handleTVPointerOut}
+    />
+  );
 }
 
 // Plate Model - loads plate.glb and applies Orange.png to fruit slices
@@ -259,6 +399,9 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
     bodyTexture.anisotropy = 16;
     bodyTexture.needsUpdate = true;
     footTexture.flipY = false;
+    footTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    footTexture.magFilter = THREE.LinearFilter;
+    footTexture.anisotropy = 16;
     footTexture.needsUpdate = true;
 
     // Single mesh with multi-material: child.material may be an array

@@ -1,5 +1,5 @@
 import { Canvas, useThree, createPortal } from '@react-three/fiber'
-import { useEffect, Suspense, useMemo, Component } from 'react'
+import { useEffect, useRef, Suspense, useMemo, Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
 import { ticker } from '../../../utils/AnimationTicker'
 import { useViewport } from '../../../context/ViewportContext'
@@ -98,7 +98,7 @@ const FBO_HEIGHT = 960
 
 const TV_MATERIAL_OVERRIDES: MaterialOverride[] = [
   { materialName: 'Default', color: '#2a2a2a', roughness: 0.6, metalness: 0.1 },
-  { materialName: 'Red', color: '#494343', roughness: 0.4, metalness: 0.1 },
+  { materialName: 'Red', color: '#901d06', roughness: 0.4, metalness: 0.1 },
   { materialName: 'White', color: '#e8e8e8', roughness: 0.5, metalness: 0.0 },
   { materialName: 'Yellow', color: '#FDBC65', roughness: 0.3, metalness: 0.2 },
   { materialName: 'gold', color: '#D4A843', metalness: 0.7, roughness: 0.2 },
@@ -119,6 +119,15 @@ function Scene({
   onReady
 }: HomeSceneProps) {
   const { gl, scene, camera } = useThree()
+
+  // Shared game input state: TV pointer events → PhysicsPlayer movement
+  const gameInputRef = useRef({ active: false, startX: 0, currentX: 0, startY: 0, currentY: 0, maxDx: 0, startTime: 0 })
+
+  // Whether dialogue is active — used by TVModel to advance/close dialogue on tap
+  const npcInRangeRef = useRef(false)
+
+  // Auto-walk target X: set by TVModel when user taps NPC on TV, cleared by NostalgiaDialogue on arrival
+  const autoWalkRef = useRef<number | null>(null)
 
   // Disable tone mapping for pixel art
   gl.toneMapping = THREE.NoToneMapping
@@ -190,6 +199,9 @@ function Scene({
             <GameContent
               gameCamera={gameCamera}
               gameViewportWidth={gameViewportWidth}
+              gameInputRef={gameInputRef}
+              npcInRangeRef={npcInRangeRef}
+              autoWalkRef={autoWalkRef}
             />
           </Suspense>,
           gameScene
@@ -204,6 +216,10 @@ function Scene({
             position={tvPosition}
             scale={tvScale}
             materialOverrides={tvMaterialOverrides}
+            gameInputRef={gameInputRef}
+            npcInRangeRef={npcInRangeRef}
+            gameCamera={gameCamera}
+            autoWalkRef={autoWalkRef}
           />
           <PlateModel
             position={platePosition}

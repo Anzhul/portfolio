@@ -29,6 +29,8 @@ export interface LayerPlaneProps {
   playerPositionRef: React.MutableRefObject<THREE.Vector3>;
 }
 
+export type GameInput = { active: boolean; startX: number; currentX: number; startY: number; currentY: number; maxDx: number; startTime: number }
+
 export interface PhysicsPlayerProps {
   collisionTiles: Tile[];
   collisionPosition: [number, number, number];
@@ -39,6 +41,9 @@ export interface PhysicsPlayerProps {
   playerPositionRef: React.MutableRefObject<THREE.Vector3>;
   gameCamera: THREE.OrthographicCamera;
   gameViewportWidth: number;
+  gameInputRef?: React.RefObject<GameInput>;
+  autoWalkRef?: React.MutableRefObject<number | null>;
+  npcInRangeRef?: React.MutableRefObject<boolean>;
 }
 
 export interface TextBoxChoice {

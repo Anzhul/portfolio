@@ -28,6 +28,8 @@
     width: clamp( 20rem, calc(100% - 32rem), 1440px);
     height: clamp(200px, 80vh, 80rem);
     z-index: 2;
+    user-select: none;
+    pointer-events: none;
 
     @media (max-width: 1440px) {
        width: clamp( 20rem, calc(100% - 24rem), 1440px);

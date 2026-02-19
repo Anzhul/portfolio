@@ -58,7 +58,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
           tvPosition: [1.5, -1.0, 0] as [number, number, number],
           tvScale: 0.045,
           platePosition: [4.8, -1.0, 0.2] as [number, number, number],
-          plateScale: 0.0125,
+          plateScale: 0.0105,
           vasePosition: [4, -1.06, -6] as [number, number, number],
           vaseScale: 0.2,
         };
