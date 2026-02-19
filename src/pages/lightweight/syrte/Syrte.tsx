@@ -35,7 +35,7 @@ export const Syrte: React.FC = () => {
           The science fiction I’ve consumed has always featured barren deserts and alien spires. Without greenery, a subconscious understanding emerges: the desert preserves-- so what it buries must be unknowable and ancient.  
           <br></br>
           <br></br>
-          To materialize similar worlds, I used Gaea, a node-based terrain creator. After several iterations of experimentation, I settled on a landscape I thought could tell a story:
+          To create similar worlds, I used Gaea, a node-based terrain creator. After several iterations of experimentation, I settled on a landscape I thought could tell a story:
           </p>
           <div className="syrte-canvas-wrapper">
             <Lazy3DObject
@@ -48,27 +48,30 @@ export const Syrte: React.FC = () => {
             />
           </div>
           <p>
-          This terrain is a 3D fabrication of the Syrte World, a fictional landscape I created using Gaea. The model was exported as an OBJ file and processed in Blender before being 3D printed. The final piece is a hand-painted representation of the barren desert and alien spires that inspired it.
+          This terrain was originally output using 8192x8192 image maps. These maps include height, normal, and color data which were used to render the realistic terrain in Blender. Additional data such as protrusion and slope maps were also generated to enhance detail and specify features.
+          <br></br>
+          <br></br>
+          A separate 3D mesh was also created for the CNC machine to utilize. This was generated with a moderate level of detail, enough to capture the jagged spires and undulating dunes. After a few adjustments to the topology, I cropped the mesh into a circle to create a more visually appealing CNC carving.
           </p>
         </div>
         <div className="syrte-fabrication">
-            <h2>Fabrication</h2>
-            <p>
-            After exporting the terrain from Gaea, I processed the model in Blender to prepare it for 3D printing. I divided the terrain into four quadrants to fit the print bed of my Prusa MK3S+ printer. Each quadrant was printed with PLA filament at 0.2mm layer height, taking approximately 12 hours per piece.
-            <br></br>
-            <br></br>
-            Once printed, I assembled the quadrants using super glue and filled any gaps with epoxy putty. To enhance the visual appeal, I hand-painted the model using acrylic paints, focusing on earthy tones to mimic a desert landscape.
-            </p>
-                    <div className="syrte-gallery">
-          <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte9.jpg" alt="Syrte World screenshot 1" />
+          <h2>Fabrication</h2>
+          <p>
+          For the material of the terrain model, I chose a relatively cheap MDF board. This was chosen for three reasons: affordability, ease of carving and thickness. MDF is a dense, smooth material that can be carved much quicker and easily by the CNC machine, making it ideal for creating detailed terrain models. 
+          <br></br>
+          <br></br>
+          MDF is also available in more varied thicknesses, allowing for the landscape to be carved into two layers instead of three or four. The CNC carving process took 6 hours to complete, with the machine carefully following the contours of my model to create a detailed  representation of the original design.
+          </p>
+          <div className="syrte-gallery">
+            <div className="gallery-item">
+              <img loading="lazy" src="/syrte/syrte9.jpg" alt="Syrte World screenshot 1" />
+            </div>
+            <div className="gallery-item">
+              <img loading="lazy" src="/syrte/syrte10.jpg" alt="Syrte World screenshot 2" />
+            </div>
           </div>
-          <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte10.jpg" alt="Syrte World screenshot 2" />
-          </div>
-        </div>
         <p>
-            The stand for the Syrte World was designed in Blender and 3D printed using PLA filament. The design features a minimalist sci-fi aesthetic, with clean lines and geometric shapes that complement the terrain model. The stand was printed in two parts to accommodate the print bed size, and then assembled using super glue. To finish, I painted the stand with a matte black spray paint to create a sleek, modern look that contrasts with the earthy tones of the terrain.
+          Once printed, I assembled the two layers using super glue and sanded down the carving. This project was time constrained, so I opted to leave the carving unpainted. The natural color of the MDF felt appropriate for the desert landscape, reminding me of the faraway dunes of arrakis or a barren planet from Valerian.
         </p>
                             <div className="syrte-gallery">
           <div className="gallery-item">
@@ -83,10 +86,13 @@ export const Syrte: React.FC = () => {
         <div className="syrte-stand">
           <h2>Sci-fi stand</h2>
           <p>
-          After exporting the terrain from Gaea, I processed the model in Blender to prepare it for 3D printing. I divided the terrain into four quadrants to fit the print bed of my Prusa MK3S+ printer. Each quadrant was printed with PLA filament at 0.2mm layer height, taking approximately 12 hours per piece.
+            To complement the sci-fi aesthetic of the landscape, I decided to create a futuristic stand. My inspiration came from the landing gear of sci-fi spaceships: overly complex and mechanically unneccessary.
           <br></br>
           <br></br>
-          Once printed, I assembled the quadrants using super glue and filled any gaps with epoxy putty. To enhance the visual appeal, I hand-painted the model using acrylic paints, focusing on earthy tones to mimic a desert landscape.
+            I first designed the stand in my favorite CAD program, Moi3D. While Fusion360 and other CAD software are far more powerful and feature rich, I find Moi3D to be the most effective in hashing out first prototypes. The design process involved sketching out the basic shape using curves, then extruding and refining the geometry to create a moveable structure. 
+          <br></br>
+          <br></br>
+As a child who grew up playing with legos and bionicles, the design process for the moveable joints felt relatively intuitive. The piston-like joints were designed to allow for smooth movement while maintaining stability, and the overall structure was optimized for 3D printing.
           </p>
           <div className="syrte-gallery">
           <div className="gallery-item">

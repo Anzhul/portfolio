@@ -8,8 +8,8 @@ export const IIIFViewer: React.FC = () => {
   return (
     <div className={`iiifviewer-page ${isActive ? 'active' : ''}`}>
       <header className="iiifviewer-header">
-        <h1>IIIF Viewer</h1>
-        <p>Project description</p>
+        <h1>Juniper–</h1>
+        <p>A brief study of computer graphics and the IIIF (International Image Interoperability Framework)</p>
       </header>
 
       <main className="iiifviewer-content">
