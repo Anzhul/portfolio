@@ -32,6 +32,8 @@ export class BoundaryManager {
   private routeChangeCallbacks: Set<RouteChangeCallback> = new Set();
   private currentClosestEntity: EntityPosition | null = null;
   private cachedViewportBounds: ViewportBounds | null = null;
+  private lastCheckPos: [number, number] = [NaN, NaN];
+  private lastCheckZoom: number = NaN;
 
   constructor(camera: CameraContextType) {
     this.camera = camera;
@@ -191,6 +193,15 @@ export class BoundaryManager {
 
   // Check all islands and sections against current camera position
   private checkAllBoundaries() {
+    // Skip if camera hasn't moved enough since last check (50px threshold in world space)
+    const state = this.camera.getState();
+    const dx = Math.abs(state.position[0] - this.lastCheckPos[0]);
+    const dy = Math.abs(state.position[1] - this.lastCheckPos[1]);
+    const dz = Math.abs(state.zoom - this.lastCheckZoom);
+    if (dx < 50 && dy < 50 && dz < 0.01) return;
+    this.lastCheckPos = [state.position[0], state.position[1]];
+    this.lastCheckZoom = state.zoom;
+
     // Calculate viewport bounds ONCE per frame, then reuse for all boundary checks
     const viewportBounds = this.calculateViewportBounds();
     this.cachedViewportBounds = viewportBounds;

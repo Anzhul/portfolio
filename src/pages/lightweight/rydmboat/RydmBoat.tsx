@@ -27,7 +27,7 @@ export const RydmBoat: React.FC<RydmBoatProps> = () => {
     <div className={`rydmboat-page ${isActive ? 'active' : ''} ${isPageLoaded ? 'loaded' : ''}`}>
       <div className="rydmboat-image-wrapper">
         <img
-          src="/public//rymdboat/rymdboat2.webp"
+          src="/rymdboat/rymdboat2.webp"
           alt="Rymdboat concept"
           className="rydmboat-static-image"
         />

@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
       <h2>Here we are, trapped in the amber of the moment.</h2>
       <img
         className="footer-painting"
-        src="/Dream of Butterflies.png"
+        src="/Dream of Butterflies.webp"
         alt="Dream of Butterflies"
       />
       <div className="footer-links">

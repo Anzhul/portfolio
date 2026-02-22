@@ -57,7 +57,7 @@ function CameraSync() {
       const fovRadians = camera instanceof THREE.PerspectiveCamera ? (camera.fov * Math.PI) / 180 : state.fov
       const viewportHeight = gl.domElement.clientHeight
       const pixelToUnit = getPixelToUnit(fovRadians, viewportHeight)
-      
+
 
       // Instead of moving the camera, we move and scale the scene
       // This matches the CSS transform behavior: translate(x, y) scale(zoom)

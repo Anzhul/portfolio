@@ -175,8 +175,8 @@ const bicubicFragmentShader = `
         float blurRadius = blurStrength * 1.65;
         vec4 blurred = vec4(0.0);
         float totalWeight = 0.0;
-        for (float y = -1.0; y <= 1.0; y += 1.0) {
-          for (float x = -1.0; x <= 1.0; x += 1.0) {
+        for (float y = -1.0; y <= 1.0; y += 2.0) {
+          for (float x = -1.0; x <= 1.0; x += 2.0) {
             vec2 offset = vec2(x, y) * texelSize * blurRadius;
             blurred += textureBicubic(map, vUv + offset);
             totalWeight += 1.0;
@@ -201,8 +201,8 @@ const bicubicFragmentShader = `
         vec4 blurred = vec4(0.0);
         float totalWeight = 0.0;
 
-        for (float y = -1.0; y <= 1.0; y += 1.0) {
-          for (float x = -1.0; x <= 1.0; x += 1.0) {
+        for (float y = -1.0; y <= 1.0; y += 2.0) {
+          for (float x = -1.0; x <= 1.0; x += 2.0) {
             vec2 offset = vec2(x, y) * texelSize * blurRadius;
             blurred += textureBicubic(map, vUv + offset);
             totalWeight += 1.0;
@@ -244,7 +244,7 @@ function ImagePlaneMesh({
   texture.minFilter = THREE.NearestFilter
   texture.magFilter = THREE.NearestFilter
   texture.colorSpace = 'srgb'
-  texture.anisotropy = 16
+  texture.anisotropy = 1
 
   // Get texture dimensions
   const textureSize = useMemo(() => {

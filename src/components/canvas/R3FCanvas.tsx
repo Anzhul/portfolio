@@ -38,21 +38,12 @@ function R3FCanvas({ children }: R3FCanvasProps) {
           toneMapping: 0, // NoToneMapping
         }}
         linear={false}
-        shadows
       >
-        {/* Lights in world space (don't move with scene) - fixed shadow camera */}
+        {/* Lights in world space */}
         <ambientLight intensity={3} />
         <directionalLight
           position={[1000, 100, -600]}
           intensity={10}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-far={5000}
-          shadow-camera-left={-2000}
-          shadow-camera-right={2000}
-          shadow-camera-top={2000}
-          shadow-camera-bottom={-2000}
         />
 
         {/* Camera sync component updates R3F camera to match CameraContext */}
