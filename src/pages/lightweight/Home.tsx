@@ -27,40 +27,40 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
     switch (breakpoint) {
       case 'mobile':
         return {
-          tvPosition: [0.5, -0.8, 0] as [number, number, number],
-          tvScale: 0.04,
+          tvPosition: [0, -0.35, 0] as [number, number, number],
+          tvScale: 0.01,
           platePosition: [-0.5, -1.1, 0.2] as [number, number, number],
-          plateScale: 0.5,
+          plateScale: 0.0,
           vasePosition: [-0.5, -0.8, -0.2] as [number, number, number],
-          vaseScale: 0.4,
+          vaseScale: 0.0,
         };
       case 'tablet':
         return {
-          tvPosition: [1.75, -0.8, 0] as [number, number, number],
-          tvScale: 0.05,
-          platePosition: [0.5, -1.1, 0.2] as [number, number, number],
-          plateScale: 0.6,
-          vasePosition: [0.5, -0.8, -0.2] as [number, number, number],
-          vaseScale: 0.5,
+          tvPosition: [0, -3.5, 0] as [number, number, number],
+          tvScale: 0.1,
+          platePosition: [4.2, -3.5, 0.2] as [number, number, number],
+          plateScale: 0,
+          vasePosition: [1.85, -3.75, -6] as [number, number, number],
+          vaseScale: 0,
         };
       case 'desktop':
         return {
-          tvPosition: [2.0, -0.8, 0] as [number, number, number],
-          tvScale: 0.06,
-          platePosition: [0.8, -1.1, 0.2] as [number, number, number],
-          plateScale: 0.7,
-          vasePosition: [0.8, -0.8, -0.2] as [number, number, number],
-          vaseScale: 0.6,
+          tvPosition: [-2.85, -3.5, 0] as [number, number, number],
+          tvScale: 0.073,
+          platePosition: [4.2, -3.5, 0.2] as [number, number, number],
+          plateScale: 0.0175,
+          vasePosition: [1.85, -3.75, -6] as [number, number, number],
+          vaseScale: 0.4,
         };
       case 'wide':
       default:
         return {
-          tvPosition: [1.5, -1.0, 0] as [number, number, number],
-          tvScale: 0.045,
-          platePosition: [4.8, -1.0, 0.2] as [number, number, number],
-          plateScale: 0.0105,
-          vasePosition: [4, -1.06, -6] as [number, number, number],
-          vaseScale: 0.2,
+          tvPosition: [-2.85, -3.5, 0] as [number, number, number],
+          tvScale: 0.075,
+          platePosition: [4.2, -3.5, 0.2] as [number, number, number],
+          plateScale: 0.0175,
+          vasePosition: [1.85, -3.75, -6] as [number, number, number],
+          vaseScale: 0.4,
         };
     }
   }, [breakpoint]);
@@ -94,8 +94,15 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
       ref={internalRef}
       className={`home ${isActive ? 'active' : ''} ${isPageLoaded ? 'loaded' : ''}`}
     >
-      {/* Canvas with TV + game */}
-      <Lazy3DObject
+
+
+      <div className="home-intro">
+        <header className="home-header">
+                      <div className="home-intro-text">
+              <h1>Hi, I'm Anzhu<span style={{ color: '#222222', fontSize: '2.2rem', fontFamily: 'source-han-sans-cjk-sc, sans-serif', fontWeight: '500', fontStyle: 'normal', display: 'none'}}>安竹</span>— an artist & developer</h1>
+            </div>
+          <div className="home-intro-content">
+                  <Lazy3DObject
         loadStrategy="immediate"
         component={HomeScene}
         componentProps={{
@@ -113,19 +120,32 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
         placeholder={null}
         loadingFallback={null}
       />
-
-      <div className="home-intro">
-        <header className="home-header">
-          <div className="home-intro-content">
-            <h1>Hi,</h1>
-            <h1>I'm <span>Anzhu</span>—</h1>
-            <p className="tagline">An artist currently entangled with design and development.</p>
-            <br></br>
           </div>
         </header>
       </div>
 
+      
+
+
       <main className="home-content">
+        <div className="home-philosophy">
+          <h2>My Philosophy</h2>
+          <div className="philosophy-cards">
+            <div className="philosophy-card">
+              <h3>Simplicity</h3>
+              <p>Less is more– the competition between empty space and encroaching information defines ninety percent of a composition. I make personal art on the assumption the viewer is inherently inquisitive, but design with retrograde intuition.</p>
+            </div>
+            <div className="philosophy-card">
+              <h3>Performance</h3>
+              <p>Good design is clear design. Every element must have a purpose, and that purpose must be immediately obvious to the viewer. If something needs explanation, it has failed in its function.</p>
+            </div>
+            <div className="philosophy-card">
+              <h3>Identity</h3>
+              <p>Design is a conversation between creator and user. Understanding the needs, desires, and limitations of the audience is crucial to crafting meaningful experiences that resonate on a personal level.</p>
+            </div>
+          </div>
+        </div>
+
         <div className="home-projects">
           <h2>Projects</h2>
           <div className="project-list">
@@ -137,7 +157,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
               </div>
               <div
                 className="project-image project-image-1"
-                style={{ backgroundImage: `url('/Untitled.png')` }}
+                style={{ backgroundImage: `url('/Untitled.webp')` }}
               ></div>
             </a>
 
@@ -148,7 +168,7 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
               </div>
               <div
                 className="project-image"
-                style={{ backgroundImage: `url('/spaceship2.png')` }}
+                style={{ backgroundImage: `url('/rymdboat/rymdboatplanet.webp')` }}
               ></div>
             </a>
 
@@ -178,16 +198,6 @@ export const Home: React.FC<HomeProps> = ({ isVisible = true }) => {
               </video>
             </a>
           </div>
-        </div>
-
-        <div className="home-philosophy">
-          <h2>Core Beliefs</h2>
-          <h3>Simplicity</h3>
-          <p>Less is more– the competition between empty space and encroaching information defines ninety percent of a composition. I make personal art on the assumption the viewer is inherently inquisitive, but design with retrograde intuition.</p>
-          <h3>Performance</h3>
-          <p>Good design is clear design. Every element must have a purpose, and that purpose must be immediately obvious to the viewer. If something needs explanation, it has failed in its function.</p>
-          <h3>Identity</h3>
-          <p>Design is a conversation between creator and user. Understanding the needs, desires, and limitations of the audience is crucial to crafting meaningful experiences that resonate on a personal level.</p>
         </div>
       </main>
     </div>

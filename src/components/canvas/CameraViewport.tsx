@@ -31,6 +31,13 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
   const isCustomAnimatingRef = useRef(false)
   const restartAnimationRef = useRef<(() => void) | null>(null)
 
+  // Touch interaction state
+  const isTouchPanningRef = useRef(false)
+  const isPinchingRef = useRef(false)
+  const lastTouchPosRef = useRef({ x: 0, y: 0 })
+  const pinchStartDistRef = useRef(0)
+  const pinchStartZoomRef = useRef(0)
+
   // Target values for trailing
   const initialZoom = isMobileOnly ? 0.3 : 0.45
   const targetZoomRef = useRef(initialZoom)
@@ -618,22 +625,137 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       }
     }
 
-    // Prevent pinch-to-zoom on touch devices
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 1) {
+    // Touch: single-finger pan, two-finger pinch-to-zoom + pan
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        // Single finger — start panning
+        isTouchPanningRef.current = true
+        isPinchingRef.current = false
+        lastTouchPosRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        }
+      } else if (e.touches.length === 2) {
+        // Two fingers — start pinch-to-zoom
         e.preventDefault()
+        isTouchPanningRef.current = false
+        isPinchingRef.current = true
+
+        const dx = e.touches[1].clientX - e.touches[0].clientX
+        const dy = e.touches[1].clientY - e.touches[0].clientY
+        pinchStartDistRef.current = Math.sqrt(dx * dx + dy * dy)
+        pinchStartZoomRef.current = targetZoomRef.current
+
+        lastTouchPosRef.current = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+        }
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1 && isTouchPanningRef.current && !isPinchingRef.current) {
+        // Single-finger pan
+        e.preventDefault()
+        const touch = e.touches[0]
+        const deltaX = touch.clientX - lastTouchPosRef.current.x
+        const deltaY = touch.clientY - lastTouchPosRef.current.y
+
+        const [x, y, z] = targetPositionRef.current
+        const panSpeed = Math.max(0.25, Math.min(1, 1 / targetZoomRef.current))
+
+        targetPositionRef.current = [x + deltaX * panSpeed, y + deltaY * panSpeed, z]
+
+        const [trueX, trueY, trueZ] = trueTargetPositionRef.current
+        trueTargetPositionRef.current = [trueX + deltaX * panSpeed, trueY + deltaY * panSpeed, trueZ]
+
+        lastTouchPosRef.current = { x: touch.clientX, y: touch.clientY }
+        restartAnimationRef.current?.()
+      } else if (e.touches.length === 2) {
+        // Two-finger pinch-to-zoom + pan
+        e.preventDefault()
+        isPinchingRef.current = true
+        isTouchPanningRef.current = false
+
+        // Current pinch distance → zoom ratio
+        const dx = e.touches[1].clientX - e.touches[0].clientX
+        const dy = e.touches[1].clientY - e.touches[0].clientY
+        const currentDist = Math.sqrt(dx * dx + dy * dy)
+        const scale = currentDist / pinchStartDistRef.current
+        const newZoom = Math.max(0.15, Math.min(1, pinchStartZoomRef.current * scale))
+
+        // Current midpoint (for combined pan)
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+
+        // Zoom centered on pinch midpoint (same math as wheel zoom)
+        // Using new midpoint automatically incorporates pan movement
+        const centerX = cachedRect.width / 2
+        const centerY = cachedRect.height / 2
+
+        const oldMidLocalX = lastTouchPosRef.current.x - cachedRect.left
+        const oldMidLocalY = lastTouchPosRef.current.y - cachedRect.top
+        const newMidLocalX = midX - cachedRect.left
+        const newMidLocalY = midY - cachedRect.top
+
+        const [camX, camY, camZ] = targetPositionRef.current
+        const oldZoom = targetZoomRef.current
+
+        // World point under previous midpoint
+        const worldX = (oldMidLocalX - centerX - camX) / oldZoom
+        const worldY = (oldMidLocalY - centerY - camY) / oldZoom
+
+        // Reposition so same world point lands under new midpoint at new zoom
+        targetPositionRef.current = [
+          newMidLocalX - centerX - worldX * newZoom,
+          newMidLocalY - centerY - worldY * newZoom,
+          camZ
+        ]
+
+        const [trueCamX, trueCamY, trueCamZ] = trueTargetPositionRef.current
+        const trueWorldX = (oldMidLocalX - centerX - trueCamX) / oldZoom
+        const trueWorldY = (oldMidLocalY - centerY - trueCamY) / oldZoom
+
+        trueTargetPositionRef.current = [
+          newMidLocalX - centerX - trueWorldX * newZoom,
+          newMidLocalY - centerY - trueWorldY * newZoom,
+          trueCamZ
+        ]
+
+        targetZoomRef.current = newZoom
+        lastTouchPosRef.current = { x: midX, y: midY }
+        restartAnimationRef.current?.()
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        isTouchPanningRef.current = false
+        isPinchingRef.current = false
+      } else if (e.touches.length === 1) {
+        // Went from pinch to single finger — switch to pan mode
+        isPinchingRef.current = false
+        isTouchPanningRef.current = true
+        lastTouchPosRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        }
       }
     }
 
     container.addEventListener('wheel', handleWheel, { passive: false })
     window.addEventListener('keydown', handleKeyDown)
+    container.addEventListener('touchstart', handleTouchStart, { passive: false })
     container.addEventListener('touchmove', handleTouchMove, { passive: false })
+    container.addEventListener('touchend', handleTouchEnd)
 
     return () => {
       if (resizeTimeout) clearTimeout(resizeTimeout)
       container.removeEventListener('wheel', handleWheel)
       window.removeEventListener('keydown', handleKeyDown)
+      container.removeEventListener('touchstart', handleTouchStart)
       container.removeEventListener('touchmove', handleTouchMove)
+      container.removeEventListener('touchend', handleTouchEnd)
       window.removeEventListener('resize', updateCachedRect)
     }
   }, [])

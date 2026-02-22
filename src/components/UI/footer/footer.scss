@@ -8,12 +8,37 @@
   z-index: 1;
   margin-top: 4rem;
 
+  .footer-painting {
+    width: 100%;
+    object-fit: cover;
+    display: block;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+
+    @media screen and (max-width: 1440px) {
+    }
+
+    @media screen and (max-width: 1024px) {
+      height: clamp(10rem, 20vh, 20rem);
+    }
+
+    @media screen and (max-width: 768px) {
+      height: clamp(10rem, 10vh, 20rem);
+    }
+  }
+
   @media screen and (max-width: 1440px) {
     width: calc(100% - 16rem);
   }
 
   @media screen and (max-width: 1024px) {
     width: calc(100% - 2rem);
+  }
+
+  @media screen and (max-width: 768px) {
+    width: calc(100% - 2rem);
+    padding-left: 1.618034 * 1rem;
+    padding-right: 1.618034 * 1rem;
   }
 
   h2 {
@@ -54,6 +79,13 @@
 
           &:hover {
             opacity: 0.6;
+          }
+          @media screen and (max-width: 1024px) {
+            font-size: 1rem;
+          }
+
+          @media screen and (max-width: 767px) {
+            font-size: 0.85rem;
           }
         }
       }

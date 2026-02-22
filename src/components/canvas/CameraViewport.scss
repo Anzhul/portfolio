@@ -7,6 +7,7 @@
   overflow: hidden;
   cursor: grab;
   user-select: none;
+  touch-action: none; // Prevent default browser touch gestures (scroll, zoom)
   pointer-events: auto; // Capture pointer events for dragging
 
   &:active {

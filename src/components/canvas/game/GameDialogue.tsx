@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { ticker } from '../../../utils/AnimationTicker'
 import type { TextBoxChoice, DialogueState } from './types'
+import { useSceneVisible } from '../SceneVisibilityContext'
 
 // --- Constants ---
 const TB_CANVAS_W = 768
@@ -37,6 +38,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 
 // --- FloatingSprite (unchanged) ---
 export function FloatingSprite({ position }: { position: [number, number, number] }) {
+  const isVisible = useSceneVisible()
   const texture = useLoader(TextureLoader, '/footer-env/Nostalgia.png')
   const meshRef = useRef<THREE.Mesh>(null!)
 
@@ -47,6 +49,8 @@ export function FloatingSprite({ position }: { position: [number, number, number
   }, [texture])
 
   useEffect(() => {
+    if (!isVisible) return
+
     const updateHover = () => {
       if (meshRef.current) {
         const time = Date.now() * 0.001
@@ -55,7 +59,7 @@ export function FloatingSprite({ position }: { position: [number, number, number
     }
     ticker.add(updateHover)
     return () => ticker.remove(updateHover)
-  }, [position])
+  }, [position, isVisible])
 
   const size = 12.8
 
@@ -707,12 +711,15 @@ export function NostalgiaDialogue({
   autoWalkRef?: React.MutableRefObject<number | null>
   gameInputRef?: React.RefObject<{ active: boolean; startX: number; currentX: number; startY: number; currentY: number; maxDx: number; startTime: number }>
 }) {
+  const isVisible = useSceneVisible()
   const [inRange, setInRange] = useState(false)
   const [dialogueState, setDialogueState] = useState<DialogueState>('idle')
   const loggedOnceRef = useRef(false)
 
   // Distance check
   useEffect(() => {
+    if (!isVisible) return
+
     const checkDistance = () => {
       if (!playerPositionRef.current) return
       const dx = playerPositionRef.current.x - position[0]
@@ -742,7 +749,7 @@ export function NostalgiaDialogue({
     }
     ticker.add(checkDistance)
     return () => ticker.remove(checkDistance)
-  }, [position, inRange, playerPositionRef, dialogueState, autoWalkRef])
+  }, [position, inRange, playerPositionRef, dialogueState, autoWalkRef, isVisible])
 
   // Sync dialogue-active state to ref (used by TVModel to gate tap → Enter)
   useEffect(() => {
@@ -751,7 +758,7 @@ export function NostalgiaDialogue({
 
   // Enter to start dialogue when in range and idle
   useEffect(() => {
-    if (!inRange || dialogueState !== 'idle') return
+    if (!isVisible || !inRange || dialogueState !== 'idle') return
     console.log('[Dialogue] Listening for Enter key (inRange=true, state=idle)')
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -761,7 +768,7 @@ export function NostalgiaDialogue({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [inRange, dialogueState])
+  }, [isVisible, inRange, dialogueState])
 
   return (
     <>

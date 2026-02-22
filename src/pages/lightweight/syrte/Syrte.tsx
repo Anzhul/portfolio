@@ -5,7 +5,11 @@ import { Lazy3DObject } from '../../../components/lazy/Lazy3DObject';
 
 const SyrteScene = lazy(() => import('../../../components/canvas/syrte/SyrteScene'));
 
-export const Syrte: React.FC = () => {
+interface SyrteProps {
+  isVisible?: boolean;
+}
+
+export const Syrte: React.FC<SyrteProps> = ({ isVisible = true }) => {
   const { isActive } = usePageTransition();
 
   return (
@@ -17,16 +21,16 @@ export const Syrte: React.FC = () => {
       <main className="syrte-content">
         <div className="syrte-gallery">
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte0.png" alt="Syrte World screenshot 1" />
+            <img loading="lazy" src="/syrtewebp/syrte1.webp" alt="Syrte World screenshot 1" />
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte2.jpg" alt="Syrte World screenshot 2" />
+            <img loading="lazy" src="/syrtewebp/syrte2.webp" alt="Syrte World screenshot 2" style={{ transform: 'rotate(90deg)' }} />
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte3.jpg" alt="Syrte World screenshot 3" />
+            <img loading="lazy" src="/syrtewebp/syrte3.webp" alt="Syrte World screenshot 3" style={{ transform: 'rotate(90deg)' }}/>
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte8.png" alt="Syrte World screenshot 4" />
+            <img loading="lazy" src="/syrtewebp/syrte4.webp" alt="Syrte World screenshot 4" />
           </div>
         </div>
         <div className="syrte-conception">
@@ -41,7 +45,7 @@ export const Syrte: React.FC = () => {
             <Lazy3DObject
               loadStrategy="immediate"
               component={SyrteScene}
-              componentProps={{ isVisible: true, colorMapTifPath: '/syrte/syrte_color.tif' }}
+              componentProps={{ isVisible, colorMapTifPath: '/syrte/syrte_color.png' }}
               className="syrte-scene-container"
               placeholder={null}
               loadingFallback={null}
@@ -64,10 +68,10 @@ export const Syrte: React.FC = () => {
           </p>
           <div className="syrte-gallery">
             <div className="gallery-item">
-              <img loading="lazy" src="/syrte/syrte9.jpg" alt="Syrte World screenshot 1" />
+              <img loading="lazy" src="/syrtewebp/syrte5.webp" alt="Syrte World screenshot 1" style={{ transform: 'rotate(90deg)' }}/>
             </div>
             <div className="gallery-item">
-              <img loading="lazy" src="/syrte/syrte10.jpg" alt="Syrte World screenshot 2" />
+              <img loading="lazy" src="/syrtewebp/syrte6.webp" alt="Syrte World screenshot 2" />
             </div>
           </div>
         <p>
@@ -75,10 +79,10 @@ export const Syrte: React.FC = () => {
         </p>
                             <div className="syrte-gallery">
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte15.png" alt="Syrte World screenshot 1" />
+            <img loading="lazy" src="/syrtewebp/syrte7.webp" alt="Syrte World screenshot 1" />
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte6.jpg" alt="Syrte World screenshot 2" />
+            <img loading="lazy" src="/syrtewebp/syrte8.webp" alt="Syrte World screenshot 2" style={{ transform: 'rotate(90deg)' }} />
           </div>
         </div>
         </div>
@@ -96,10 +100,10 @@ As a child who grew up playing with legos and bionicles, the design process for 
           </p>
           <div className="syrte-gallery">
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte11.png" alt="Syrte World screenshot 1" />
+            <img loading="lazy" src="/syrtewebp/syrte9.webp" alt="Syrte World screenshot 1" />
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte12.jpg" alt="Syrte World screenshot 2" />
+            <img loading="lazy" src="/syrtewebp/syrte10.webp" alt="Syrte World screenshot 2" style={{ transform: 'rotate(90deg)' }} />
           </div>
           </div>
           <p>
@@ -107,10 +111,10 @@ As a child who grew up playing with legos and bionicles, the design process for 
           </p>
       <div className="syrte-gallery">
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte13.png" alt="Syrte World screenshot 1" />
+            <img loading="lazy" src="/syrtewebp/syrte11.webp" alt="Syrte World screenshot 1"/>
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte14.jpg" alt="Syrte World screenshot 2" />
+            <img loading="lazy" src="/syrtewebp/syrte12.webp" alt="Syrte World screenshot 2" />
           </div>
         </div>
         <p>
@@ -119,10 +123,10 @@ As a child who grew up playing with legos and bionicles, the design process for 
         </p>
               <div className="syrte-gallery">
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte7.jpg" alt="Syrte World screenshot 1" />
+            <img loading="lazy" src="/syrtewebp/syrte13.webp" alt="Syrte World screenshot 1" style={{ transform: 'rotate(90deg)' }}/>
           </div>
           <div className="gallery-item">
-            <img loading="lazy" src="/syrte/syrte7.png" alt="Syrte World screenshot 2" />
+            <img loading="lazy" src="/syrtewebp/syrte14.webp" alt="Syrte World screenshot 2"/>
           </div>
         </div>
         </div>

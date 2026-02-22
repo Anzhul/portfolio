@@ -39,7 +39,7 @@ function PenCapMesh({
   penMaterialOverrides?: MaterialOverride[]
   capMaterialOverrides?: MaterialOverride[]
 }) {
-  const { camera, gl, scene } = useThree()
+  const { camera, scene } = useThree()
 
   // Load models
   const penGltf = useLoader(GLTFLoader, '/pen2.glb')

@@ -6,6 +6,7 @@ import { ticker } from '../../../utils/AnimationTicker';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { applyMaterialOverrides, type MaterialOverride } from '../home/materialUtils';
 import type { GameInput } from './types';
+import { useSceneVisible } from '../SceneVisibilityContext';
 
 // CRT screen shader
 export const crtVertexShader = `
@@ -72,6 +73,7 @@ function screenUvToWorld(meshUv: { x: number; y: number }, cam: THREE.Orthograph
 export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number, number], scale = 1, materialOverrides = [], gameInputRef, npcInRangeRef, gameCamera, autoWalkRef }: { screenTexture: THREE.Texture; position?: [number, number, number]; scale?: number; materialOverrides?: MaterialOverride[]; gameInputRef?: React.MutableRefObject<GameInput>; npcInRangeRef?: React.MutableRefObject<boolean>; gameCamera?: THREE.OrthographicCamera; autoWalkRef?: React.MutableRefObject<number | null> }) {
   const gltf = useLoader(GLTFLoader, '/tv.glb');
   const { camera: rootCamera, gl } = useThree();
+  const isVisible = useSceneVisible();
   const screenMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const screenMeshRef = useRef<THREE.Mesh | null>(null);
   const lastTapUvRef = useRef<{ x: number; y: number } | null>(null);
@@ -127,6 +129,8 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
 
   // Animate the time uniform for noise variation
   useEffect(() => {
+    if (!isVisible) return;
+
     const update = () => {
       if (screenMaterialRef.current) {
         screenMaterialRef.current.uniforms.time.value = performance.now() * 0.001;
@@ -134,7 +138,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     };
     ticker.add(update);
     return () => ticker.remove(update);
-  }, []);
+  }, [isVisible]);
 
   // Game input: click on TV to start drag, tap to interact (Enter)
   const isHoveredRef = useRef(false);
@@ -161,7 +165,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
   }, [gameCamera]);
 
   useEffect(() => {
-    if (!gameInputRef) return;
+    if (!gameInputRef || !isVisible) return;
 
     const handlePointerMove = (e: PointerEvent) => {
       if (gameInputRef.current.active) {
@@ -212,7 +216,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [gameInputRef, npcInRangeRef, gameCamera, raycastScreenUv, isNpcArea]);
+  }, [gameInputRef, npcInRangeRef, gameCamera, raycastScreenUv, isNpcArea, isVisible]);
 
   const handleTVPointerDown = useCallback((e: any) => {
     if (!gameInputRef) return;
@@ -262,6 +266,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
 export function PlateModel({ position = [0, 0, 0] as [number, number, number], scale = 1 }: { position?: [number, number, number]; scale?: number }) {
   const gltf = useLoader(GLTFLoader, '/plate.glb');
   const orangeTexture = useLoader(TextureLoader, '/Orange.png');
+  const isVisible = useSceneVisible();
   const groupRef = useRef<THREE.Group>(null);
   const isDragging = useRef(false);
   const isHovered = useRef(false);
@@ -288,7 +293,7 @@ export function PlateModel({ position = [0, 0, 0] as [number, number, number], s
             mat.color.set('#ffe8c8');
             mat.emissive.set('#ff8c40');
             mat.emissiveIntensity = 0.15;
-            mat.roughness = 0.6;
+            mat.roughness = 0.9;
             mat.metalness = 0.0;
             mat.needsUpdate = true;
           } else {
@@ -337,6 +342,8 @@ export function PlateModel({ position = [0, 0, 0] as [number, number, number], s
 
   // Window-level listeners for drag tracking (user may drag outside mesh)
   useEffect(() => {
+    if (!isVisible) return;
+
     const handlePointerMove = (e: PointerEvent) => {
       if (!isDragging.current || !groupRef.current) return;
       const deltaX = e.clientX - prevX.current;
@@ -358,7 +365,7 @@ export function PlateModel({ position = [0, 0, 0] as [number, number, number], s
       window.removeEventListener('pointerup', handlePointerUp);
       document.body.style.cursor = '';
     };
-  }, []);
+  }, [isVisible]);
 
   return (
     <group
@@ -380,6 +387,7 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
   const gltf = useLoader(GLTFLoader, '/Vase.glb');
   const bodyTexture = useLoader(TextureLoader, '/vase_body.png');
   const footTexture = useLoader(TextureLoader, '/vase_foot.png');
+  const isVisible = useSceneVisible();
   const groupRef = useRef<THREE.Group>(null);
   const isDragging = useRef(false);
   const isHovered = useRef(false);
@@ -472,6 +480,8 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
 
   // Window-level listeners for drag tracking (user may drag outside mesh)
   useEffect(() => {
+    if (!isVisible) return;
+
     const handlePointerMove = (e: PointerEvent) => {
       if (!isDragging.current || !groupRef.current) return;
       const deltaX = e.clientX - prevX.current;
@@ -493,7 +503,7 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
       window.removeEventListener('pointerup', handlePointerUp);
       document.body.style.cursor = '';
     };
-  }, []);
+  }, [isVisible]);
 
   return (
     <group

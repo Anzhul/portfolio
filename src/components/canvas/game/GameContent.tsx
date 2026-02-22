@@ -5,6 +5,7 @@ import { useMemo, useEffect, useRef, useState } from 'react';
 import { ticker } from '../../../utils/AnimationTicker';
 import type { Tile, TileMapData, LayerPlaneProps, PhysicsPlayerProps } from './types';
 import { NostalgiaDialogue } from './GameDialogue';
+import { useSceneVisible } from '../SceneVisibilityContext';
 
 // Import all Z layer JSON files
 import Z0Data from '../../../data/Z0.json';
@@ -17,6 +18,7 @@ import Z6Data from '../../../data/Z6.json';
 
 // Render an entire Z layer as a single plane
 function LayerPlane({ layerData, zIndex, spritesheetTexture, tilesPerRow, position, parallaxFactor, playerPositionRef }: LayerPlaneProps) {
+  const isVisible = useSceneVisible();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const meshRef = useRef<THREE.Mesh>(null!);
 
@@ -84,6 +86,8 @@ function LayerPlane({ layerData, zIndex, spritesheetTexture, tilesPerRow, positi
 
   // Apply parallax effect based on player position
   useEffect(() => {
+    if (!isVisible) return;
+
     const updateParallax = () => {
       if (meshRef.current) {
         // Calculate parallax offset based on player position and layer depth
@@ -96,7 +100,7 @@ function LayerPlane({ layerData, zIndex, spritesheetTexture, tilesPerRow, positi
 
     ticker.add(updateParallax);
     return () => ticker.remove(updateParallax);
-  }, [position, parallaxFactor, playerPositionRef, zIndex]);
+  }, [position, parallaxFactor, playerPositionRef, zIndex, isVisible]);
 
   return (
     <mesh ref={meshRef} position={position}>
@@ -113,6 +117,7 @@ function LayerPlane({ layerData, zIndex, spritesheetTexture, tilesPerRow, positi
 
 // Physics Player with collision detection
 function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize, mapWidth, mapHeight, playerPositionRef, gameCamera, gameViewportWidth, gameInputRef, autoWalkRef, npcInRangeRef }: PhysicsPlayerProps) {
+  const isVisible = useSceneVisible();
   const meshRef = useRef<THREE.Mesh>(null!);
   const velocityRef = useRef({ x: 0, y: 0 });
   const keysRef = useRef({ left: false, right: false, up: false });
@@ -237,6 +242,8 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
 
   // Keyboard controls
   useEffect(() => {
+    if (!isVisible) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' || e.key === 'a') keysRef.current.left = true;
       if (e.key === 'ArrowRight' || e.key === 'd') keysRef.current.right = true;
@@ -256,12 +263,14 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [isVisible]);
 
   // Pointer input from TV clicks (read in physics loop)
 
   // Physics update loop
   useEffect(() => {
+    if (!isVisible) return;
+
     const updatePhysics = () => {
       if (!meshRef.current) return;
 
@@ -422,7 +431,7 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
 
     ticker.add(updatePhysics);
     return () => ticker.remove(updatePhysics);
-  }, [collisionTiles, collisionPosition, tileSize, pixelSize, planeWidth, planeHeight, runTextures, idleTexture, gameCamera, gameViewportWidth]);
+  }, [collisionTiles, collisionPosition, tileSize, pixelSize, planeWidth, planeHeight, runTextures, idleTexture, gameCamera, gameViewportWidth, isVisible]);
 
   return (
     <mesh ref={meshRef} position={[playerPositionRef.current.x, playerPositionRef.current.y, playerPositionRef.current.z]}>
@@ -439,6 +448,7 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
 
 // Camera follower component
 function CameraFollower({ playerPositionRef, gameCamera }: { playerPositionRef: React.MutableRefObject<THREE.Vector3>; gameCamera: THREE.OrthographicCamera }) {
+  const isVisible = useSceneVisible();
 
   useEffect(() => {
     // Lock camera rotation to look straight ahead
@@ -447,6 +457,8 @@ function CameraFollower({ playerPositionRef, gameCamera }: { playerPositionRef: 
   }, [gameCamera]);
 
   useEffect(() => {
+    if (!isVisible) return;
+
     const updateCamera = () => {
       const targetX = playerPositionRef.current.x;
       const targetY = playerPositionRef.current.y;
@@ -461,12 +473,12 @@ function CameraFollower({ playerPositionRef, gameCamera }: { playerPositionRef: 
 
     ticker.add(updateCamera);
     return () => ticker.remove(updateCamera);
-  }, [gameCamera, playerPositionRef]);
+  }, [gameCamera, playerPositionRef, isVisible]);
 
   return null;
 }
 
-export function GameContent({ gameCamera, gameViewportWidth, gameInputRef, npcInRangeRef, autoWalkRef }: { gameCamera: THREE.OrthographicCamera; gameViewportWidth: number; gameInputRef?: React.RefObject<{ active: boolean; startX: number; currentX: number; maxDx: number; startTime: number }>; npcInRangeRef?: React.MutableRefObject<boolean>; autoWalkRef?: React.MutableRefObject<number | null> }) {
+export function GameContent({ gameCamera, gameViewportWidth, gameInputRef, npcInRangeRef, autoWalkRef }: { gameCamera: THREE.OrthographicCamera; gameViewportWidth: number; gameInputRef?: React.RefObject<{ active: boolean; startX: number; currentX: number; startY: number; currentY: number; maxDx: number; startTime: number }>; npcInRangeRef?: React.MutableRefObject<boolean>; autoWalkRef?: React.MutableRefObject<number | null> }) {
   // Texture loading once
   const spritesheetTexture = useLoader(THREE.TextureLoader, "/footer-env/spritesheet.png");
   useMemo(() => {

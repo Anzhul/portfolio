@@ -37,11 +37,13 @@ function RenderTrigger({ isVisible = true }: { isVisible?: boolean }) {
 /**
  * TickerOrbitControls - OrbitControls updated via the global animation ticker
  */
-function TickerOrbitControls() {
+function TickerOrbitControls({ isVisible = true }: { isVisible?: boolean }) {
   const { camera, gl } = useThree()
   const controlsRef = useRef<OrbitControls | null>(null)
 
   useEffect(() => {
+    if (!isVisible) return
+
     const controls = new OrbitControls(camera, gl.domElement)
     controls.enableDamping = true
     controls.dampingFactor = 0.08
@@ -75,7 +77,7 @@ function TickerOrbitControls() {
       window.removeEventListener('keyup', handleKeyUp)
       controls.dispose()
     }
-  }, [camera, gl])
+  }, [camera, gl, isVisible])
 
   return null
 }
@@ -83,16 +85,14 @@ function TickerOrbitControls() {
 /**
  * ZoomIn - Animates the camera from a far position to the target once ready
  */
-function ZoomIn({ ready }: { ready: boolean }) {
+function ZoomIn({ ready, isVisible = true }: { ready: boolean; isVisible?: boolean }) {
   const { camera } = useThree()
   const progressRef = useRef(0)
   const startPos = useRef(new THREE.Vector3(0, 8, 14))
   const endPos = useRef(new THREE.Vector3(0, 0.8, 1.4))
 
   useEffect(() => {
-    if (!ready) return
-
-    progressRef.current = 0
+    if (!ready || !isVisible) return
 
     const animate = (_ts: number, dt: number) => {
       if (progressRef.current >= 1) return
@@ -106,7 +106,7 @@ function ZoomIn({ ready }: { ready: boolean }) {
 
     ticker.add(animate)
     return () => ticker.remove(animate)
-  }, [camera, ready])
+  }, [camera, ready, isVisible])
 
   return null
 }
@@ -120,12 +120,14 @@ function TerrainModel({
   colorMapTifPath,
   onTextureLoaded,
   visible = true,
+  isVisible = true,
 }: {
   modelPath?: string
   colorMapPath?: string
   colorMapTifPath?: string
   onTextureLoaded?: () => void
   visible?: boolean
+  isVisible?: boolean
 }) {
   const gltf = useLoader(GLTFLoader, modelPath)
   const groupRef = useRef<THREE.Group>(null!)
@@ -141,6 +143,8 @@ function TerrainModel({
 
   // Rotate slowly around Z-axis
   useEffect(() => {
+    if (!isVisible) return
+
     const animate = (_t: number, dt: number) => {
       if (groupRef.current) {
         groupRef.current.rotation.y += 0.00005 * dt
@@ -148,7 +152,7 @@ function TerrainModel({
     }
     ticker.add(animate)
     return () => ticker.remove(animate)
-  }, [])
+  }, [isVisible])
 
   useEffect(() => {
     const mapPath = colorMapTifPath || colorMapPath
@@ -212,8 +216,8 @@ function Scene({
   return (
     <>
       <RenderTrigger isVisible={isVisible} />
-      <TickerOrbitControls />
-      <ZoomIn ready={textureReady} />
+      <TickerOrbitControls isVisible={isVisible} />
+      <ZoomIn ready={textureReady} isVisible={isVisible} />
 
       {/* Lighting */}
       <ambientLight intensity={1.0} />
@@ -228,6 +232,7 @@ function Scene({
           colorMapTifPath={colorMapTifPath}
           onTextureLoaded={handleTextureLoaded}
           visible={textureReady}
+          isVisible={isVisible}
         />
       </Suspense>
     </>

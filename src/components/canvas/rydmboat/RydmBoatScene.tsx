@@ -169,11 +169,13 @@ function BoatMesh({
 /**
  * ScrollProgressIndicator - Visual debug showing scroll progress in the scene
  */
-function ScrollProgressIndicator() {
+function ScrollProgressIndicator({ isVisible = true }: { isVisible?: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null!)
   const scroll = useScroll()
 
   useEffect(() => {
+    if (!isVisible) return
+
     const update = () => {
       if (!meshRef.current) return
       const progress = scroll.getState().smoothProgress
@@ -187,7 +189,7 @@ function ScrollProgressIndicator() {
 
     ticker.add(update)
     return () => ticker.remove(update)
-  }, [scroll])
+  }, [scroll, isVisible])
 
   return (
     <mesh ref={meshRef} position={[-3, -2.5, 0]}>
@@ -200,11 +202,13 @@ function ScrollProgressIndicator() {
 /**
  * ProgressBar - A 3D progress bar showing scroll position
  */
-function ProgressBar() {
+function ProgressBar({ isVisible = true }: { isVisible?: boolean }) {
   const barRef = useRef<THREE.Mesh>(null!)
   const scroll = useScroll()
 
   useEffect(() => {
+    if (!isVisible) return
+
     const update = () => {
       if (!barRef.current) return
       const progress = scroll.getState().smoothProgress
@@ -214,7 +218,7 @@ function ProgressBar() {
 
     ticker.add(update)
     return () => ticker.remove(update)
-  }, [scroll])
+  }, [scroll, isVisible])
 
   return (
     <group position={[0, -2.5, 0]}>
@@ -309,8 +313,8 @@ function Scene({
       </Suspense>
 
       {/* Visual scroll indicators */}
-      <ProgressBar />
-      <ScrollProgressIndicator />
+      <ProgressBar isVisible={isVisible} />
+      <ScrollProgressIndicator isVisible={isVisible} />
     </>
   )
 }

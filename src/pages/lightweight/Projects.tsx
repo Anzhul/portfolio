@@ -14,7 +14,7 @@ interface ProjectData {
 const projects: ProjectData[] = [
   {
     href: '/iiifviewer',
-    image: '/Untitled.png',
+    image: '/Untitled.webp',
     title: 'Juniper',
     tags: ['React', 'TypeScript'],
     year: 2026,
@@ -22,7 +22,7 @@ const projects: ProjectData[] = [
   },
   {
     href: '/rydmboat',
-    image: '/spaceship2.png',
+    image: '/rymdboat/rymdboatplanet.webp',
     title: 'Rymdboat',
     tags: ['3D', 'WebGL', 'Three.js'],
     year: 2025,

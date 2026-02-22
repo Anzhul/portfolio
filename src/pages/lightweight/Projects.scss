@@ -7,23 +7,28 @@
 
   .projects-content {
     position: relative;
-    left: 50%;
-    top: clamp( 10rem, 20vh, 20rem);
-    transform: translate(-50%, 0);
-    width: clamp( 20rem, calc(100% - 32rem), 1440px);
+    margin: 0 auto;
+    margin-top: clamp( 5rem, 20vh, 15rem);
+    width: clamp( 40rem, calc(100% - 20rem), 1600px);
     height: auto;
-    padding-bottom: 30rem;
+    padding-left: 1.618034 * 2rem;
+    padding-right: 1.618034 * 2rem;
+    padding-bottom: 10rem;
     display: flex;
     flex-direction: column;
-    //background-color: red;
 
     @media (max-width: 1440px) {
-       width: clamp( 20rem, calc(100% - 24rem), 1440px);
-       padding-bottom: 20rem;
+       width: calc(100% - 16rem);
     }
 
     @media screen and (max-width: 1024px) {
-       width: clamp( 20rem, calc(100% - 2rem), 1440px);
+       width: calc(100% - 2rem);
+    }
+
+    @media screen and (max-width: 767px) {
+       width: calc(100% - 2rem);
+       padding-left: 1rem;
+       padding-right: 1rem;
     }
 
     .projects-header {

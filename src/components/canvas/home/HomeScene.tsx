@@ -7,6 +7,7 @@ import * as THREE from 'three'
 import type { MaterialOverride } from './materialUtils'
 import { GameContent } from '../game/GameContent'
 import { TVModel, PlateModel, VaseModel } from '../game/TVModel'
+import { SceneVisibilityContext } from '../SceneVisibilityContext'
 
 /**
  * Error boundary to catch runtime errors inside the R3F tree
@@ -66,7 +67,7 @@ function CameraController() {
         zPosition = 12
       } else if (isTabletDown) {
         xPosition = 0
-        zPosition = 10
+        zPosition = 90
       } else if (width < 1440) {
         zPosition = 100
         xPosition = 0
@@ -184,7 +185,7 @@ function Scene({
   }, [gl, scene, camera, gameScene, gameCamera, fbo, isVisible])
 
   return (
-    <>
+    <SceneVisibilityContext.Provider value={isVisible}>
       {/* Camera controller for responsive zoom */}
       <CameraController />
 
@@ -232,8 +233,30 @@ function Scene({
           <ReadyNotifier onReady={onReady} />
         </Suspense>
       </R3FErrorBoundary>
-    </>
+    </SceneVisibilityContext.Provider>
   )
+}
+
+/**
+ * Fixes pointer-to-NDC mapping when canvas is offset from the viewport origin.
+ * The default R3F compute with eventPrefix="client" divides clientX/Y by canvas
+ * size without subtracting the canvas position, causing misaligned hit areas.
+ */
+function JsonPointerCompute() {
+  const state = useThree()
+
+  useEffect(() => {
+    state.events.compute = (event: any, root: any) => {
+      const rect = root.gl.domElement.getBoundingClientRect()
+      root.pointer.set(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1
+      )
+      root.raycaster.setFromCamera(root.pointer, root.camera)
+    }
+  }, [state])
+
+  return null
 }
 
 /**
@@ -265,6 +288,7 @@ function HomeScene({
         outputColorSpace: 'srgb',
       }}
     >
+      <JsonPointerCompute />
       <Scene
         isVisible={isVisible}
         scrollContainer={scrollContainer}

@@ -103,7 +103,7 @@ function Toolbar({ loaded = false }: ToolbarProps) {
             </svg>
           </button>
         </div>
-        <button className="toolbar-button" onClick={() => {
+        <button className="toolbar-fullscreen" onClick={() => {
           if (document.fullscreenElement) {
             document.exitFullscreen()
           } else {
