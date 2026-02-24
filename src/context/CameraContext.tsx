@@ -7,8 +7,7 @@ import { useViewport } from './ViewportContext'
 // Components can subscribe to throttled updates if they need reactivity
 
 export interface CameraState {
-  position: [number, number, number]
-  truePosition: [number, number, number]
+  worldPosition: [number, number, number]  // what the camera is centered on in world coords
   rotation: [number, number, number]
   fov: number
   zoom: number
@@ -19,8 +18,7 @@ export interface CameraContextType {
   getState: () => CameraState
 
   // Update state (updates ref immediately, notifies subscribers with throttle)
-  setPosition: (position: [number, number, number]) => void
-  setTruePosition: (truePosition: [number, number, number]) => void
+  setWorldPosition: (worldPosition: [number, number, number]) => void
   setRotation: (rotation: [number, number, number]) => void
   setFov: (fov: number) => void
   setZoom: (zoom: number) => void
@@ -35,16 +33,10 @@ export interface CameraContextType {
 const CameraContext = createContext<CameraContextType | undefined>(undefined)
 
 // Throttle helper - limits function calls to once per delay
-// T-> whatever function you pass in
-// (...args: any[]) => void -> function that takes any args and returns void
-// (parameter) func: T -> the function to be throttled
-// (parameter) delay: number -> delay in ms
-// returns: T -> returns a function of the same type as func
 function throttle<T extends (...args: any[]) => void>(func: T, delay: number): T {
   let timeoutId: number | null = null
   let lastRan: number = 0
 
-  // Return a throttled version of the function
   return ((...args: any[]) => {
     const now = Date.now()
 
@@ -61,23 +53,17 @@ function throttle<T extends (...args: any[]) => void>(func: T, delay: number): T
   }) as T
 }
 
-// Automatically passes everything between the tags as the children prop
 export function CameraProvider({ children }: { children: ReactNode }) {
   const { isMobileOnly } = useViewport()
 
   // Store camera state in ref (doesn't cause re-renders when updated)
   const stateRef = useRef<CameraState>({
-    position: [0, 0, 5],
-    truePosition: [0, 0, 5],
+    worldPosition: [0, 0, 5],
     rotation: [0, 0, 0],
     fov: (75 * Math.PI) / 180,  // Convert 75 degrees to radians
     zoom: isMobileOnly ? 0.3 : 0.45,  // Mobile gets more zoomed out view
   })
 
-  // Store subscribers (components that want to be notified of changes vis callbacks)
-  /*set.add(value) - not set[0] = value
-    set.has(value) - not set[0]
-    set.delete(value) */
   const listenersRef = useRef<Set<() => void>>(new Set())
 
   // Throttled notify function - only calls subscribers every 100ms
@@ -94,13 +80,8 @@ export function CameraProvider({ children }: { children: ReactNode }) {
     () => ({
       getState: () => stateRef.current,
 
-      setPosition: (position) => {
-        stateRef.current.position = position
-        notifyListeners()
-      },
-
-      setTruePosition: (truePosition) => {
-        stateRef.current.truePosition = truePosition
+      setWorldPosition: (worldPosition) => {
+        stateRef.current.worldPosition = worldPosition
         notifyListeners()
       },
 
@@ -121,12 +102,11 @@ export function CameraProvider({ children }: { children: ReactNode }) {
 
       // Batched update - updates multiple properties and notifies only once
       setState: (updates) => {
-        if (updates.position !== undefined) stateRef.current.position = updates.position
-        if (updates.truePosition !== undefined) stateRef.current.truePosition = updates.truePosition
+        if (updates.worldPosition !== undefined) stateRef.current.worldPosition = updates.worldPosition
         if (updates.rotation !== undefined) stateRef.current.rotation = updates.rotation
         if (updates.fov !== undefined) stateRef.current.fov = updates.fov
         if (updates.zoom !== undefined) stateRef.current.zoom = updates.zoom
-        notifyListeners() // Only notify once for all updates
+        notifyListeners()
       },
 
       subscribe: (listener) => {
@@ -152,15 +132,11 @@ export function useCamera() {
 }
 
 // Reactive hook for components that need re-renders on camera changes
-// (minimap, URL handler, etc.)
 export function useCameraState() {
-  // Custom hook that provides reactive access to camera state
   const camera = useCamera()
-  //Get the camera API object (the non-reactive context with all the functions).
   const [state, setState] = useState<CameraState>(camera.getState())
 
   useEffect(() => {
-    // Update local state when camera changes
     const unsubscribe = camera.subscribe(() => {
       setState(camera.getState())
     })

@@ -84,14 +84,15 @@
           align-items: center;
           gap: 0.5rem;
           background: none;
-          border: 1px solid #ddd;
-          border-radius: 2rem;
+          border: 0px solid #ddd;
+          border-radius: 0.5rem;
           padding: 0.4rem 1rem;
           font-size: 0.9rem;
           font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
           font-weight: 400;
-          color: #222;
+          color: white;
           cursor: pointer;
+          background-color: #222222;
           transition: all 0.2s ease;
 
           &:hover {
@@ -100,7 +101,7 @@
 
           .sort-chevron {
             font-size: 0.7rem;
-            transition: transform 0.2s ease;
+            //transition: transform 0.2s ease;
 
             &.open {
               transform: rotate(180deg);
@@ -112,12 +113,10 @@
           position: absolute;
           top: calc(100% + 0.4rem);
           right: 0;
-          background: white;
-          border: 1px solid #ddd;
+          background: #222222;
           border-radius: 0.5rem;
           padding: 0.25rem 0;
           min-width: 100%;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
           z-index: 10;
 
           .sort-dropdown-item {
@@ -129,7 +128,7 @@
             font-size: 0.9rem;
             font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
             font-weight: 400;
-            color: #222;
+            color: white;
             cursor: pointer;
             text-align: left;
             transition: background 0.15s ease;

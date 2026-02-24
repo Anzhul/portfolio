@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useBoundary, useBoundaryState } from '../../context/BoundaryContext'
 import type { IslandConfig } from '../../config/islandRegistry'
 import { shouldShowSkeleton } from '../../utils/devMode'
@@ -44,43 +44,31 @@ export function IslandLoader({ config }: IslandLoaderProps) {
   // Dev mode: Force skeleton display for testing
   const forceSkeletonMode = shouldShowSkeleton(config.id)
 
-  // Register island metadata with BoundaryManager on mount
+  // Islands are pre-registered by BoundaryProvider from ISLAND_REGISTRY.
+  // Only register the preload callback here (triggered at 2x loadRadius).
   useEffect(() => {
-    manager.registerIsland(
-      {
-        id: config.id,
-        position: config.position,
-        name: config.name,
-        boundaries: config.boundaries,
-      },
-      config.boundaries
-    )
-
-    // Register preload callback (triggered at 2x loadRadius)
     if (!config.loadImmediately) {
       manager.registerPreload(config.id, () => {
         setIsPreloading(true)
-        // The actual preload happens when React tries to render the lazy component
-        // This just sets a flag to trigger the lazy load
       })
-    }
-
-    return () => {
-      manager.unregisterIsland(config.id)
     }
   }, [config, manager])
 
   const SkeletonComponent = config.skeleton
   const IslandComponent = config.component
 
-  // Wrapper component to detect when island has loaded
-  const IslandWrapper = () => {
-    useEffect(() => {
-      setComponentLoaded(true)
-    }, [])
+  // Stable wrapper component — useMemo prevents creating a new component type on every
+  // render, which would cause React to unmount/remount the entire island tree
+  const IslandWrapper = useMemo(() => {
+    function Wrapper() {
+      useEffect(() => {
+        setComponentLoaded(true)
+      }, [])
 
-    return <IslandComponent />
-  }
+      return <IslandComponent />
+    }
+    return Wrapper
+  }, [IslandComponent])
 
   // Dev mode: Force skeleton display
   if (forceSkeletonMode) {

@@ -14,7 +14,7 @@ interface ViewportBounds {
   viewportTop: number;
   viewportRight: number;
   viewportBottom: number;
-  cameraPos: [number, number, number];
+  worldPosition: [number, number, number];
   cameraZoom: number;
 }
 
@@ -156,50 +156,33 @@ export class BoundaryManager {
 
   // Calculate viewport bounds in world space - cached per frame for all boundary checks
   private calculateViewportBounds(): ViewportBounds {
-    const cameraPos = this.camera.getState().position;
-    const cameraZoom = this.camera.getState().zoom;
+    const { worldPosition, zoom } = this.camera.getState();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-    // Cache window dimensions to avoid multiple property accesses
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-
-    // Calculate viewport bounds in world space
-    // CSS transform: translate(cameraPos) scale(zoom)
-    // To convert screen coords to world coords: worldPoint = (screenPoint - cameraPos) / zoom
-    const zoomoffsetX = (windowWidth / 2) - (windowWidth * cameraZoom / 2);
-    const zoomoffsetY = (windowHeight / 2) - (windowHeight * cameraZoom / 2);
-
-    // Screen corners
-    const screenLeft = -cameraPos[0] - zoomoffsetX;
-    const screenTop = -cameraPos[1] - zoomoffsetY;
-    const screenRight = screenLeft + windowWidth;
-    const screenBottom = screenTop + windowHeight;
-
-    // World corners (reversing the transform)
-    const viewportLeft = screenLeft / cameraZoom;
-    const viewportTop = screenTop / cameraZoom;
-    const viewportRight = screenRight / cameraZoom;
-    const viewportBottom = screenBottom / cameraZoom;
+    // Viewport extends half-viewport in each direction from camera center, divided by zoom
+    const halfW = vw / (2 * zoom);
+    const halfH = vh / (2 * zoom);
 
     return {
-      viewportLeft,
-      viewportTop,
-      viewportRight,
-      viewportBottom,
-      cameraPos,
-      cameraZoom,
+      viewportLeft: worldPosition[0] - halfW,
+      viewportTop: worldPosition[1] - halfH,
+      viewportRight: worldPosition[0] + halfW,
+      viewportBottom: worldPosition[1] + halfH,
+      worldPosition,
+      cameraZoom: zoom,
     };
   }
 
   // Check all islands and sections against current camera position
   private checkAllBoundaries() {
-    // Skip if camera hasn't moved enough since last check (50px threshold in world space)
+    // Skip if camera hasn't moved enough since last check (50 world units threshold)
     const state = this.camera.getState();
-    const dx = Math.abs(state.position[0] - this.lastCheckPos[0]);
-    const dy = Math.abs(state.position[1] - this.lastCheckPos[1]);
+    const dx = Math.abs(state.worldPosition[0] - this.lastCheckPos[0]);
+    const dy = Math.abs(state.worldPosition[1] - this.lastCheckPos[1]);
     const dz = Math.abs(state.zoom - this.lastCheckZoom);
     if (dx < 50 && dy < 50 && dz < 0.01) return;
-    this.lastCheckPos = [state.position[0], state.position[1]];
+    this.lastCheckPos = [state.worldPosition[0], state.worldPosition[1]];
     this.lastCheckZoom = state.zoom;
 
     // Calculate viewport bounds ONCE per frame, then reuse for all boundary checks
@@ -272,25 +255,17 @@ export class BoundaryManager {
     const island = this.islands.get(islandId);
     if (!island) return;
 
-    // Extract viewport bounds (pre-calculated)
-    const { viewportLeft, viewportTop, viewportRight, viewportBottom, cameraPos, cameraZoom } = viewportBounds;
+    const { viewportLeft, viewportTop, viewportRight, viewportBottom, worldPosition, cameraZoom } = viewportBounds;
 
-    //console.log(`x: ${cameraPos[0]}, y: ${cameraPos[1]}, zoom: ${cameraZoom.toFixed(2)}`);
-
-    //console.log(`Camera Pos: (${cameraPos[0].toFixed(0)}, ${cameraPos[1].toFixed(0)}), Zoom: ${cameraZoom.toFixed(2)}x, Viewport: (${viewportLeft.toFixed(0)}, ${viewportTop.toFixed(0)}) to (${viewportRight.toFixed(0)}, ${viewportBottom.toFixed(0)})` );
-
-    // Boundaries are defined in world space, no scaling needed
     const scaledLoadRadius = island.config.loadRadius;
     const scaledActiveRadius = island.config.activeRadius;
 
-    // Check if boundary circles intersect with viewport rectangle
     const previousState = { ...island.state };
 
-    // Update distance to camera (used for logging and potential future features)
-    // Using approximate Manhattan distance to avoid expensive sqrt/pow operations
-    const dx = Math.abs(cameraPos[0] - island.position[0]);
-    const dy = Math.abs(cameraPos[1] - island.position[1]);
-    island.state.distanceToCamera = dx + dy; // Manhattan distance (good enough for logging)
+    // Manhattan distance from camera center to island (world space)
+    const dx = Math.abs(worldPosition[0] - island.position[0]);
+    const dy = Math.abs(worldPosition[1] - island.position[1]);
+    island.state.distanceToCamera = dx + dy;
 
     // Check preload zone (2x loadRadius) and trigger preload callback
     const preloadRadius = scaledLoadRadius * 2;
@@ -366,20 +341,17 @@ export class BoundaryManager {
     const section = this.sections.get(sectionId);
     if (!section) return;
 
-    // Extract viewport bounds (pre-calculated)
-    const { viewportLeft, viewportTop, viewportRight, viewportBottom, cameraPos, cameraZoom } = viewportBounds;
+    const { viewportLeft, viewportTop, viewportRight, viewportBottom, worldPosition, cameraZoom } = viewportBounds;
 
-    // Boundaries are defined in world space
     const scaledLoadRadius = section.config.loadRadius;
     const scaledActiveRadius = section.config.activeRadius;
 
     const previousState = { ...section.state };
 
-    // Update distance to camera (used for logging and potential future features)
-    // Using approximate Manhattan distance to avoid expensive sqrt/pow operations
-    const dx = Math.abs(cameraPos[0] - section.position[0]);
-    const dy = Math.abs(cameraPos[1] - section.position[1]);
-    section.state.distanceToCamera = dx + dy; // Manhattan distance (good enough for logging)
+    // Manhattan distance from camera center to section (world space)
+    const dx = Math.abs(worldPosition[0] - section.position[0]);
+    const dy = Math.abs(worldPosition[1] - section.position[1]);
+    section.state.distanceToCamera = dx + dy;
 
     // Check preload zone (2x loadRadius)
     const preloadRadius = scaledLoadRadius * 2;

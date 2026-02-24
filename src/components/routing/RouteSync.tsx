@@ -47,7 +47,7 @@ export function RouteSync({ cameraViewportRef, isActive }: RouteSyncProps) {
     // The camera is already at the preserved position from before we went inactive
     const justBecameActive = !wasActive && nowActive && hasInitialized.current
     if (justBecameActive) {
-      console.log(`🔄 RouteSync reactivated - preserving camera position at`, camera.getState().truePosition)
+      console.log(`🔄 RouteSync reactivated - preserving camera position at`, camera.getState().worldPosition)
       lastActiveState.current = nowActive
       return
     }
@@ -103,7 +103,7 @@ export function RouteSync({ cameraViewportRef, isActive }: RouteSyncProps) {
       // Force boundary check on next frame
       setTimeout(() => {
         const cameraState = camera.getState()
-        console.log(`📍 Current camera position: [${cameraState.truePosition[0]}, ${cameraState.truePosition[1]}]`)
+        console.log(`📍 Current camera position: [${cameraState.worldPosition[0]}, ${cameraState.worldPosition[1]}]`)
       }, 0)
     }
 

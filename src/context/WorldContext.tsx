@@ -85,7 +85,10 @@ export function WorldProvider({ children }: { children: ReactNode }) {
 
   // Registration functions - wrapped in useCallback to prevent infinite loops
   const registerIsland = useCallback((island: IslandData) => {
-    setIslands((prev) => new Map(prev).set(island.id, island))
+    setIslands((prev) => {
+      if (prev.has(island.id)) return prev // Already registered — same ref, no re-render
+      return new Map(prev).set(island.id, island)
+    })
   }, [])
 
   const unregisterIsland = useCallback((id: string) => {

@@ -7,6 +7,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { applyMaterialOverrides, type MaterialOverride } from '../home/materialUtils';
 import type { GameInput } from './types';
 import { useSceneVisible } from '../SceneVisibilityContext';
+import { useViewport } from '../../../context/ViewportContext';
 
 // CRT screen shader
 export const crtVertexShader = `
@@ -74,6 +75,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
   const gltf = useLoader(GLTFLoader, '/tv.glb');
   const { camera: rootCamera, gl } = useThree();
   const isVisible = useSceneVisible();
+  const { isTabletDown } = useViewport();
   const screenMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const screenMeshRef = useRef<THREE.Mesh | null>(null);
   const lastTapUvRef = useRef<{ x: number; y: number } | null>(null);
@@ -125,7 +127,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
         }
       }
     });
-  }, [gltf, screenTexture, materialOverrides]);
+  }, [gltf, screenTexture, materialOverrides, isTabletDown]);
 
   // Animate the time uniform for noise variation
   useEffect(() => {
@@ -139,6 +141,37 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     ticker.add(update);
     return () => ticker.remove(update);
   }, [isVisible]);
+
+  // Prevent browser from stealing touches on the TV for scrolling.
+  // R3F sets pointer-events:none on the canvas when eventSource is used,
+  // so touches land on the eventSource (scroll container), not the canvas.
+  // We listen on that element and preventDefault when the touch hits the TV.
+  const { events } = useThree();
+  useEffect(() => {
+    if (!isTabletDown || !isVisible) return;
+
+    // events.connected is the eventSource element R3F listens on
+    const target = events.connected as HTMLElement | undefined;
+    if (!target) return;
+    const canvas = gl.domElement;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      const rect = canvas.getBoundingClientRect();
+      pointerVec.current.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerVec.current.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+      raycasterRef.current.setFromCamera(pointerVec.current, rootCamera);
+      const hits = raycasterRef.current.intersectObject(gltf.scene, true);
+      if (hits.length > 0) {
+        e.preventDefault();
+        console.log('[TV] touchstart preventDefault — keeping touch for game input');
+      }
+    };
+
+    target.addEventListener('touchstart', handleTouchStart, { passive: false });
+    return () => target.removeEventListener('touchstart', handleTouchStart);
+  }, [gl, events, rootCamera, gltf, isTabletDown, isVisible]);
 
   // Game input: click on TV to start drag, tap to interact (Enter)
   const isHoveredRef = useRef(false);
@@ -169,10 +202,11 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
 
     const handlePointerMove = (e: PointerEvent) => {
       if (gameInputRef.current.active) {
+        const dx = Math.abs(e.clientX - gameInputRef.current.startX);
+        console.log('[TV] pointerMove (active)', { clientX: e.clientX, dx, pointerType: e.pointerType });
         // Drag tracking (X + Y)
         gameInputRef.current.currentX = e.clientX;
         gameInputRef.current.currentY = e.clientY;
-        const dx = Math.abs(e.clientX - gameInputRef.current.startX);
         if (dx > gameInputRef.current.maxDx) {
           gameInputRef.current.maxDx = dx;
         }
@@ -194,7 +228,8 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
       setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true })), 50);
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (e: PointerEvent) => {
+      console.log('[TV] pointerUp', { active: gameInputRef.current.active, maxDx: gameInputRef.current.maxDx, pointerType: e.pointerType });
       if (!gameInputRef.current.active) return;
       const elapsed = Date.now() - gameInputRef.current.startTime;
       if (gameInputRef.current.maxDx < 10 && elapsed < 300) {
@@ -210,15 +245,24 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
       document.body.style.cursor = isHoveredRef.current ? 'grab' : '';
     };
 
+    // Reset state when browser cancels touch (e.g. scroll takeover)
+    const handlePointerCancel = () => {
+      console.log('[TV] pointerCancel — browser stole touch');
+      gameInputRef.current.active = false;
+    };
+
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerCancel);
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerCancel);
     };
   }, [gameInputRef, npcInRangeRef, gameCamera, raycastScreenUv, isNpcArea, isVisible]);
 
   const handleTVPointerDown = useCallback((e: any) => {
+    console.log('[TV] pointerDown', { pointerType: e.pointerType, clientX: e.clientX, clientY: e.clientY, object: e.object?.name, meshType: e.object?.type });
     if (!gameInputRef) return;
     e.stopPropagation();
     gameInputRef.current.active = true;

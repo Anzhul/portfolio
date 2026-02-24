@@ -45,8 +45,6 @@ function CameraSync() {
     const render = () => {
       const state = cameraContext.getState()
 
-      //console.log(`🎬 CameraSync.render: Syncing camera to position: [${state.position[0].toFixed(2)}, ${state.position[1].toFixed(2)}], zoom: ${state.zoom.toFixed(2)}`)
-
       // Keep camera at a fixed distance from origin to match orthographic-like behavior
       // The Z distance determines the perspective strength
       // Increased from 1000 to 2000 for better quality when zoomed in
@@ -62,8 +60,9 @@ function CameraSync() {
       // Instead of moving the camera, we move and scale the scene
       // This matches the CSS transform behavior: translate(x, y) scale(zoom)
       // Apply pixel-to-unit conversion so 1px in CSS = 1 unit in Three.js at z=0
-      const sceneX = state.truePosition[0] * pixelToUnit
-      const sceneY = -state.truePosition[1] * pixelToUnit
+      // worldPosition is the camera center in world coords; negate and scale by zoom
+      const sceneX = -state.worldPosition[0] * state.zoom * pixelToUnit
+      const sceneY = state.worldPosition[1] * state.zoom * pixelToUnit
 
       scene.position.set(
         sceneX,   // Same direction as CSS translate X

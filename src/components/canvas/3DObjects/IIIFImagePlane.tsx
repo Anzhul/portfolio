@@ -3,8 +3,12 @@ import { useViewport } from '../../../context/ViewportContext'
 import { useIslandPosition } from '../../../context/IslandPositionContext'
 import { worldRenderer } from '../../../renderer/WorldRenderer'
 
-interface ImagePlaneProps {
-  imageUrl: string
+// R2 base URL for IIIF tiles in production (e.g. "https://pub-xxx.r2.dev")
+// In dev, tiles are served from public/ via the Vite dev server
+const IIIF_BASE = import.meta.env.VITE_IIIF_BASE_URL || ''
+
+interface IIIFImagePlaneProps {
+  infoUrl: string
   position?: [number, number, number]
   mobilePosition?: [number, number, number]
   height?: number
@@ -13,14 +17,10 @@ interface ImagePlaneProps {
   mobileWidth?: number
   zIndex?: number
   opacity?: number
-  transparent?: boolean
-  emmissive?: number
-  emissiveIntensity?: number
-  islandId?: string
 }
 
-export function ImagePlane({
-  imageUrl,
+export function IIIFImagePlane({
+  infoUrl,
   position = [0, 0, 0],
   mobilePosition,
   height = 100,
@@ -29,21 +29,15 @@ export function ImagePlane({
   mobileWidth,
   zIndex = 0,
   opacity = 1,
-  transparent: _transparent = false,
-  emmissive: _emmissive = 0.0,
-  emissiveIntensity: _emissiveIntensity = 1.0,
-  islandId: _islandId,
-}: ImagePlaneProps) {
+}: IIIFImagePlaneProps) {
   const { isMobileOnly } = useViewport()
   const islandPosition = useIslandPosition()
-  const planeId = useRef(`image-plane-${Math.random()}`).current
+  const planeId = useRef(`iiif-plane-${Math.random()}`).current
 
-  // Use mobile values if provided and on mobile, otherwise use desktop values
   const actualPosition = isMobileOnly && mobilePosition ? mobilePosition : position
   const actualHeight = isMobileOnly && mobileHeight !== undefined ? mobileHeight : height
   const actualWidth = isMobileOnly && mobileWidth !== undefined ? mobileWidth : width
 
-  // Resolve position relative to island center
   const resolvedPosition = useMemo<[number, number, number]>(() => [
     actualPosition[0] + islandPosition[0],
     actualPosition[1] + islandPosition[1],
@@ -51,9 +45,11 @@ export function ImagePlane({
   ], [actualPosition[0], actualPosition[1], actualPosition[2], islandPosition[0], islandPosition[1], islandPosition[2]])
 
   useEffect(() => {
-    worldRenderer.addImage(
+    const resolvedInfoUrl = IIIF_BASE + infoUrl
+    console.log(`[IIIFImagePlane] MOUNT ${planeId} → addIIIFImage(${resolvedPosition[0]}, ${resolvedPosition[1]}, ${resolvedPosition[2] + zIndex}, w=${actualWidth}, h=${actualHeight})`)
+    worldRenderer.addIIIFImage(
       planeId,
-      imageUrl,
+      resolvedInfoUrl,
       resolvedPosition[0],
       resolvedPosition[1],
       resolvedPosition[2] + zIndex,
@@ -63,10 +59,10 @@ export function ImagePlane({
     )
 
     return () => {
-      worldRenderer.removeImage(planeId)
+      console.log(`[IIIFImagePlane] UNMOUNT ${planeId} → removeIIIFImage`)
+      worldRenderer.removeIIIFImage(planeId)
     }
-  }, [planeId, imageUrl, resolvedPosition, actualWidth, actualHeight, zIndex, opacity])
+  }, [planeId, infoUrl, resolvedPosition, actualWidth, actualHeight, zIndex, opacity])
 
-  // No DOM output — rendering is handled by the WebGL worker
   return null
 }

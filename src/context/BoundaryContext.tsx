@@ -99,10 +99,16 @@ export function useBoundaryState(islandId: string): BoundaryState {
 
   useEffect(() => {
     // Subscribe to camera updates to reactively update state
+    // Only trigger re-render when isLoaded or isActive actually change
     const unsubscribe = camera.subscribe(() => {
       const newState = manager.getIslandState(islandId);
       if (newState) {
-        setState(newState);
+        setState(prev => {
+          if (prev.isLoaded === newState.isLoaded && prev.isActive === newState.isActive) {
+            return prev; // Same reference = no re-render
+          }
+          return newState;
+        });
       }
     });
 
@@ -128,10 +134,16 @@ export function useSectionBoundaryState(sectionId: string): BoundaryState {
 
   useEffect(() => {
     // Subscribe to camera updates to reactively update state
+    // Only trigger re-render when isLoaded or isActive actually change
     const unsubscribe = camera.subscribe(() => {
       const newState = manager.getSectionState(sectionId);
       if (newState) {
-        setState(newState);
+        setState(prev => {
+          if (prev.isLoaded === newState.isLoaded && prev.isActive === newState.isActive) {
+            return prev; // Same reference = no re-render
+          }
+          return newState;
+        });
       }
     });
 

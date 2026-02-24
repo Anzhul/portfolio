@@ -1,4 +1,3 @@
-import { lazy } from 'react'
 import type { ComponentType } from 'react'
 import type { BoundaryConfig } from '../context/BoundaryContext'
 
@@ -13,17 +12,17 @@ export interface IslandConfig {
   loadImmediately?: boolean  // For home island
 }
 
-// Lazy-loaded island components
-const TheHillIsland = lazy(() => import('../island/home/the_hill').then(m => ({ default: m.TheHillIsland })))
-const TheStudioIsland = lazy(() => import('../island/about/the_studio').then(m => ({ default: m.TheStudioIsland })))
-// Add more islands here as you create them:
-// const ProjectsIsland = lazy(() => import('../island/projects/projects').then(m => ({ default: m.ProjectsIsland })))
+// Eagerly imported island components — chunks are tiny (~4KB total)
+// so the lazy loading overhead (network latency + Suspense re-render)
+// costs more than just bundling them
+import { TheHillIsland } from '../island/home/the_hill'
+import { TheStudioIsland } from '../island/about/the_studio'
+import { InTheDesertIsland } from '../island/desert/in_the_desert'
 
-// Skeleton components (loaded immediately, lightweight)
+// Skeleton components (lightweight placeholders)
 import { TheHillIslandSkeleton } from '../island/home/TheHillIslandSkeleton'
 import { TheStudioIslandSkeleton } from '../island/about/TheStudioIslandSkeleton'
-// Import more skeletons here:
-// import { ProjectsIslandSkeleton } from '../island/projects/ProjectsIslandSkeleton'
+import { InTheDesertIslandSkeleton } from '../island/desert/InTheDesertIslandSkeleton'
 
 export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
   the_hill: {
@@ -51,17 +50,17 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
     component: TheStudioIsland,
     skeleton: TheStudioIslandSkeleton,
     subGroup: 'about'
-  }
-  // Add more islands here:
-  // projects: {
-  //   id: 'projects',
-  //   position: [5000, 0, 0],
-  //   name: 'Projects',
-  //   boundaries: {
-  //     loadRadius: 3000,
-  //     activeRadius: 1600,
-  //   },
-  //   component: ProjectsIsland,
-  //   skeleton: ProjectsIslandSkeleton,
-  // },
+  },
+
+  in_the_desert: {
+    id: 'in_the_desert',
+    position: [8000, 0, 0],
+    name: 'in the desert',
+    boundaries: {
+      loadRadius: 3000,
+      activeRadius: 1600,
+    },
+    component: InTheDesertIsland,
+    skeleton: InTheDesertIslandSkeleton,
+  },
 }

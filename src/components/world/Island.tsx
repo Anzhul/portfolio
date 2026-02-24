@@ -1,9 +1,8 @@
-import { useEffect } from 'react'
+import { useMemo } from 'react'
 import type { ReactNode } from 'react'
-import { useWorld } from '../../context/WorldContext'
-import { useBoundary } from '../../context/BoundaryContext'
 import { BoundaryVisualizer } from '../boundary/BoundaryVisualizer'
 import type { BoundaryConfig } from '../../context/BoundaryContext'
+import { IslandPositionProvider } from '../../context/IslandPositionContext'
 
 interface IslandProps {
   id: string
@@ -13,29 +12,20 @@ interface IslandProps {
   children?: ReactNode
 }
 
-export function Island({ id, position, name, boundaries, children }: IslandProps) {
-  const { registerIsland, unregisterIsland } = useWorld()
-  const { manager } = useBoundary()
-  // Removed: const boundaryState = useBoundaryState(id)
-  // Active state is now managed by BoundaryManager via direct DOM updates
+// Only show boundary debug circles with ?boundaries=true URL param
+const showBoundaryVisualizer = typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('boundaries') === 'true'
 
-  useEffect(() => {
-    // Register island with WorldContext
-    registerIsland({ id, position, name, boundaries })
+export function Island({ id, position, boundaries, children }: IslandProps) {
+  // Islands are pre-registered by BoundaryProvider from ISLAND_REGISTRY.
+  // No runtime registration here — avoids WorldContext re-render cascade
+  // and BoundaryManager state resets that caused multi-frame jank.
 
-    // Register with BoundaryManager if boundaries are provided
-    if (boundaries) {
-      manager.registerIsland({ id, position, name, boundaries }, boundaries)
-    }
-
-    return () => {
-      unregisterIsland(id)
-      if (boundaries) {
-        manager.unregisterIsland(id)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, position[0], position[1], position[2], name, registerIsland, unregisterIsland, boundaries])
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const contextValue = useMemo(
+    () => ({ position: [position[0], position[1], position[2]] as [number, number, number], id }),
+    [position[0], position[1], position[2], id]
+  )
 
   // Build className without active state (BoundaryManager will add it via DOM)
   // Loading classes will be added by SimpleLoadingManager
@@ -51,8 +41,8 @@ export function Island({ id, position, name, boundaries, children }: IslandProps
   // Apply position to DOM element to match 3D space position
   return (
     <>
-      {/* Render boundary visualizer circles if boundaries are defined */}
-      {boundaries && (
+      {/* Render boundary visualizer circles only with ?boundaries=true */}
+      {showBoundaryVisualizer && boundaries && (
         <BoundaryVisualizer
           position={position}
           boundaries={boundaries}
@@ -68,10 +58,12 @@ export function Island({ id, position, name, boundaries, children }: IslandProps
           left: `${position[0]}px`,
           top: `${position[1]}px`,
           transform: 'translate(-50%, -50%)',
-          // z-index could be derived from position[2] if needed for layering
+          willChange: 'transform',
         }}
       >
-        {children}
+        <IslandPositionProvider value={contextValue}>
+          {children}
+        </IslandPositionProvider>
       </div>
     </>
   )

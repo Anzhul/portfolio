@@ -4,7 +4,6 @@ import { CameraProvider } from '../../context/CameraContext'
 import { WorldProvider } from '../../context/WorldContext'
 import { BoundaryProvider } from '../../context/BoundaryContext'
 import { World } from '../../components/world/World'
-import { SceneProvider } from '../../context/SceneContext'
 import { CameraViewport, type CameraViewportHandle } from '../../components/canvas/CameraViewport'
 import { IslandLoader } from '../../components/loading/IslandLoader'
 import { ISLAND_REGISTRY } from '../../config/islandRegistry'
@@ -148,18 +147,16 @@ export function Experience3D({ isVisible }: Experience3DProps) {
 
   return (
     <WorldProvider>
-      <SceneProvider>
-        <CameraProvider>
-          <BoundaryProvider>
-            {/* All 3D routes render the same content - RouteSync handles URL updates based on position */}
-            <Experience3DContent
-              cameraViewportRef={cameraViewportRef}
-              isMapVisible={isMapVisible}
-              isVisible={isVisible}
-            />
-          </BoundaryProvider>
-        </CameraProvider>
-      </SceneProvider>
+      <CameraProvider>
+        <BoundaryProvider>
+          {/* All 3D routes render the same content - RouteSync handles URL updates based on position */}
+          <Experience3DContent
+            cameraViewportRef={cameraViewportRef}
+            isMapVisible={isMapVisible}
+            isVisible={isVisible}
+          />
+        </BoundaryProvider>
+      </CameraProvider>
     </WorldProvider>
   )
 }

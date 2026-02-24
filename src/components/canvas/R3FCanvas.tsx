@@ -22,11 +22,7 @@ function R3FCanvas({ children }: R3FCanvasProps) {
         className="r3f-canvas"
         frameloop="never" // Manual control via ticker
         camera={{
-          position: [
-            initialState.truePosition[0],
-            initialState.truePosition[1],
-            initialState.truePosition[2]
-          ],
+          position: [0, 0, 1000],
           fov: initialState.fov,
           near: 0.1,
           far: 10000,
@@ -40,10 +36,10 @@ function R3FCanvas({ children }: R3FCanvasProps) {
         linear={false}
       >
         {/* Lights in world space */}
-        <ambientLight intensity={3} />
+        <ambientLight intensity={1.5} />
         <directionalLight
           position={[1000, 100, -600]}
-          intensity={10}
+          intensity={4}
         />
 
         {/* Camera sync component updates R3F camera to match CameraContext */}

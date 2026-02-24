@@ -1,11 +1,44 @@
-import { useRef, useEffect, useMemo, useCallback, useImperativeHandle, forwardRef, Suspense, type ReactNode, type MouseEvent } from 'react'
+import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef, type ReactNode, type MouseEvent } from 'react'
 import { useCamera } from '../../context/CameraContext'
-import { useSceneObjects } from '../../context/SceneContext'
 import { useViewport } from '../../context/ViewportContext'
 import { ticker } from '../../utils/AnimationTicker'
 import { Animation, Easing, type EasingFunction } from '../../utils/Animation'
-import R3FCanvas from './R3FCanvas'
+import { Spring } from '../../utils/Spring'
+import { WorldCanvas } from './WorldCanvas'
+import { worldRenderer } from '../../renderer/WorldRenderer'
 import './CameraViewport.scss'
+
+// ── Projection helpers ──
+
+/** Derive CSS translate values from world position */
+function worldToCSS(
+  wx: number, wy: number,
+  zoom: number, vw: number, vh: number
+): [number, number] {
+  return [
+    zoom * (vw / 2 - wx),
+    zoom * (vh / 2 - wy),
+  ]
+}
+
+/** Derive WebGL "true" position from world position (for worldRenderer) */
+function worldToWebGL(wx: number, wy: number, zoom: number): [number, number] {
+  return [-wx * zoom, -wy * zoom]
+}
+
+/** Convert a screen point to world coordinates */
+function screenToWorld(
+  screenX: number, screenY: number,
+  worldPosX: number, worldPosY: number,
+  zoom: number, vw: number, vh: number
+): [number, number] {
+  return [
+    worldPosX + (screenX - vw / 2) / zoom,
+    worldPosY + (screenY - vh / 2) / zoom,
+  ]
+}
+
+// ── Component ──
 
 interface CameraViewportProps {
   children?: ReactNode
@@ -21,7 +54,6 @@ export interface CameraViewportHandle {
 export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportProps>(
   ({ children }, ref) => {
   const camera = useCamera()
-  const objects = useSceneObjects()
   const { isMobileOnly } = useViewport()
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -38,269 +70,139 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
   const pinchStartDistRef = useRef(0)
   const pinchStartZoomRef = useRef(0)
 
-  // Target values for trailing
-  const initialZoom = isMobileOnly ? 0.3 : 0.45
-  const targetZoomRef = useRef(initialZoom)
-  const targetPositionRef = useRef<[number, number, number]>([0, 0, 5])
-  const trueTargetPositionRef = useRef<[number, number, number]>([0, 0, 5])
+  // Zoom anchor: when set, position is derived from zoom to keep this world point
+  // fixed at the given screen position (cursor-anchored zoom).
+  // Cleared when zoom settles or user starts panning.
+  const zoomAnchorRef = useRef<{
+    worldX: number; worldY: number
+    screenX: number; screenY: number
+  } | null>(null)
 
-  // Current interpolated values
-  const currentZoomRef = useRef(initialZoom)
-  const currentPositionRef = useRef<[number, number, number]>([0, 0, 5])
-  const trueCurrentPositionRef = useRef<[number, number, number]>([0, 0, 5])
+  // Spring-based animation state (replaces target/current refs + trailing lerp)
+  const initialZoom = isMobileOnly ? 0.3 : 0.45
+  const springsRef = useRef<null | { x: Spring; y: Spring; z: Spring; zoom: Spring }>(null)
+  if (!springsRef.current) {
+    springsRef.current = {
+      x: new Spring({ initial: 0, stiffness: 6.5, animationTime: 1.25 }),
+      y: new Spring({ initial: 0, stiffness: 6.5, animationTime: 1.25 }),
+      z: new Spring({ initial: 5, stiffness: 6.5, animationTime: 1.25 }),
+      zoom: new Spring({ initial: initialZoom, stiffness: 6.5, animationTime: 1.25, exponential: true }),
+    }
+  }
+
+  /** Apply current world position + zoom to all outputs (CSS, WebGL, context) */
+  const applyState = (wx: number, wy: number, wz: number, zoom: number) => {
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const [cssX, cssY] = worldToCSS(wx, wy, zoom, vw, vh)
+    const [trueX, trueY] = worldToWebGL(wx, wy, zoom)
+
+    camera.setState({ worldPosition: [wx, wy, wz], zoom })
+    worldRenderer.updateCamera(trueX, trueY, zoom, camera.getState().fov, vw, vh)
+
+    if (contentRef.current) {
+      contentRef.current.style.transform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
+    }
+  }
 
   /**
-   * Low-level camera movement function (internal use)
-   * Moves both HTML content (CSS transforms) and R3F camera using raw coordinates
-   *
-   * @param x - X position for CSS transform (viewport position in pixels)
-   * @param y - Y position for CSS transform (viewport position in pixels)
-   * @param trueX - X position for 3D scene
-   * @param trueY - Y position for 3D scene
-   * @param z - Z position (currently unused, reserved for future 3D features)
-   * @param zoom - Optional zoom level (default: current zoom)
-   * @param smooth - If true, smoothly interpolate to position. If false, jump immediately (default: false)
+   * Low-level camera movement in world coordinates.
    */
   const moveToRaw = (
-    x: number,
-    y: number,
-    trueX: number,
-    trueY: number,
+    worldX: number,
+    worldY: number,
     z: number = 0,
     zoom?: number,
     smooth: boolean = false,
   ) => {
-
-    const targetPos: [number, number, number] = [x, y, z]
-    const truetargetPos: [number, number, number] = [trueX, trueY, z]
-    const targetZoom = zoom ?? currentZoomRef.current
+    const springs = springsRef.current!
+    const targetZoom = zoom ?? springs.zoom.value
 
     if (smooth) {
-      // Smooth transition: update target refs and let animation loop interpolate
-      targetPositionRef.current = targetPos
-      trueTargetPositionRef.current = truetargetPos
-      targetZoomRef.current = targetZoom
-      console.log(`🎯 CameraViewport.moveToRaw: Smooth transition to [${x}, ${y}, ${z}], zoom: ${targetZoom}`)
+      springs.x.springTo(worldX)
+      springs.y.springTo(worldY)
+      springs.z.springTo(z)
+      springs.zoom.springTo(targetZoom)
+      restartAnimationRef.current?.()
     } else {
-      // Immediate jump: update both target and current refs
-      targetPositionRef.current = targetPos
-      currentPositionRef.current = targetPos
-      trueTargetPositionRef.current = truetargetPos
-      trueCurrentPositionRef.current = truetargetPos
-      targetZoomRef.current = targetZoom
-      currentZoomRef.current = targetZoom
-
-      // Update camera context immediately (this triggers R3F CameraSync)
-      camera.setTruePosition(truetargetPos)
-      camera.setPosition(targetPos)
-      camera.setZoom(targetZoom)
-
-      // Update CSS transform immediately
-      if (contentRef.current) {
-        contentRef.current.style.transform = `translate(${x}px, ${y}px) scale(${targetZoom})`
-      }
-
-      //console.log(`⚡ CameraViewport.moveToRaw: Instant jump to [${x}, ${y}, ${z}], zoom: ${targetZoom}`)
+      springs.x.resetTo(worldX)
+      springs.y.resetTo(worldY)
+      springs.z.resetTo(z)
+      springs.zoom.resetTo(targetZoom)
+      applyState(worldX, worldY, z, targetZoom)
     }
   }
 
-  // Zoom control functions
-  const zoomIn = () => {
-    const container = containerRef.current
-    if (!container) return
-
-    const newZoom = Math.min(targetZoomRef.current + 0.15, 1)
-
-    // Calculate the point in world space that's currently at the center
-    const [camX, camY, camZ] = targetPositionRef.current
-    const currentZoom = targetZoomRef.current
-
-    const worldX = -camX / currentZoom
-    const worldY = -camY / currentZoom
-
-    // After zooming, keep the same world point at the center
-    targetPositionRef.current = [
-      -worldX * newZoom,
-      -worldY * newZoom,
-      camZ
-    ]
-
-    const [trueCamX, trueCamY, trueCamZ] = trueTargetPositionRef.current
-    const trueWorldX = -trueCamX / currentZoom
-    const trueWorldY = -trueCamY / currentZoom
-    trueTargetPositionRef.current = [
-      -trueWorldX * newZoom,
-      -trueWorldY * newZoom,
-      trueCamZ
-    ]
-
-    targetZoomRef.current = newZoom
-
-    // Restart animation since target changed
+  /**
+   * Center-anchored zoom adjustment.
+   * World position doesn't change — just the zoom level.
+   */
+  const adjustZoom = (delta: number) => {
+    const springs = springsRef.current!
+    const newZoom = Math.max(0.15, Math.min(1.5, springs.zoom.target + delta))
+    springs.zoom.springTo(newZoom)
     restartAnimationRef.current?.()
   }
 
-  const zoomOut = () => {
-    const container = containerRef.current
-    if (!container) return
-
-    const newZoom = Math.max(targetZoomRef.current - 0.15, 0.15)
-
-    // Calculate the point in world space that's currently at the center
-    const [camX, camY, camZ] = targetPositionRef.current
-    const currentZoom = targetZoomRef.current
-
-    const worldX = -camX / currentZoom
-    const worldY = -camY / currentZoom
-
-    // After zooming, keep the same world point at the center
-    targetPositionRef.current = [
-      -worldX * newZoom,
-      -worldY * newZoom,
-      camZ
-    ]
-
-    const [trueCamX, trueCamY, trueCamZ] = trueTargetPositionRef.current
-    const trueWorldX = -trueCamX / currentZoom
-    const trueWorldY = -trueCamY / currentZoom
-    trueTargetPositionRef.current = [
-      -trueWorldX * newZoom,
-      -trueWorldY * newZoom,
-      trueCamZ
-    ]
-
-    targetZoomRef.current = newZoom
-
-    // Restart animation since target changed
-    restartAnimationRef.current?.()
-  }
+  const zoomIn = () => adjustZoom(0.15)
+  const zoomOut = () => adjustZoom(-0.15)
 
   /**
-   * Custom camera movement with precise duration and easing control
-   * Uses the Animation class for frame-perfect animations
-   *
-   * @param x - Target X position for CSS transform
-   * @param y - Target Y position for CSS transform
-   * @param trueX - Target X position for 3D scene
-   * @param trueY - Target Y position for 3D scene
-   * @param z - Target Z position (default: 0)
-   * @param zoom - Target zoom level (default: current zoom)
-   * @param duration - Animation duration in milliseconds (default: 1000)
-   * @param easing - Easing function or name from Easing (default: 'easeOutExpo')
+   * Custom camera animation with precise duration and easing.
    */
   const moveToCustom = (
-    x: number,
-    y: number,
-    trueX: number,
-    trueY: number,
-    z: number = 0,
+    targetX: number,
+    targetY: number,
+    targetZ: number = 0,
     zoom?: number,
     duration: number = 700,
     easing: EasingFunction | keyof typeof Easing = 'easeOutExpo'
   ) => {
-    // Stop any existing animation
     if (activeAnimationRef.current) {
       activeAnimationRef.current.stop()
       activeAnimationRef.current = null
     }
 
-    // Get easing function
     const easingFn = typeof easing === 'function' ? easing : Easing[easing]
+    const springs = springsRef.current!
 
-    // Kill any trailing animation by snapping current to target
-    // This prevents any interpolation artifacts when starting the custom animation
-    currentPositionRef.current = [...targetPositionRef.current] as [number, number, number]
-    trueCurrentPositionRef.current = [...trueTargetPositionRef.current] as [number, number, number]
-    currentZoomRef.current = targetZoomRef.current
+    // Snap springs to current position to prevent interference
+    springs.x.resetTo(springs.x.value)
+    springs.y.resetTo(springs.y.value)
+    springs.z.resetTo(springs.z.value)
+    springs.zoom.resetTo(springs.zoom.value)
 
-    // Capture starting values (now synchronized)
-    const startPosition = [...currentPositionRef.current] as [number, number, number]
-    const startTruePosition = [...trueCurrentPositionRef.current] as [number, number, number]
-    const startZoom = currentZoomRef.current
-
-    // Target values
+    const startX = springs.x.value
+    const startY = springs.y.value
+    const startZ = springs.z.value
+    const startZoom = springs.zoom.value
     const targetZoom = zoom ?? startZoom
 
-    console.log(`🎬 CameraViewport.moveToCustom: Animating to [${x}, ${y}, ${z}], zoom: ${targetZoom}, duration: ${duration}ms, easing: ${typeof easing === 'string' ? easing : 'custom'}`)
-
-    // Set flag to disable trailing animation during custom animation
     isCustomAnimatingRef.current = true
 
-    // Create animation for all values
     const animation = new Animation({
-      from: {
-        x: startPosition[0],
-        y: startPosition[1],
-        z: startPosition[2],
-        trueX: startTruePosition[0],
-        trueY: startTruePosition[1],
-        trueZ: startTruePosition[2],
-        zoom: startZoom
-      },
-      to: {
-        x,
-        y,
-        z,
-        trueX,
-        trueY,
-        trueZ: z,
-        zoom: targetZoom
-      },
+      from: { x: startX, y: startY, z: startZ, zoom: startZoom },
+      to: { x: targetX, y: targetY, z: targetZ, zoom: targetZoom },
       duration,
       easing: easingFn,
-      onUpdate: (values) => {
-        // Bypass the trailing animation by updating both target AND current refs
-        // This gives us frame-perfect control over the animation
-        const newPosition: [number, number, number] = [values.x, values.y, values.z]
-        const newTruePosition: [number, number, number] = [values.trueX, values.trueY, values.trueZ]
-
-        targetPositionRef.current = newPosition
-        currentPositionRef.current = newPosition
-        trueTargetPositionRef.current = newTruePosition
-        trueCurrentPositionRef.current = newTruePosition
-        targetZoomRef.current = values.zoom
-        currentZoomRef.current = values.zoom
-
-        // Update camera context
-        camera.setPosition(newPosition)
-        camera.setTruePosition(newTruePosition)
-        camera.setZoom(values.zoom)
-
-        // Update CSS transform directly for immediate visual feedback
-        if (contentRef.current) {
-          contentRef.current.style.transform = `translate(${values.x}px, ${values.y}px) scale(${values.zoom})`
-        }
+      onUpdate: (v) => {
+        springs.x.resetTo(v.x)
+        springs.y.resetTo(v.y)
+        springs.z.resetTo(v.z)
+        springs.zoom.resetTo(v.zoom)
+        applyState(v.x, v.y, v.z, v.zoom)
       },
       onComplete: () => {
-        // Ensure exact final values (eliminate any floating-point errors)
-        const finalPosition: [number, number, number] = [x, y, z]
-        const finalTruePosition: [number, number, number] = [trueX, trueY, z]
-
-        targetPositionRef.current = finalPosition
-        currentPositionRef.current = finalPosition
-        trueTargetPositionRef.current = finalTruePosition
-        trueCurrentPositionRef.current = finalTruePosition
-        targetZoomRef.current = targetZoom
-        currentZoomRef.current = targetZoom
-
-        // Update camera context with exact final values
-        camera.setPosition(finalPosition)
-        camera.setTruePosition(finalTruePosition)
-        camera.setZoom(targetZoom)
-
-        // Update CSS transform with exact final values
-        if (contentRef.current) {
-          contentRef.current.style.transform = `translate(${x}px, ${y}px) scale(${targetZoom})`
-        }
+        springs.x.resetTo(targetX)
+        springs.y.resetTo(targetY)
+        springs.z.resetTo(targetZ)
+        springs.zoom.resetTo(targetZoom)
+        applyState(targetX, targetY, targetZ, targetZoom)
 
         activeAnimationRef.current = null
-
-        // Delay re-enabling trailing animation by one frame to ensure clean state
         requestAnimationFrame(() => {
           isCustomAnimatingRef.current = false
         })
-
-        console.log('✅ CameraViewport.moveToCustom: Animation complete')
       }
     })
 
@@ -309,334 +211,124 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
   }
 
   /**
-   * High-level island navigation function
-   * Handles all coordinate transformations internally
-   *
-   * @param islandX - Island X position in world space
-   * @param islandY - Island Y position in world space
-   * @param islandZ - Island Z position in world space (default: 0)
-   * @param options - Navigation options
-   * @param options.animated - Whether to animate the transition (default: true)
-   * @param options.duration - Animation duration in ms (default: auto-calculated based on distance)
-   * @param options.easing - Easing function (default: 'easeOutQuart')
-   * @param options.zoom - Target zoom level (default: current zoom)
+   * Navigate camera to center on a world position.
+   * moveToIsland and moveTo share this implementation since both
+   * take world coordinates directly.
    */
+  const navigateTo = (
+    worldX: number,
+    worldY: number,
+    worldZ: number = 0,
+    options: {
+      animated?: boolean
+      duration?: number
+      easing?: EasingFunction | keyof typeof Easing
+      zoom?: number
+    } = {}
+  ) => {
+    const { animated = true, duration, easing = 'easeOutQuart', zoom } = options
+    const currentZoom = zoom ?? camera.getState().zoom
+
+    if (!animated) {
+      moveToRaw(worldX, worldY, worldZ, currentZoom, false)
+      return
+    }
+
+    // Calculate distance in screen pixels for auto-duration
+    const springs = springsRef.current!
+    const deltaX = worldX - springs.x.value
+    const deltaY = worldY - springs.y.value
+    const worldDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+    const screenDistance = worldDistance * currentZoom
+
+    if (screenDistance < 1) return
+
+    let finalDuration = duration
+    if (!finalDuration) {
+      const minDuration = 800
+      const maxDuration = 3000
+      const durationPerPixel = 0.3
+      finalDuration = Math.min(Math.max(minDuration + screenDistance * durationPerPixel, minDuration), maxDuration)
+    }
+
+    moveToCustom(worldX, worldY, worldZ, currentZoom, finalDuration, easing)
+  }
+
   const moveToIsland = (
-    islandX: number,
-    islandY: number,
-    islandZ: number = 0,
-    options: {
-      animated?: boolean
-      duration?: number
-      easing?: EasingFunction | keyof typeof Easing
-      zoom?: number
-    } = {}
-  ) => {
-    const {
-      animated = true,
-      duration,
-      easing = 'easeOutQuart',
-      zoom
-    } = options
+    islandX: number, islandY: number, islandZ: number = 0,
+    options: { animated?: boolean, duration?: number, easing?: EasingFunction | keyof typeof Easing, zoom?: number } = {}
+  ) => navigateTo(islandX, islandY, islandZ, options)
 
-    // Get current zoom level
-    const currentZoom = zoom ?? camera.getState().zoom
-
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-
-    // Calculate zoom offsets (compensates for scale transform origin)
-    const zoomOffsetX = (viewportWidth / 2) - (viewportWidth * currentZoom / 2)
-    const zoomOffsetY = (viewportHeight / 2) - (viewportHeight * currentZoom / 2)
-
-    // Camera position to center the island (negative island position)
-    const cameraX = -islandX
-    const cameraY = -islandY
-
-    // Calculate screen coordinates for 2D CSS layer
-    const screenLeft = (cameraX * currentZoom) - zoomOffsetX
-    const screenTop = (cameraY * currentZoom) - zoomOffsetY
-    const screenRight = screenLeft + viewportWidth
-    const screenBottom = screenTop + viewportHeight
-
-    // Calculate center of viewport (for 2D CSS layer)
-    const viewportCenterX = (screenLeft + screenRight) / 2
-    const viewportCenterY = (screenTop + screenBottom) / 2
-
-    // Calculate true screen position (for 3D scene layer)
-    const trueScreenLeft = islandX * currentZoom
-    const trueScreenTop = islandY * currentZoom
-
-    if (!animated) {
-      // Instant jump using moveToRaw
-      moveToRaw(
-        viewportCenterX,
-        viewportCenterY,
-        -trueScreenLeft,
-        -trueScreenTop,
-        islandZ,
-        currentZoom,
-        false
-      )
-      console.log(`⚡ CameraViewport.moveToIsland: Instant jump to island [${islandX}, ${islandY}, ${islandZ}]`)
-      return
-    }
-
-    // Calculate distance for auto-duration
-    const currentPosition = camera.getState().position
-    const [currentX, currentY] = currentPosition
-    const deltaX = viewportCenterX - currentX
-    const deltaY = viewportCenterY - currentY
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-
-    // Skip animation if already at target (within 1 pixel threshold)
-    if (distance < 1) {
-      console.log(`🗺️ CameraViewport.moveToIsland: Already at island [${islandX}, ${islandY}, ${islandZ}], skipping animation`)
-      return
-    }
-
-    // Calculate duration based on distance if not provided
-    let finalDuration = duration
-    if (!finalDuration) {
-      const minDuration = 800
-      const maxDuration = 3000
-      const durationPerPixel = 0.3
-      const calculatedDuration = minDuration + (distance * durationPerPixel)
-      finalDuration = Math.min(Math.max(calculatedDuration, minDuration), maxDuration)
-    }
-
-    console.log(`🎬 CameraViewport.moveToIsland: Animating to island [${islandX}, ${islandY}, ${islandZ}]`)
-    console.log(`   Distance: ${distance.toFixed(0)}px, Duration: ${finalDuration.toFixed(0)}ms`)
-
-    // Animated transition using moveToCustom
-    moveToCustom(
-      viewportCenterX,
-      viewportCenterY,
-      -trueScreenLeft,
-      -trueScreenTop,
-      islandZ,
-      currentZoom,
-      finalDuration,
-      easing
-    )
-  }
-
-  /**
-   * High-level position navigation function
-   * Moves camera to center on a specific world position
-   *
-   * @param x - Target X position in world space
-   * @param y - Target Y position in world space
-   * @param z - Target Z position in world space (default: 0)
-   * @param options - Navigation options
-   * @param options.animated - Whether to animate the transition (default: true)
-   * @param options.duration - Animation duration in ms (default: auto-calculated based on distance)
-   * @param options.easing - Easing function (default: 'easeOutQuart')
-   * @param options.zoom - Target zoom level (default: current zoom)
-   */
   const moveTo = (
-    x: number,
-    y: number,
-    z: number = 0,
-    options: {
-      animated?: boolean
-      duration?: number
-      easing?: EasingFunction | keyof typeof Easing
-      zoom?: number
-    } = {}
-  ) => {
-    const {
-      animated = true,
-      duration,
-      easing = 'easeOutQuart',
-      zoom
-    } = options
+    x: number, y: number, z: number = 0,
+    options: { animated?: boolean, duration?: number, easing?: EasingFunction | keyof typeof Easing, zoom?: number } = {}
+  ) => navigateTo(x, y, z, options)
 
-    // Get current zoom level
-    const currentZoom = zoom ?? camera.getState().zoom
+  useImperativeHandle(ref, () => ({ moveTo, moveToIsland, zoomIn, zoomOut }))
 
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
+  // ── Input handlers ──
 
-    // Calculate zoom offsets (compensates for scale transform origin)
-    const zoomOffsetX = (viewportWidth / 2) - (viewportWidth * currentZoom / 2)
-    const zoomOffsetY = (viewportHeight / 2) - (viewportHeight * currentZoom / 2)
-
-    // Camera position to center on target position
-    const cameraX = -x
-    const cameraY = -y
-
-    // Calculate screen coordinates for 2D CSS layer
-    const screenLeft = (cameraX * currentZoom) - zoomOffsetX
-    const screenTop = (cameraY * currentZoom) - zoomOffsetY
-    const screenRight = screenLeft + viewportWidth
-    const screenBottom = screenTop + viewportHeight
-
-    // Calculate center of viewport (for 2D CSS layer)
-    const viewportCenterX = (screenLeft + screenRight) / 2
-    const viewportCenterY = (screenTop + screenBottom) / 2
-
-    // Calculate true screen position (for 3D scene layer)
-    const trueScreenLeft = x * currentZoom
-    const trueScreenTop = y * currentZoom
-
-    if (!animated) {
-      // Instant jump using moveToRaw
-      moveToRaw(
-        viewportCenterX,
-        viewportCenterY,
-        -trueScreenLeft,
-        -trueScreenTop,
-        z,
-        currentZoom,
-        false
-      )
-      console.log(`⚡ CameraViewport.moveTo: Instant jump to position [${x}, ${y}, ${z}]`)
-      return
-    }
-
-    // Calculate distance for auto-duration
-    const currentPosition = camera.getState().position
-    const [currentX, currentY] = currentPosition
-    const deltaX = viewportCenterX - currentX
-    const deltaY = viewportCenterY - currentY
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-
-    // Skip animation if already at target (within 1 pixel threshold)
-    if (distance < 1) {
-      console.log(`🗺️ CameraViewport.moveTo: Already at position [${x}, ${y}, ${z}], skipping animation`)
-      return
-    }
-
-    // Calculate duration based on distance if not provided
-    let finalDuration = duration
-    if (!finalDuration) {
-      const minDuration = 800
-      const maxDuration = 3000
-      const durationPerPixel = 0.3
-      const calculatedDuration = minDuration + (distance * durationPerPixel)
-      finalDuration = Math.min(Math.max(calculatedDuration, minDuration), maxDuration)
-    }
-
-    console.log(`🎬 CameraViewport.moveTo: Animating to position [${x}, ${y}, ${z}]`)
-    console.log(`   Distance: ${distance.toFixed(0)}px, Duration: ${finalDuration.toFixed(0)}ms`)
-
-    // Animated transition using moveToCustom
-    moveToCustom(
-      viewportCenterX,
-      viewportCenterY,
-      -trueScreenLeft,
-      -trueScreenTop,
-      z,
-      currentZoom,
-      finalDuration,
-      easing
-    )
-  }
-
-  // Expose functions via ref for external access
-  useImperativeHandle(ref, () => ({
-    moveTo,
-    moveToIsland,
-    zoomIn,
-    zoomOut
-  }))
-
-  // Sort objects by zIndex for proper render order
-  const sortedObjects = useMemo(
-    () => [...objects].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)),
-    [objects]
-  )
-
-  // Handle mouse wheel for custom zooming - prevent browser zoom but keep our scroll zoom
+  // Wheel zoom + keyboard shortcuts + touch gestures
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
+    const springs = springsRef.current!
 
-    // Cache container rect to avoid expensive getBoundingClientRect() on every wheel event
     let cachedRect = container.getBoundingClientRect()
 
-    // Update cached rect on window resize (debounced to avoid excessive recalculations)
     let resizeTimeout: number | null = null
     const updateCachedRect = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout)
       resizeTimeout = window.setTimeout(() => {
-        if (container) {
-          cachedRect = container.getBoundingClientRect()
-        }
-      }, 100) // Wait 100ms after resize stops before recalculating
+        if (container) cachedRect = container.getBoundingClientRect()
+      }, 100)
     }
     window.addEventListener('resize', updateCachedRect)
 
     const handleWheel = (e: globalThis.WheelEvent) => {
-      e.preventDefault() // Always prevent default to block browser zoom
+      e.preventDefault()
 
-      // Only apply custom zoom if NOT a browser zoom gesture (Ctrl/Cmd not pressed)
       if (!e.ctrlKey && !e.metaKey) {
         const delta = e.deltaY * -0.00075
-        const newTargetZoom = Math.max(0.15, Math.min(1, targetZoomRef.current + delta))
+        const currentZoom = springs.zoom.value
+        const newZoom = Math.max(0.15, Math.min(1.5, springs.zoom.target + delta))
 
-        // Use cached rect instead of calling getBoundingClientRect() on every event
+        // Cursor position relative to container
         const cursorX = e.clientX - cachedRect.left
         const cursorY = e.clientY - cachedRect.top
+        const vw = cachedRect.width
+        const vh = cachedRect.height
 
-        // Get center of viewport
-        const centerX = cachedRect.width / 2
-        const centerY = cachedRect.height / 2
+        // Anchor: keep world point under cursor fixed as zoom changes.
+        // Use current visual state (.value) not target — target may be stale
+        // during consecutive scrolls since position is derived, not sprung.
+        const [cursorWorldX, cursorWorldY] = screenToWorld(
+          cursorX, cursorY, springs.x.value, springs.y.value, currentZoom, vw, vh
+        )
+        zoomAnchorRef.current = {
+          worldX: cursorWorldX, worldY: cursorWorldY,
+          screenX: cursorX, screenY: cursorY,
+        }
+        springs.zoom.springTo(newZoom)
 
-        // Calculate the point in world space that's currently under the cursor
-        // We need to reverse the transform: point = (cursor - center - position) / zoom
-        const [camX, camY, camZ] = targetPositionRef.current
-        const currentZoom = targetZoomRef.current
-
-        const worldX = (cursorX - centerX - camX) / currentZoom
-        const worldY = (cursorY - centerY - camY) / currentZoom
-
-        // After zooming, we want the same world point to be under the cursor
-        // newPosition = cursor - center - (worldPoint * newZoom)
-        targetPositionRef.current = [
-          cursorX - centerX - worldX * newTargetZoom,
-          cursorY - centerY - worldY * newTargetZoom,
-          camZ
-        ]
-
-        const [trueCamX, trueCamY, trueCamZ] = trueTargetPositionRef.current
-        const trueWorldX = (cursorX - centerX - trueCamX) / currentZoom
-        const trueWorldY = (cursorY - centerY - trueCamY) / currentZoom
-        trueTargetPositionRef.current = [
-          cursorX - centerX - trueWorldX * newTargetZoom,
-          cursorY - centerY - trueWorldY * newTargetZoom,
-          trueCamZ
-        ]
-
-        targetZoomRef.current = newTargetZoom
-
-        // Restart animation since target changed
         restartAnimationRef.current?.()
       }
     }
 
-    // Prevent keyboard zoom shortcuts (Ctrl+Plus, Ctrl+Minus, Ctrl+0)
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
         e.preventDefault()
       }
     }
 
-    // Touch: single-finger pan, two-finger pinch-to-zoom + pan
+    // ── Touch handlers ──
+
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
-        // Single finger — start panning
         isTouchPanningRef.current = true
         isPinchingRef.current = false
-        lastTouchPosRef.current = {
-          x: e.touches[0].clientX,
-          y: e.touches[0].clientY
-        }
+        lastTouchPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
       } else if (e.touches.length === 2) {
-        // Two fingers — start pinch-to-zoom
         e.preventDefault()
         isTouchPanningRef.current = false
         isPinchingRef.current = true
@@ -644,7 +336,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         const dx = e.touches[1].clientX - e.touches[0].clientX
         const dy = e.touches[1].clientY - e.touches[0].clientY
         pinchStartDistRef.current = Math.sqrt(dx * dx + dy * dy)
-        pinchStartZoomRef.current = targetZoomRef.current
+        pinchStartZoomRef.current = springs.zoom.target
 
         lastTouchPosRef.current = {
           x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
@@ -661,68 +353,58 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         const deltaX = touch.clientX - lastTouchPosRef.current.x
         const deltaY = touch.clientY - lastTouchPosRef.current.y
 
-        const [x, y, z] = targetPositionRef.current
-        const panSpeed = Math.max(0.25, Math.min(1, 1 / targetZoomRef.current))
+        const zoom = springs.zoom.target
+        const panSpeed = Math.max(0.25, Math.min(1, 1 / zoom))
 
-        targetPositionRef.current = [x + deltaX * panSpeed, y + deltaY * panSpeed, z]
+        // Pan cancels any active zoom anchor
+        zoomAnchorRef.current = null
 
-        const [trueX, trueY, trueZ] = trueTargetPositionRef.current
-        trueTargetPositionRef.current = [trueX + deltaX * panSpeed, trueY + deltaY * panSpeed, trueZ]
+        // Screen delta → world delta (negate: drag right = look left)
+        springs.x.springTo(springs.x.target - deltaX * panSpeed / zoom)
+        springs.y.springTo(springs.y.target - deltaY * panSpeed / zoom)
 
         lastTouchPosRef.current = { x: touch.clientX, y: touch.clientY }
         restartAnimationRef.current?.()
       } else if (e.touches.length === 2) {
-        // Two-finger pinch-to-zoom + pan
+        // Pinch-to-zoom + pan: compute position directly instead of using zoom anchor.
+        // Anchor approach drifts for pinch because both midpoint and zoom move simultaneously.
         e.preventDefault()
         isPinchingRef.current = true
         isTouchPanningRef.current = false
 
-        // Current pinch distance → zoom ratio
         const dx = e.touches[1].clientX - e.touches[0].clientX
         const dy = e.touches[1].clientY - e.touches[0].clientY
         const currentDist = Math.sqrt(dx * dx + dy * dy)
         const scale = currentDist / pinchStartDistRef.current
-        const newZoom = Math.max(0.15, Math.min(1, pinchStartZoomRef.current * scale))
+        const newZoom = Math.max(0.15, Math.min(1.5, pinchStartZoomRef.current * scale))
 
-        // Current midpoint (for combined pan)
         const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
         const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
 
-        // Zoom centered on pinch midpoint (same math as wheel zoom)
-        // Using new midpoint automatically incorporates pan movement
-        const centerX = cachedRect.width / 2
-        const centerY = cachedRect.height / 2
-
+        const vw = cachedRect.width
+        const vh = cachedRect.height
         const oldMidLocalX = lastTouchPosRef.current.x - cachedRect.left
         const oldMidLocalY = lastTouchPosRef.current.y - cachedRect.top
         const newMidLocalX = midX - cachedRect.left
         const newMidLocalY = midY - cachedRect.top
 
-        const [camX, camY, camZ] = targetPositionRef.current
-        const oldZoom = targetZoomRef.current
+        const oldZoom = springs.zoom.value
 
-        // World point under previous midpoint
-        const worldX = (oldMidLocalX - centerX - camX) / oldZoom
-        const worldY = (oldMidLocalY - centerY - camY) / oldZoom
+        // World point under old finger midpoint at current zoom
+        const [anchorWorldX, anchorWorldY] = screenToWorld(
+          oldMidLocalX, oldMidLocalY, springs.x.value, springs.y.value, oldZoom, vw, vh
+        )
 
-        // Reposition so same world point lands under new midpoint at new zoom
-        targetPositionRef.current = [
-          newMidLocalX - centerX - worldX * newZoom,
-          newMidLocalY - centerY - worldY * newZoom,
-          camZ
-        ]
+        // Derive new camera position: keep that world point under the new midpoint at new zoom
+        const newWorldX = anchorWorldX - (newMidLocalX - vw / 2) / newZoom
+        const newWorldY = anchorWorldY - (newMidLocalY - vh / 2) / newZoom
 
-        const [trueCamX, trueCamY, trueCamZ] = trueTargetPositionRef.current
-        const trueWorldX = (oldMidLocalX - centerX - trueCamX) / oldZoom
-        const trueWorldY = (oldMidLocalY - centerY - trueCamY) / oldZoom
+        // Direct set — pinch gesture is already smooth from the OS, no spring needed
+        zoomAnchorRef.current = null
+        springs.x.resetTo(newWorldX)
+        springs.y.resetTo(newWorldY)
+        springs.zoom.resetTo(newZoom)
 
-        trueTargetPositionRef.current = [
-          newMidLocalX - centerX - trueWorldX * newZoom,
-          newMidLocalY - centerY - trueWorldY * newZoom,
-          trueCamZ
-        ]
-
-        targetZoomRef.current = newZoom
         lastTouchPosRef.current = { x: midX, y: midY }
         restartAnimationRef.current?.()
       }
@@ -733,13 +415,9 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         isTouchPanningRef.current = false
         isPinchingRef.current = false
       } else if (e.touches.length === 1) {
-        // Went from pinch to single finger — switch to pan mode
         isPinchingRef.current = false
         isTouchPanningRef.current = true
-        lastTouchPosRef.current = {
-          x: e.touches[0].clientX,
-          y: e.touches[0].clientY
-        }
+        lastTouchPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
       }
     }
 
@@ -760,250 +438,157 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     }
   }, [])
 
-  // Handle mouse move for panning (memoized to prevent recreation)
+  // Mouse pan
   const handleMouseMove = useCallback((e: globalThis.MouseEvent) => {
     if (!isPanningRef.current) return
 
     const deltaX = e.clientX - lastMousePosRef.current.x
     const deltaY = e.clientY - lastMousePosRef.current.y
 
-    const [x, y, z] = targetPositionRef.current
+    const springs = springsRef.current!
+    const zoom = springs.zoom.target
+    const panSpeed = Math.max(0.25, Math.min(1, 1 / zoom))
 
-    // Adjust pan speed based on zoom level (less zoom = faster pan)
-    const panSpeed = Math.max(0.25, Math.min(1, 1 / targetZoomRef.current))
+    // Pan cancels any active zoom anchor
+    zoomAnchorRef.current = null
 
-    targetPositionRef.current = [
-      x + deltaX * panSpeed,
-      y + deltaY * panSpeed,
-      z
-    ]
-
-    const [trueX, trueY, trueZ] = trueTargetPositionRef.current
-    trueTargetPositionRef.current = [
-      trueX + deltaX * panSpeed,
-      trueY + deltaY * panSpeed,
-      trueZ
-    ]
+    springs.x.springTo(springs.x.target - deltaX * panSpeed / zoom)
+    springs.y.springTo(springs.y.target - deltaY * panSpeed / zoom)
 
     lastMousePosRef.current = { x: e.clientX, y: e.clientY }
-
-    // Restart animation since target changed
     restartAnimationRef.current?.()
   }, [])
 
-  // Handle mouse up (memoized to prevent recreation)
   const handleMouseUp = useCallback(() => {
     isPanningRef.current = false
-    if (containerRef.current) {
-      containerRef.current.style.cursor = 'grab'
-    }
+    if (containerRef.current) containerRef.current.style.cursor = 'grab'
   }, [])
 
-  // Handle mouse down to start panning
   const handleMouseDown = useCallback((e: MouseEvent<HTMLDivElement>) => {
-    if (e.button === 0) { // Left click only
+    if (e.button === 0) {
       isPanningRef.current = true
       lastMousePosRef.current = { x: e.clientX, y: e.clientY }
-
-      if (containerRef.current) {
-        containerRef.current.style.cursor = 'grabbing'
-      }
+      if (containerRef.current) containerRef.current.style.cursor = 'grabbing'
     }
   }, [])
 
-  // Set up mouse event listeners
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [handleMouseMove, handleMouseUp])
 
-  // Store initial viewport height and FOV for dynamic FOV adjustment
+  // ── Resize handler ──
+
   const initialViewportHeightRef = useRef(window.innerHeight)
   const baseFovRef = useRef(camera.getState().fov)
 
-  // Handle window resize to recalculate 2D positions and adjust FOV for height changes
   useEffect(() => {
     const handleResize = () => {
-      // Get current world position by reverse-calculating from 2D position
-      const [currentX, currentY, currentZ] = currentPositionRef.current
-      const [, , trueCurrentZ] = trueCurrentPositionRef.current
-      const currentZoom = currentZoomRef.current
+      const springs = springsRef.current!
+      const currentZoom = springs.zoom.value
+      const newVW = window.innerWidth
+      const newVH = window.innerHeight
 
-      // Get old viewport dimensions from the last calculation
-      // We need to reverse the transformation to get the world position
-      const oldViewportWidth = window.innerWidth
-      const oldViewportHeight = window.innerHeight
-
-      // Calculate old zoom offsets
-      const oldZoomOffsetX = (oldViewportWidth / 2) - (oldViewportWidth * currentZoom / 2)
-      const oldZoomOffsetY = (oldViewportHeight / 2) - (oldViewportHeight * currentZoom / 2)
-
-      // Reverse calculate the camera position in world space
-      // From: screenLeft = (cameraX * currentZoom) - zoomOffsetX
-      // And: viewportCenterX = (screenLeft + screenRight) / 2 = (screenLeft + screenLeft + viewportWidth) / 2
-      // Simplify: viewportCenterX = screenLeft + viewportWidth / 2
-      // So: screenLeft = viewportCenterX - viewportWidth / 2 = currentX - viewportWidth / 2
-      // Therefore: cameraX = (screenLeft + zoomOffsetX) / currentZoom
-
-      const screenLeft = currentX - oldViewportWidth / 2
-      const screenTop = currentY - oldViewportHeight / 2
-
-      const cameraX = (screenLeft + oldZoomOffsetX) / currentZoom
-      const cameraY = (screenTop + oldZoomOffsetY) / currentZoom
-
-      // Now recalculate with new viewport dimensions
-      const newViewportWidth = window.innerWidth
-      const newViewportHeight = window.innerHeight
-
-      const newZoomOffsetX = (newViewportWidth / 2) - (newViewportWidth * currentZoom / 2)
-      const newZoomOffsetY = (newViewportHeight / 2) - (newViewportHeight * currentZoom / 2)
-
-      const newScreenLeft = (cameraX * currentZoom) - newZoomOffsetX
-      const newScreenTop = (cameraY * currentZoom) - newZoomOffsetY
-
-      const newViewportCenterX = newScreenLeft + newViewportWidth / 2
-      const newViewportCenterY = newScreenTop + newViewportHeight / 2
-
-      // Update positions with new viewport dimensions
-      const newPosition: [number, number, number] = [newViewportCenterX, newViewportCenterY, currentZ]
-
-      // For true position, we can maintain it relative to the viewport center
-      // The 3D scene should stay centered on the same world point
-      const worldX = -cameraX
-      const worldY = -cameraY
-      const newTrueScreenLeft = worldX * currentZoom
-      const newTrueScreenTop = worldY * currentZoom
-      const newTruePosition: [number, number, number] = [-newTrueScreenLeft, -newTrueScreenTop, trueCurrentZ]
+      // World position doesn't change — we're still looking at the same point
+      // Just re-derive CSS transform with new viewport dimensions
+      const wx = springs.x.value
+      const wy = springs.y.value
+      const [cssX, cssY] = worldToCSS(wx, wy, currentZoom, newVW, newVH)
 
       // Adjust FOV to compensate for height changes
-      // visibleHeight = 2 * tan(fov/2) * distance
-      // To keep same visible height per pixel: newFov should make (visibleHeight / newHeight) = (baseVisibleHeight / baseHeight)
-      // tan(newFov/2) / newHeight = tan(baseFov/2) / baseHeight
-      // tan(newFov/2) = tan(baseFov/2) * (newHeight / baseHeight)
-      const heightRatio = newViewportHeight / initialViewportHeightRef.current
+      const heightRatio = newVH / initialViewportHeightRef.current
       const baseFov = baseFovRef.current
       const newFov = 2 * Math.atan(Math.tan(baseFov / 2) * heightRatio)
-
       camera.setFov(newFov)
 
-      // Update both current and target refs to prevent sudden jumps
-      currentPositionRef.current = newPosition
-      targetPositionRef.current = newPosition
-      trueCurrentPositionRef.current = newTruePosition
-      trueTargetPositionRef.current = newTruePosition
+      // Update WebGL worker renderer with new viewport
+      worldRenderer.resize(newVW, newVH, window.devicePixelRatio || 1)
 
-      // Update camera context
-      camera.setPosition(newPosition)
-      camera.setTruePosition(newTruePosition)
+      // Update WebGL camera
+      const [trueX, trueY] = worldToWebGL(wx, wy, currentZoom)
+      worldRenderer.updateCamera(trueX, trueY, currentZoom, newFov, newVW, newVH)
 
-      // Update CSS transform immediately
+      // Update CSS transform
       if (contentRef.current) {
-        contentRef.current.style.transform = `translate(${newViewportCenterX}px, ${newViewportCenterY}px) scale(${currentZoom})`
+        contentRef.current.style.transform = `translate(${cssX}px, ${cssY}px) scale(${currentZoom})`
       }
-
-      console.log(`📐 CameraViewport: Resize handled - new viewport: ${newViewportWidth}x${newViewportHeight}, adjusted FOV: ${(newFov * 180 / Math.PI).toFixed(2)}°`)
     }
 
     window.addEventListener('resize', handleResize)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-    }
+    return () => window.removeEventListener('resize', handleResize)
   }, [camera])
 
-  // Trailing animation loop using ticker
+  // ── Spring animation loop ──
+
   useEffect(() => {
-    const trailingSpeed = 0.1 // Adjust for more/less smoothness (0.1 = slower, 0.3 = faster)
-    const threshold = 0.01 // Stop animating when differences are below this threshold
-    let lastTransform = '' // Cache last transform to avoid unnecessary DOM writes
-    let isAnimating = false // Track whether animation is currently active
+    const springs = springsRef.current!
+    let lastTransform = ''
+    let isAnimating = false
 
     const animate = (_timestamp: number, _deltaTime: number) => {
-      // Skip trailing animation if custom animation is active
-      if (isCustomAnimatingRef.current) {
-        return
+      if (isCustomAnimatingRef.current) return
+
+      const anchor = zoomAnchorRef.current
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+
+      // Advance zoom spring (always)
+      const zoomAnim = springs.zoom.update()
+      const zAnim = springs.z.update()
+      const zoom = springs.zoom.value
+
+      let wx: number, wy: number
+      let posAnimating: boolean
+
+      if (anchor) {
+        // Cursor-anchored zoom: derive position from zoom so the anchor
+        // world point stays fixed at the cursor screen position.
+        wx = anchor.worldX - (anchor.screenX - vw / 2) / zoom
+        wy = anchor.worldY - (anchor.screenY - vh / 2) / zoom
+
+        // Keep position springs in sync (so they're correct when anchor clears)
+        springs.x.resetTo(wx)
+        springs.y.resetTo(wy)
+
+        posAnimating = zoomAnim // position is coupled to zoom
+        if (!zoomAnim) zoomAnchorRef.current = null // anchor done
+      } else {
+        // Normal: position springs animate independently
+        const xAnim = springs.x.update()
+        const yAnim = springs.y.update()
+        posAnimating = xAnim || yAnim
+        wx = springs.x.value
+        wy = springs.y.value
       }
 
-      // Calculate differences
-      const zoomDiff = Math.abs(targetZoomRef.current - currentZoomRef.current)
-      const [targetX, targetY, targetZ] = targetPositionRef.current
-      const [currentX, currentY, currentZ] = currentPositionRef.current
-      const [trueCurrentX, trueCurrentY, trueCurrentZ] = trueCurrentPositionRef.current
+      const wz = springs.z.value
+      const stillAnimating = posAnimating || zoomAnim || zAnim
 
-      const positionDiff = Math.abs(targetX - currentX) + Math.abs(targetY - currentY)
-      const truePositionDiff = Math.abs(trueTargetPositionRef.current[0] - trueCurrentX) +
-                               Math.abs(trueTargetPositionRef.current[1] - trueCurrentY)
+      const [cssX, cssY] = worldToCSS(wx, wy, zoom, vw, vh)
+      const [trueX, trueY] = worldToWebGL(wx, wy, zoom)
 
-      // Check if animation is complete (all differences below threshold)
-      if (zoomDiff < threshold && positionDiff < threshold && truePositionDiff < threshold) {
-        // Snap to target values and stop
-        currentZoomRef.current = targetZoomRef.current
-        currentPositionRef.current = targetPositionRef.current
-        trueCurrentPositionRef.current = trueTargetPositionRef.current
+      camera.setState({ worldPosition: [wx, wy, wz], zoom })
+      worldRenderer.updateCamera(trueX, trueY, zoom, camera.getState().fov, vw, vh)
 
-        // Update camera state one final time (batched for efficiency)
-        camera.setState({
-          zoom: currentZoomRef.current,
-          position: currentPositionRef.current,
-          truePosition: trueCurrentPositionRef.current
-        })
-
-        // Final transform update
-        if (contentRef.current) {
-          const [x, y] = currentPositionRef.current
-          const newTransform = `translate(${x}px, ${y}px) scale(${currentZoomRef.current})`
-          if (newTransform !== lastTransform) {
-            contentRef.current.style.transform = newTransform
-            lastTransform = newTransform
-          }
+      if (contentRef.current) {
+        const newTransform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
+        if (newTransform !== lastTransform) {
+          contentRef.current.style.transform = newTransform
+          lastTransform = newTransform
         }
+      }
 
-        // Stop animating - remove from ticker to save CPU
-        if (isAnimating) {
-          ticker.remove(animate)
-          isAnimating = false
-        }
-      } else {
-        // Continue interpolating
-        currentZoomRef.current += (targetZoomRef.current - currentZoomRef.current) * trailingSpeed
-
-        currentPositionRef.current = [
-          currentX + (targetX - currentX) * trailingSpeed,
-          currentY + (targetY - currentY) * trailingSpeed,
-          currentZ + (targetZ - currentZ) * trailingSpeed,
-        ]
-
-        trueCurrentPositionRef.current = [
-          trueCurrentX + (trueTargetPositionRef.current[0] - trueCurrentX) * trailingSpeed,
-          trueCurrentY + (trueTargetPositionRef.current[1] - trueCurrentY) * trailingSpeed,
-          trueCurrentZ + (trueTargetPositionRef.current[2] - trueCurrentZ) * trailingSpeed,
-        ]
-
-        // Update camera state (batched for efficiency)
-        camera.setState({
-          zoom: currentZoomRef.current,
-          position: currentPositionRef.current,
-          truePosition: trueCurrentPositionRef.current
-        })
-
-        // Update CSS transform only if it changed
-        if (contentRef.current) {
-          const [x, y] = currentPositionRef.current
-          const newTransform = `translate(${x}px, ${y}px) scale(${currentZoomRef.current})`
-          if (newTransform !== lastTransform) {
-            contentRef.current.style.transform = newTransform
-            lastTransform = newTransform
-          }
-        }
+      // Remove from ticker when all springs are at rest
+      if (!stillAnimating && isAnimating) {
+        ticker.remove(animate)
+        isAnimating = false
       }
     }
 
-    // Function to start animation when target changes
     const startAnimation = () => {
       if (!isAnimating) {
         ticker.add(animate)
@@ -1011,10 +596,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       }
     }
 
-    // Expose restart function to other handlers
     restartAnimationRef.current = startAnimation
-
-    // Initially start the animation
     startAnimation()
 
     return () => {
@@ -1030,17 +612,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       className="camera-viewport"
       onMouseDown={handleMouseDown}
     >
-      {/* R3F Canvas - renders 3D objects */}
-      <R3FCanvas>
-        <Suspense fallback={null}>
-          {/* Render all 3D objects in sorted order */}
-          {sortedObjects.map(({ id, component }) => (
-            <group key={id}>
-              {component}
-            </group>
-          ))}
-        </Suspense>
-      </R3FCanvas>
+      <WorldCanvas />
 
       <div
         ref={contentRef}

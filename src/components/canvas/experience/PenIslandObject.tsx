@@ -6,6 +6,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { applyMaterialOverrides, type MaterialOverride } from '../home/materialUtils'
 import { Animation, Easing } from '../../../utils/Animation'
+import { useIslandPosition } from '../../../context/IslandPositionContext'
 
 /**
  * Normalize angle `a` to be within ±π of `ref` so interpolation takes the shortest path
@@ -431,12 +432,25 @@ export function PenIslandObject({
 }) {
   const { addObject, removeObject } = useScene()
   const objectId = useRef(`pen-island-${Math.random()}`).current
+  const islandPosition = useIslandPosition()
+
+  const resolvedPenPosition = useMemo<[number, number, number]>(() => [
+    penPosition[0] + islandPosition[0],
+    penPosition[1] + islandPosition[1],
+    penPosition[2] + islandPosition[2],
+  ], [penPosition[0], penPosition[1], penPosition[2], islandPosition[0], islandPosition[1], islandPosition[2]])
+
+  const resolvedCapPosition = useMemo<[number, number, number]>(() => [
+    capPosition[0] + islandPosition[0],
+    capPosition[1] + islandPosition[1],
+    capPosition[2] + islandPosition[2],
+  ], [capPosition[0], capPosition[1], capPosition[2], islandPosition[0], islandPosition[1], islandPosition[2]])
 
   useEffect(() => {
     const mesh = (
       <PenCapMesh
-        penPosition={penPosition}
-        capPosition={capPosition}
+        penPosition={resolvedPenPosition}
+        capPosition={resolvedCapPosition}
         penScale={penScale}
         capScale={capScale}
         penRotation={penRotation}
@@ -448,7 +462,7 @@ export function PenIslandObject({
 
     addObject(objectId, mesh, zIndex)
     return () => removeObject(objectId)
-  }, [penPosition, capPosition, penScale, capScale, penRotation, capRotation, penMaterialOverrides, capMaterialOverrides, zIndex])
+  }, [resolvedPenPosition, resolvedCapPosition, penScale, capScale, penRotation, capRotation, penMaterialOverrides, capMaterialOverrides, zIndex])
 
   return null
 }
