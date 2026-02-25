@@ -3,6 +3,7 @@ import { loadingManager } from '../../utils/SimpleLoadingManager'
 import { CameraProvider } from '../../context/CameraContext'
 import { WorldProvider } from '../../context/WorldContext'
 import { BoundaryProvider } from '../../context/BoundaryContext'
+
 import { World } from '../../components/world/World'
 import { CameraViewport, type CameraViewportHandle } from '../../components/canvas/CameraViewport'
 import { IslandLoader } from '../../components/loading/IslandLoader'

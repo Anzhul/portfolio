@@ -72,6 +72,46 @@ export interface RemoveIIIFImageMessage {
   id: string
 }
 
+export interface ModelMaterialOverride {
+  color?: [number, number, number, number]
+  roughness?: number
+  metallic?: number
+}
+
+export interface AddModelMessage {
+  type: 'addModel'
+  id: string
+  url: string
+  x: number
+  y: number
+  z: number
+  scale: number
+  rotationX: number
+  rotationY: number
+  rotationZ: number
+  opacity: number
+  materials: Record<number, ModelMaterialOverride> | null
+}
+
+export interface RemoveModelMessage {
+  type: 'removeModel'
+  id: string
+}
+
+export interface UpdateModelMessage {
+  type: 'updateModel'
+  id: string
+  x: number
+  y: number
+  z: number
+  scale: number
+  rotationX: number
+  rotationY: number
+  rotationZ: number
+  opacity: number
+  materials: Record<number, ModelMaterialOverride> | null
+}
+
 export type MainToWorkerMessage =
   | InitMessage
   | ResizeMessage
@@ -81,6 +121,9 @@ export type MainToWorkerMessage =
   | UpdateImageMessage
   | AddIIIFImageMessage
   | RemoveIIIFImageMessage
+  | AddModelMessage
+  | RemoveModelMessage
+  | UpdateModelMessage
 
 // ── Worker → Main ──
 
@@ -100,6 +143,11 @@ export interface IIIFReadyMessage {
   imageHeight: number
 }
 
+export interface ModelLoadedMessage {
+  type: 'modelLoaded'
+  id: string
+}
+
 export interface ErrorMessage {
   type: 'error'
   message: string
@@ -110,4 +158,5 @@ export type WorkerToMainMessage =
   | ReadyMessage
   | ImageLoadedMessage
   | IIIFReadyMessage
+  | ModelLoadedMessage
   | ErrorMessage

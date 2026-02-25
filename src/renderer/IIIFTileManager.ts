@@ -184,7 +184,7 @@ export class IIIFTileManager {
     camTrueX: number,
     camTrueY: number,
     camZoom: number,
-    camFov: number,
+    _camFov: number,
     camViewW: number,
     camViewH: number,
     dpr: number
@@ -199,10 +199,9 @@ export class IIIFTileManager {
     const { width: imgW, height: imgH, tileSize, scaleFactors } = manifest
 
     // ── Zoom level selection ──
-    // pixelToUnit matches WebGLRenderer's perspective camera conversion
-    const baseCameraZ = 1000
-    const pixelToUnit = (2 * Math.tan(camFov / 2) * baseCameraZ) / camViewH
-    const screenPixels = displayW * camZoom / pixelToUnit * dpr
+    // With the scene scale fix (zoom * pixelToUnit), 1 pixel-unit = 1 CSS pixel.
+    // Screen pixels = displayW * zoom * dpr (no pixelToUnit division needed).
+    const screenPixels = displayW * camZoom * dpr
     // Quality boost: request higher-res tiles than strictly needed for the viewport.
     // 1.0 = match screen pixels exactly, 1.5 = fetch one level sharper from further away.
     const qualityBoost = 1.5
@@ -235,12 +234,13 @@ export class IIIFTileManager {
     const worldToImgX = imgW / displayW
     const worldToImgY = imgH / displayH
 
-    // Camera viewport bounds in world space
-    // Must account for pixelToUnit (perspective camera pixel-to-GL-unit conversion)
-    const camWorldX = -camTrueX * pixelToUnit / camZoom
-    const camWorldY = -camTrueY * pixelToUnit / camZoom
-    const halfVW = pixelToUnit * camViewW / (2 * camZoom)
-    const halfVH = pixelToUnit * camViewH / (2 * camZoom)
+    // Camera viewport bounds in world pixel space.
+    // With scene scale = zoom * pixelToUnit, camera center in pixel coords is just
+    // the world position (no pixelToUnit conversion needed).
+    const camWorldX = -camTrueX / camZoom
+    const camWorldY = -camTrueY / camZoom
+    const halfVW = camViewW / (2 * camZoom)
+    const halfVH = camViewH / (2 * camZoom)
 
     // Visible region in image pixels
     const visLeft = (camWorldX - halfVW - imgWorldLeft) * worldToImgX
@@ -275,9 +275,9 @@ export class IIIFTileManager {
     const imgToWorldX = displayW / imgW
     const imgToWorldY = displayH / imgH
 
-    // Seam padding: expand each tile by 0.5 device pixels on non-edge sides
+    // Seam padding: expand each tile by 0.5 device pixels in world pixel units
     // to prevent sub-pixel gaps from floating-point rounding (matches Juniper approach)
-    const padWorld = 0.5 * pixelToUnit / (camZoom * dpr)
+    const padWorld = 0.5 / (camZoom * dpr)
 
     // ── Build quads and queue missing tiles ──
     const quads: QuadState[] = []

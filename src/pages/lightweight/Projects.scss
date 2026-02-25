@@ -1,8 +1,20 @@
 .projects {
-  min-height: 100vh;
+  min-height: 120vh;
   background: white;
+  //background-color: red;
   color: #222222;
 
+  @media (max-width: 1440px) {
+    min-height: 100vh;
+  }
+
+  @media (max-width: 1024px) {
+    min-height: 250vh;
+  }
+
+  @media (max-width: 767px) {
+    min-height: 150vh;
+  }
 
 
   .projects-content {
@@ -304,7 +316,7 @@
 
         // Mobile - auto sizing in flex
         @media screen and (max-width: 768px) {
-          aspect-ratio: 16 / 9;
+          aspect-ratio: 1 / 1;
         }
 
         &:hover .project-info {

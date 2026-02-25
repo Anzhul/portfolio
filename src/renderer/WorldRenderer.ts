@@ -2,6 +2,7 @@ import type { MainToWorkerMessage, WorkerToMainMessage } from './types'
 
 type ImageLoadedCallback = (id: string) => void
 type IIIFReadyCallback = (id: string, imageWidth: number, imageHeight: number) => void
+type ModelLoadedCallback = (id: string) => void
 type ErrorCallback = (message: string, id?: string) => void
 
 /**
@@ -14,6 +15,7 @@ export class WorldRenderer {
   private messageBuffer: MainToWorkerMessage[] = []
   private onImageLoaded?: ImageLoadedCallback
   private onIIIFReady?: IIIFReadyCallback
+  private onModelLoaded?: ModelLoadedCallback
   private onError?: ErrorCallback
 
   /**
@@ -45,6 +47,9 @@ export class WorldRenderer {
           break
         case 'iiifReady':
           this.onIIIFReady?.(msg.id, msg.imageWidth, msg.imageHeight)
+          break
+        case 'modelLoaded':
+          this.onModelLoaded?.(msg.id)
           break
         case 'error':
           console.warn('[WorldRenderer]', msg.message, msg.id ?? '')
@@ -150,6 +155,57 @@ export class WorldRenderer {
    */
   removeIIIFImage(id: string): void {
     this.send({ type: 'removeIIIFImage', id })
+  }
+
+  /**
+   * Register a 3D GLB model in the world.
+   */
+  addModel(
+    id: string,
+    url: string,
+    x: number,
+    y: number,
+    z: number,
+    scale: number,
+    rotationX: number,
+    rotationY: number,
+    rotationZ: number,
+    opacity: number = 1,
+    materials: Record<number, { color?: [number, number, number, number]; roughness?: number; metallic?: number }> | null = null
+  ): void {
+    this.send({ type: 'addModel', id, url, x, y, z, scale, rotationX, rotationY, rotationZ, opacity, materials })
+  }
+
+  /**
+   * Remove a 3D model from the world.
+   */
+  removeModel(id: string): void {
+    this.send({ type: 'removeModel', id })
+  }
+
+  /**
+   * Update an existing 3D model's transform/opacity.
+   */
+  updateModel(
+    id: string,
+    x: number,
+    y: number,
+    z: number,
+    scale: number,
+    rotationX: number,
+    rotationY: number,
+    rotationZ: number,
+    opacity: number,
+    materials: Record<number, { color?: [number, number, number, number]; roughness?: number; metallic?: number }> | null = null
+  ): void {
+    this.send({ type: 'updateModel', id, x, y, z, scale, rotationX, rotationY, rotationZ, opacity, materials })
+  }
+
+  /**
+   * Set callback for when a 3D model finishes loading.
+   */
+  setOnModelLoaded(cb: ModelLoadedCallback): void {
+    this.onModelLoaded = cb
   }
 
   /**

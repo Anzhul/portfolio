@@ -1,7 +1,8 @@
 import { WebGLRenderer } from './WebGLRenderer'
-import type { QuadState } from './WebGLRenderer'
+import type { QuadState, MeshState } from './WebGLRenderer'
 import type { MainToWorkerMessage, WorkerToMainMessage } from './types'
 import { IIIFTileManager, TileCacheBudget, parseIIIFManifest } from './IIIFTileManager'
+import { parseGLB } from './GLBParser'
 
 // ── State ──
 
@@ -43,6 +44,12 @@ const pendingIIIFFetches = new Map<string, AbortController>()
 const tileBudget = new TileCacheBudget()
 let workerDpr = 1
 
+// 3D meshes
+const meshes = new Map<string, MeshState>()
+const pendingModelFetches = new Map<string, AbortController>()
+let sortedMeshes: MeshState[] = []
+let meshesDirty = false
+
 // ── Message handler ──
 
 self.onmessage = (e: MessageEvent<MainToWorkerMessage>) => {
@@ -54,7 +61,7 @@ self.onmessage = (e: MessageEvent<MainToWorkerMessage>) => {
       try {
         const gl = canvas.getContext('webgl2', {
           alpha: true,
-          depth: false,
+          depth: true,
           antialias: true,
           premultipliedAlpha: true,
         }) as WebGL2RenderingContext | null
@@ -76,7 +83,6 @@ self.onmessage = (e: MessageEvent<MainToWorkerMessage>) => {
         workerDpr = msg.dpr
 
         postMsg({ type: 'ready' })
-        startRenderLoop()
       } catch (err) {
         postMsg({
           type: 'error',
@@ -103,6 +109,9 @@ self.onmessage = (e: MessageEvent<MainToWorkerMessage>) => {
       camFov = msg.fov
       camViewW = msg.viewportWidth
       camViewH = msg.viewportHeight
+      // Render immediately so WebGL draws with the exact same camera state
+      // the main thread just applied to CSS — eliminates 1-frame lag.
+      renderFrame()
       break
     }
 
@@ -206,6 +215,7 @@ self.onmessage = (e: MessageEvent<MainToWorkerMessage>) => {
             tileBudget
           )
           iiifManagers.set(msg.id, mgr)
+          scheduleRender()
           postMsg({
             type: 'iiifReady',
             id: msg.id,
@@ -237,6 +247,97 @@ self.onmessage = (e: MessageEvent<MainToWorkerMessage>) => {
       if (mgr) {
         mgr.destroy()
         iiifManagers.delete(msg.id)
+      }
+      break
+    }
+
+    case 'addModel': {
+      if (!renderer) break
+      const capturedRendererForModel = renderer
+      const modelAbort = new AbortController()
+      pendingModelFetches.set(msg.id, modelAbort)
+
+      fetch(msg.url, { signal: modelAbort.signal })
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          return res.arrayBuffer()
+        })
+        .then((buffer) => parseGLB(buffer))
+        .then((parsed) => {
+          pendingModelFetches.delete(msg.id)
+          if (modelAbort.signal.aborted) return
+
+          // Upload all mesh primitives to GPU
+          const gpuPrimitives: MeshState['primitives'] = []
+          const nodeTransforms: Float32Array[] = []
+
+          for (const mesh of parsed.meshes) {
+            for (const prim of mesh.primitives) {
+              gpuPrimitives.push(capturedRendererForModel.uploadMesh(prim))
+              nodeTransforms.push(mesh.transform)
+            }
+          }
+
+          const meshState: MeshState = {
+            id: msg.id,
+            x: msg.x,
+            y: msg.y,
+            z: msg.z,
+            scale: msg.scale,
+            rotationX: msg.rotationX,
+            rotationY: msg.rotationY,
+            rotationZ: msg.rotationZ,
+            opacity: msg.opacity,
+            materialOverrides: msg.materials,
+            primitives: gpuPrimitives,
+            nodeTransforms,
+          }
+          meshes.set(msg.id, meshState)
+          meshesDirty = true
+          scheduleRender()
+          postMsg({ type: 'modelLoaded', id: msg.id })
+        })
+        .catch((err) => {
+          pendingModelFetches.delete(msg.id)
+          if (err instanceof DOMException && err.name === 'AbortError') return
+          console.error(`[Worker] Model load FAILED for ${msg.id}:`, err)
+          postMsg({
+            type: 'error',
+            message: `Model load failed: ${err instanceof Error ? err.message : err}`,
+            id: msg.id,
+          })
+        })
+      break
+    }
+
+    case 'removeModel': {
+      const modelController = pendingModelFetches.get(msg.id)
+      if (modelController) {
+        modelController.abort()
+        pendingModelFetches.delete(msg.id)
+      }
+      const meshState = meshes.get(msg.id)
+      if (meshState && renderer) {
+        renderer.deleteMesh(meshState.primitives)
+        meshes.delete(msg.id)
+        meshesDirty = true
+      }
+      break
+    }
+
+    case 'updateModel': {
+      const existingMesh = meshes.get(msg.id)
+      if (existingMesh) {
+        existingMesh.x = msg.x
+        existingMesh.y = msg.y
+        existingMesh.z = msg.z
+        existingMesh.scale = msg.scale
+        existingMesh.rotationX = msg.rotationX
+        existingMesh.rotationY = msg.rotationY
+        existingMesh.rotationZ = msg.rotationZ
+        existingMesh.opacity = msg.opacity
+        existingMesh.materialOverrides = msg.materials
+        meshesDirty = true
       }
       break
     }
@@ -295,6 +396,7 @@ function processNextFetch() {
         return
       }
       uploadQueue.push({ id, bitmap })
+      scheduleRender()
     })
     .catch((err) => {
       pendingFetches.delete(id)
@@ -311,87 +413,112 @@ function processNextFetch() {
     })
 }
 
-// ── Render loop ──
+// ── Render ──
 
-function startRenderLoop() {
-  function frame() {
-    if (!renderer) return
+// One-shot RAF for content changes when the camera isn't moving
+// (e.g. texture finishes loading while user is idle).
+let renderScheduled = false
 
-    // Phase 1: Upload 1 texture per frame (texImage2D only, no mipmaps)
-    if (uploadQueue.length > 0) {
-      const { id, bitmap } = uploadQueue.shift()!
-      const quad = quads.get(id)
-      if (quad) {
-        const result = renderer.uploadTexture(bitmap)
-        quad.texture = result.texture
-        quad.texWidth = result.texWidth
-        quad.texHeight = result.texHeight
-        // Queue mipmap generation for a later frame
-        mipmapQueue.push({ id, texture: result.texture })
-        postMsg({ type: 'imageLoaded', id })
-      }
-      bitmap.close()
+function scheduleRender() {
+  if (!renderScheduled) {
+    renderScheduled = true
+    requestAnimationFrame(() => {
+      renderScheduled = false
+      renderFrame()
+    })
+  }
+}
+
+function renderFrame() {
+  if (!renderer) return
+
+  // Phase 1: Upload 1 texture per frame (texImage2D only, no mipmaps)
+  if (uploadQueue.length > 0) {
+    const { id, bitmap } = uploadQueue.shift()!
+    const quad = quads.get(id)
+    if (quad) {
+      const result = renderer.uploadTexture(bitmap)
+      quad.texture = result.texture
+      quad.texWidth = result.texWidth
+      quad.texHeight = result.texHeight
+      // Queue mipmap generation for a later frame
+      mipmapQueue.push({ id, texture: result.texture })
+      postMsg({ type: 'imageLoaded', id })
     }
-
-    // Phase 2: Generate mipmaps for 1 texture per frame (only when no uploads pending)
-    if (uploadQueue.length === 0 && mipmapQueue.length > 0) {
-      const { id, texture } = mipmapQueue.shift()!
-      // Only finalize if quad still exists
-      if (quads.has(id)) {
-        renderer.finalizeMipmaps(texture)
-      }
-    }
-
-    // Rebuild sorted array if quads changed
-    if (quadsDirty) {
-      sortedQuads = Array.from(quads.values())
-      // Sort by z ascending (farther quads drawn first — painter's algorithm)
-      // Lower z = farther from camera = drawn first = appears behind
-      sortedQuads.sort((a, b) => a.z - b.z)
-      quadsDirty = false
-    }
-
-    // IIIF tile processing and collection
-    if (iiifManagers.size > 0) {
-      for (const mgr of iiifManagers.values()) {
-        mgr.processFetchQueue()
-        mgr.processUploadQueue()
-      }
-      // Global eviction: when budget is exceeded, evict oldest tiles across all managers
-      while (tileBudget.needsEviction()) {
-        let oldestTime = Infinity
-        let oldestMgr: IIIFTileManager | null = null
-        for (const mgr of iiifManagers.values()) {
-          const t = mgr.oldestEvictableTime()
-          if (t < oldestTime) {
-            oldestTime = t
-            oldestMgr = mgr
-          }
-        }
-        if (!oldestMgr || oldestTime === Infinity) break
-        oldestMgr.evictOldTiles()
-      }
-      // Collect tile quads from all IIIF managers
-      const allQuads = [...sortedQuads]
-      for (const mgr of iiifManagers.values()) {
-        const tileQuads = mgr.update(
-          camTrueX, camTrueY, camZoom, camFov, camViewW, camViewH, workerDpr
-        )
-        allQuads.push(...tileQuads)
-      }
-      allQuads.sort((a, b) => a.z - b.z)
-      renderer.updateCamera(camTrueX, camTrueY, camZoom, camFov, camViewW, camViewH)
-      renderer.renderQuads(allQuads)
-    } else {
-      // Fast path: no IIIF images, render regular quads only
-      renderer.updateCamera(camTrueX, camTrueY, camZoom, camFov, camViewW, camViewH)
-      renderer.renderQuads(sortedQuads)
-    }
-
-    requestAnimationFrame(frame)
+    bitmap.close()
   }
 
-  requestAnimationFrame(frame)
+  // Phase 2: Generate mipmaps for 1 texture per frame (only when no uploads pending)
+  if (uploadQueue.length === 0 && mipmapQueue.length > 0) {
+    const { id, texture } = mipmapQueue.shift()!
+    // Only finalize if quad still exists
+    if (quads.has(id)) {
+      renderer.finalizeMipmaps(texture)
+    }
+  }
+
+  // Rebuild sorted array if quads changed
+  if (quadsDirty) {
+    sortedQuads = Array.from(quads.values())
+    // Sort by z ascending (farther quads drawn first — painter's algorithm)
+    // Lower z = farther from camera = drawn first = appears behind
+    sortedQuads.sort((a, b) => a.z - b.z)
+    quadsDirty = false
+  }
+
+  // Rebuild sorted meshes if changed
+  if (meshesDirty) {
+    sortedMeshes = Array.from(meshes.values())
+    sortedMeshes.sort((a, b) => a.z - b.z)
+    meshesDirty = false
+  }
+
+  // IIIF tile processing and collection
+  if (iiifManagers.size > 0) {
+    for (const mgr of iiifManagers.values()) {
+      mgr.processFetchQueue()
+      mgr.processUploadQueue()
+    }
+    // Global eviction: when budget is exceeded, evict oldest tiles across all managers
+    while (tileBudget.needsEviction()) {
+      let oldestTime = Infinity
+      let oldestMgr: IIIFTileManager | null = null
+      for (const mgr of iiifManagers.values()) {
+        const t = mgr.oldestEvictableTime()
+        if (t < oldestTime) {
+          oldestTime = t
+          oldestMgr = mgr
+        }
+      }
+      if (!oldestMgr || oldestTime === Infinity) break
+      oldestMgr.evictOldTiles()
+    }
+    // Collect tile quads from all IIIF managers
+    const allQuads = [...sortedQuads]
+    for (const mgr of iiifManagers.values()) {
+      const tileQuads = mgr.update(
+        camTrueX, camTrueY, camZoom, camFov, camViewW, camViewH, workerDpr
+      )
+      allQuads.push(...tileQuads)
+    }
+    allQuads.sort((a, b) => a.z - b.z)
+    renderer.updateCamera(camTrueX, camTrueY, camZoom, camFov, camViewW, camViewH)
+    renderer.renderQuads(allQuads)
+  } else {
+    // Fast path: no IIIF images, render regular quads only
+    renderer.updateCamera(camTrueX, camTrueY, camZoom, camFov, camViewW, camViewH)
+    renderer.renderQuads(sortedQuads)
+  }
+
+  // Render 3D meshes (after quads, depth buffer shared)
+  if (sortedMeshes.length > 0) {
+    renderer.renderMeshes(sortedMeshes)
+  }
+
+  // If there's still work in the queues, schedule another frame
+  if (uploadQueue.length > 0 || mipmapQueue.length > 0) {
+    scheduleRender()
+  }
 }
 
 // ── Helpers ──

@@ -60,7 +60,7 @@ export function CameraProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef<CameraState>({
     worldPosition: [0, 0, 5],
     rotation: [0, 0, 0],
-    fov: (75 * Math.PI) / 180,  // Convert 75 degrees to radians
+    fov: (45 * Math.PI) / 180,  // Convert 45 degrees to radians
     zoom: isMobileOnly ? 0.3 : 0.45,  // Mobile gets more zoomed out view
   })
 

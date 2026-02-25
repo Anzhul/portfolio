@@ -100,9 +100,14 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     camera.setState({ worldPosition: [wx, wy, wz], zoom })
     worldRenderer.updateCamera(trueX, trueY, zoom, camera.getState().fov, vw, vh)
 
-    if (contentRef.current) {
-      contentRef.current.style.transform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
-    }
+    // Defer CSS to next macrotask so it paints in the same vsync as the
+    // worker's WebGL render (which processes the camera message between frames).
+    const transform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
+    setTimeout(() => {
+      if (contentRef.current) {
+        contentRef.current.style.transform = transform
+      }
+    }, 0)
   }
 
   /**
@@ -354,7 +359,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         const deltaY = touch.clientY - lastTouchPosRef.current.y
 
         const zoom = springs.zoom.target
-        const panSpeed = Math.max(0.25, Math.min(1, 1 / zoom))
+        const panSpeed = 1.8 / zoom
 
         // Pan cancels any active zoom anchor
         zoomAnchorRef.current = null
@@ -399,11 +404,12 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         const newWorldX = anchorWorldX - (newMidLocalX - vw / 2) / newZoom
         const newWorldY = anchorWorldY - (newMidLocalY - vh / 2) / newZoom
 
-        // Direct set — pinch gesture is already smooth from the OS, no spring needed
+        // Position is set directly (pinch provides smooth input).
+        // Zoom uses springTo for a slight ease/resistance feel.
         zoomAnchorRef.current = null
         springs.x.resetTo(newWorldX)
         springs.y.resetTo(newWorldY)
-        springs.zoom.resetTo(newZoom)
+        springs.zoom.springTo(newZoom)
 
         lastTouchPosRef.current = { x: midX, y: midY }
         restartAnimationRef.current?.()
@@ -512,10 +518,13 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       const [trueX, trueY] = worldToWebGL(wx, wy, currentZoom)
       worldRenderer.updateCamera(trueX, trueY, currentZoom, newFov, newVW, newVH)
 
-      // Update CSS transform
-      if (contentRef.current) {
-        contentRef.current.style.transform = `translate(${cssX}px, ${cssY}px) scale(${currentZoom})`
-      }
+      // Defer CSS to next macrotask to stay in sync with WebGL worker
+      const transform = `translate(${cssX}px, ${cssY}px) scale(${currentZoom})`
+      setTimeout(() => {
+        if (contentRef.current) {
+          contentRef.current.style.transform = transform
+        }
+      }, 0)
     }
 
     window.addEventListener('resize', handleResize)
@@ -574,12 +583,16 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       camera.setState({ worldPosition: [wx, wy, wz], zoom })
       worldRenderer.updateCamera(trueX, trueY, zoom, camera.getState().fov, vw, vh)
 
-      if (contentRef.current) {
-        const newTransform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
-        if (newTransform !== lastTransform) {
-          contentRef.current.style.transform = newTransform
-          lastTransform = newTransform
-        }
+      // Defer CSS to next macrotask so it paints in the same vsync as the
+      // worker's WebGL render (which processes the camera message between frames).
+      const newTransform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
+      if (newTransform !== lastTransform) {
+        lastTransform = newTransform
+        setTimeout(() => {
+          if (contentRef.current) {
+            contentRef.current.style.transform = newTransform
+          }
+        }, 0)
       }
 
       // Remove from ticker when all springs are at rest

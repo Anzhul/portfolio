@@ -57,8 +57,8 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
     position: [8000, 0, 0],
     name: 'in the desert',
     boundaries: {
-      loadRadius: 3000,
-      activeRadius: 1600,
+      loadRadius: 5000,
+      activeRadius: 3400,
     },
     component: InTheDesertIsland,
     skeleton: InTheDesertIslandSkeleton,

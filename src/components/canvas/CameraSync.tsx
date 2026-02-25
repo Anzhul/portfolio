@@ -25,7 +25,7 @@ function CameraSync() {
   // Render loop using ticker - directly use camera state without interpolation
   useEffect(() => {
     // Cache for pixel-to-unit conversion (only recalculate on resize or FOV change)
-    const baseCameraZ = 1000
+    const baseCameraZ = 1853
     let cachedPixelToUnit = 0
     let cachedViewportHeight = 0
     let cachedFov = 0

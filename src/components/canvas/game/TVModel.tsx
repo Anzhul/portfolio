@@ -8,6 +8,7 @@ import { applyMaterialOverrides, type MaterialOverride } from '../home/materialU
 import type { GameInput } from './types';
 import { useSceneVisible } from '../SceneVisibilityContext';
 import { useViewport } from '../../../context/ViewportContext';
+import { useScroll } from '../../../context/ScrollContext';
 
 // CRT screen shader
 export const crtVertexShader = `
@@ -116,12 +117,15 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
           child.material = new THREE.MeshPhysicalMaterial({
             transmission: 1,
             transparent: true,
+            depthWrite: false,
+            depthTest: false,
             roughness: 0.05,
             metalness: 0,
             ior: 1.5,
             thickness: 0.5,
             color: 0xd8e0ff,
           });
+          child.renderOrder = 1;
           // Disable raycasting so clicks/hovers pass through to the screen mesh behind
           child.raycast = () => {};
         }
@@ -146,7 +150,9 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
   // R3F sets pointer-events:none on the canvas when eventSource is used,
   // so touches land on the eventSource (scroll container), not the canvas.
   // We listen on that element and preventDefault when the touch hits the TV.
+  // Only active when scroll is near the top (hero area visible).
   const { events } = useThree();
+  const scroll = useScroll();
   useEffect(() => {
     if (!isTabletDown || !isVisible) return;
 
@@ -156,6 +162,10 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     const canvas = gl.domElement;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Only intercept touches when TV is in view (first half of camera tour)
+      const { progress } = scroll.getState();
+      if (progress > 0.5) return;
+
       const touch = e.touches[0];
       if (!touch) return;
       const rect = canvas.getBoundingClientRect();
@@ -165,13 +175,12 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
       const hits = raycasterRef.current.intersectObject(gltf.scene, true);
       if (hits.length > 0) {
         e.preventDefault();
-        console.log('[TV] touchstart preventDefault — keeping touch for game input');
       }
     };
 
     target.addEventListener('touchstart', handleTouchStart, { passive: false });
     return () => target.removeEventListener('touchstart', handleTouchStart);
-  }, [gl, events, rootCamera, gltf, isTabletDown, isVisible]);
+  }, [gl, events, rootCamera, gltf, isTabletDown, isVisible, scroll]);
 
   // Game input: click on TV to start drag, tap to interact (Enter)
   const isHoveredRef = useRef(false);
@@ -203,7 +212,6 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     const handlePointerMove = (e: PointerEvent) => {
       if (gameInputRef.current.active) {
         const dx = Math.abs(e.clientX - gameInputRef.current.startX);
-        console.log('[TV] pointerMove (active)', { clientX: e.clientX, dx, pointerType: e.pointerType });
         // Drag tracking (X + Y)
         gameInputRef.current.currentX = e.clientX;
         gameInputRef.current.currentY = e.clientY;
@@ -228,8 +236,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
       setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true })), 50);
     };
 
-    const handlePointerUp = (e: PointerEvent) => {
-      console.log('[TV] pointerUp', { active: gameInputRef.current.active, maxDx: gameInputRef.current.maxDx, pointerType: e.pointerType });
+    const handlePointerUp = () => {
       if (!gameInputRef.current.active) return;
       const elapsed = Date.now() - gameInputRef.current.startTime;
       if (gameInputRef.current.maxDx < 10 && elapsed < 300) {
@@ -247,7 +254,6 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
 
     // Reset state when browser cancels touch (e.g. scroll takeover)
     const handlePointerCancel = () => {
-      console.log('[TV] pointerCancel — browser stole touch');
       gameInputRef.current.active = false;
     };
 
@@ -262,7 +268,6 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
   }, [gameInputRef, npcInRangeRef, gameCamera, raycastScreenUv, isNpcArea, isVisible]);
 
   const handleTVPointerDown = useCallback((e: any) => {
-    console.log('[TV] pointerDown', { pointerType: e.pointerType, clientX: e.clientX, clientY: e.clientY, object: e.object?.name, meshType: e.object?.type });
     if (!gameInputRef) return;
     e.stopPropagation();
     gameInputRef.current.active = true;
