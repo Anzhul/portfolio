@@ -60,6 +60,22 @@ function ScrollAttacher() {
     scroll.attach(el)
     scroll.setSmoothingFactor(0.08)
 
+    // Calculate scroll region so progress 0→1 maps to the canvas section only.
+    // Animation starts when the canvas section top reaches the viewport top.
+    const updateScrollRegion = () => {
+      const section = document.querySelector('.about-canvas-section') as HTMLElement | null
+      if (section) {
+        const rect = section.getBoundingClientRect()
+        const sectionTop = rect.top + window.scrollY
+        const sectionHeight = section.offsetHeight
+        const viewportHeight = window.innerHeight
+        scroll.setScrollRegion(sectionTop, sectionTop + sectionHeight - viewportHeight)
+      }
+    }
+
+    updateScrollRegion()
+    window.addEventListener('resize', updateScrollRegion)
+
     // Window scroll events don't fire on documentElement directly —
     // proxy them so ScrollContext's listener picks them up
     const proxyScroll = () => {
@@ -69,6 +85,8 @@ function ScrollAttacher() {
 
     return () => {
       window.removeEventListener('scroll', proxyScroll)
+      window.removeEventListener('resize', updateScrollRegion)
+      scroll.clearScrollRegion()
       scroll.detach()
     }
   }, [scroll])
@@ -84,45 +102,46 @@ interface CameraKeyframe {
   progress: number
   position: [number, number, number]
   lookAt: [number, number, number]
+  fov?: number
 }
 
 // Image placeholder position on back wall (exported for GalleryEnvironment)
 export const WALL_IMAGE_POSITION: [number, number, number] = [10.0, 3.75, -19.9]
 
 const KEYFRAMES_WIDE: CameraKeyframe[] = [
-  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20] },
-  { progress: 0.25, position: [-5,  8, 80],          lookAt: [-5, 2.5, -17] },
-  { progress: 0.5,  position: [10, 5, 100],          lookAt: [5, 0, -14] },
-  { progress: 0.7,  position: [7.5, 1.75, 10],       lookAt: WALL_IMAGE_POSITION },
-  { progress: 0.85, position: [10, 3.75, -5],        lookAt: WALL_IMAGE_POSITION },
-  { progress: 1.0,  position: [250, 350, 600],       lookAt: [0, 5, -20] },
+  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
+  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
+  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
+  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
 ]
 
 const KEYFRAMES_DESKTOP: CameraKeyframe[] = [
-  { progress: 0,    position: [0, 8, 0],             lookAt: [0, -5, 0] },
-  { progress: 0.25, position: [-5.5, -1, 27],        lookAt: [-5.5, -2.5, -17] },
-  { progress: 0.5,  position: [4.5, -1, 32],         lookAt: [4.5, -2.5, -14] },
-  { progress: 0.7,  position: [7.5, 1.75, 22],       lookAt: WALL_IMAGE_POSITION },
-  { progress: 0.85, position: [10, 3.75, -5],        lookAt: WALL_IMAGE_POSITION },
-  { progress: 1.0,  position: [0, 15, 80],           lookAt: [0, -2, -20] },
+  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
+  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
+  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
+  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
 ]
 
 const KEYFRAMES_TABLET: CameraKeyframe[] = [
-  { progress: 0,    position: [0, 8, 200],           lookAt: [0, -5, 0] },
-  { progress: 0.25, position: [0, -1, 25],           lookAt: [0, -2.5, -17] },
-  { progress: 0.5,  position: [3, -1, 30],           lookAt: [3, -2.5, -14] },
-  { progress: 0.7,  position: [7.5, 1.75, 20],       lookAt: WALL_IMAGE_POSITION },
-  { progress: 0.85, position: [10, 3.75, -5],        lookAt: WALL_IMAGE_POSITION },
-  { progress: 1.0,  position: [0, 15, 70],           lookAt: [0, -2, -20] },
+  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
+  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
+  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
+  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
 ]
 
 const KEYFRAMES_MOBILE: CameraKeyframe[] = [
-  { progress: 0,    position: [0, 3, 30],            lookAt: [0, -1.5, 0] },
-  { progress: 0.25, position: [0, -0.1, 6],          lookAt: [0, -0.3, 0] },
-  { progress: 0.5,  position: [0, -0.1, 6],          lookAt: [0, -0.3, 0] },
-  { progress: 0.7,  position: [7.5, 1.75, 4],        lookAt: WALL_IMAGE_POSITION },
-  { progress: 0.85, position: [10, 3.75, -5],        lookAt: WALL_IMAGE_POSITION },
-  { progress: 1.0,  position: [0, 10, 40],           lookAt: [0, -2, -20] },
+  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
+  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
+  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
+  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
 ]
 
 function lerp(a: number, b: number, t: number) {
@@ -194,6 +213,10 @@ function Scene({
   // Auto-walk target X: set by TVModel when user taps NPC on TV, cleared by NostalgiaDialogue on arrival
   const autoWalkRef = useRef<number | null>(null)
 
+  // TV turn-on animation: null = not yet visible, number = timestamp when first visible
+  const tvTurnOnTimeRef = useRef<number | null>(null)
+  const tvTurnOnRef = useRef(0) // 0→1 progress, shared with TVModel
+
   // Disable tone mapping for pixel art
   gl.toneMapping = THREE.NoToneMapping
   gl.autoClear = false
@@ -242,33 +265,17 @@ function Scene({
 
   // Two-pass rendering with keyframe-driven camera
   useEffect(() => {
-    console.log('[Scene] render effect — isVisible:', isVisible)
     if (!isVisible) return
 
-    let frameCount = 0
     const render = () => {
-      if (frameCount++ < 5) console.log('[Scene] render frame', frameCount)
+      const { smoothProgress } = scroll.getState()
+
+      // smoothProgress maps 0→1 over the canvas section scroll range
+      // (set by ScrollAttacher's setScrollRegion). Camera uses full range.
+      const cameraProgress = smoothProgress
+
       // Interpolate camera position/lookAt from scroll keyframes
       if (camera instanceof THREE.PerspectiveCamera) {
-        const { progress, smoothProgress } = scroll.getState()
-
-        // Remap progress: camera animation uses first 75% of scroll,
-        // remaining 25% slides the canvas up and out of view.
-        const CAMERA_END = 0.75
-        const cameraProgress = Math.min(1, smoothProgress / CAMERA_END)
-
-        // Slide the fixed canvas container up once keyframes are done.
-        // Uses raw `progress` (not smoothProgress) so the canvas moves
-        // at exactly the same rate as the native page scroll.
-        const container = gl.domElement.closest('.home-canvas-fixed') as HTMLElement | null
-        if (container) {
-          if (progress > CAMERA_END) {
-            const scrollOutT = (progress - CAMERA_END) / (1 - CAMERA_END)
-            container.style.transform = `translateY(${-scrollOutT * 100}vh)`
-          } else {
-            container.style.transform = ''
-          }
-        }
 
         // Find bounding keyframes
         let fromIdx = 0
@@ -293,13 +300,33 @@ function Scene({
           lerp(from.lookAt[2], to.lookAt[2], eased),
         )
         camera.lookAt(_lookAtTarget)
+
+        // Interpolate FOV if either keyframe specifies one (default 5)
+        const fromFov = from.fov ?? 5
+        const toFov = to.fov ?? 5
+        if (fromFov !== toFov || camera.fov !== fromFov) {
+          camera.fov = lerp(fromFov, toFov, eased)
+          camera.updateProjectionMatrix()
+        }
       }
 
-      // Pass 1: Render game scene to FBO
-      gl.setRenderTarget(fbo)
-      gl.setClearColor(0x000000, 1)
-      gl.clear()
-      gl.render(gameScene, gameCamera)
+      // Only render game FBO when camera is close enough to see the TV.
+      // Starts at ~0.085 so the turn-on animation plays as the first caption fades in.
+      const tvVisible = cameraProgress > 0.085 && cameraProgress < 0.9
+      if (tvVisible) {
+        // Start turn-on timer on first visibility
+        if (tvTurnOnTimeRef.current === null) {
+          tvTurnOnTimeRef.current = performance.now()
+        }
+        const TURN_ON_MS = 1500
+        const elapsed = performance.now() - tvTurnOnTimeRef.current
+        tvTurnOnRef.current = Math.min(1, elapsed / TURN_ON_MS)
+
+        gl.setRenderTarget(fbo)
+        gl.setClearColor(0x000000, 1)
+        gl.clear()
+        gl.render(gameScene, gameCamera)
+      }
 
       // Pass 2: Render TV scene to screen
       gl.setRenderTarget(null)
@@ -347,6 +374,7 @@ function Scene({
             npcInRangeRef={npcInRangeRef}
             gameCamera={gameCamera}
             autoWalkRef={autoWalkRef}
+            turnOnRef={tvTurnOnRef}
           />
           <VaseModel
             position={vasePosition}

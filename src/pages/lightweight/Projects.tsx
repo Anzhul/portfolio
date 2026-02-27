@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import './Projects.scss';
 import { usePageTransition } from '../../context/PageTransitionContext';
 
-interface ProjectData {
+export interface ProjectData {
   href: string;
   image: string;
   title: string;
@@ -11,7 +11,7 @@ interface ProjectData {
   size: string;
 }
 
-const projects: ProjectData[] = [
+export const projects: ProjectData[] = [
   {
     href: '/iiifviewer',
     image: '/Untitled.webp',
@@ -126,11 +126,9 @@ export const Projects: React.FC = () => {
 
   return (
     <div className={`projects ${isActive ? 'active' : ''}`}>
-      <main className="projects-content">
-        <div className="projects-header">
+        <header className="projects-header">
           <div className="projects-description">
             <h1>Projects</h1>
-            <p>A collection of work spanning interactive 3D experiences, web applications, and creative development.</p>
           </div>
           <div className="projects-sort" ref={dropdownRef}>
             <button
@@ -160,7 +158,8 @@ export const Projects: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+      </header>
+      <main className="projects-content">
         <div className="projects-grid">
           {filteredProjects.map((project) => (
             <ProjectCard

@@ -23,6 +23,7 @@ export const crtFragmentShader = `
   uniform sampler2D map;
   uniform float time;
   uniform float emissiveIntensity;
+  uniform float turnOn; // 0 = off, 0→1 animates turn-on, 1 = fully on
   varying vec2 vUv;
 
   // Pseudo-random noise
@@ -37,6 +38,25 @@ export const crtFragmentShader = `
     vec2 rotated = vec2(-centered.y, centered.x); // -90 deg rotation
     vec2 uv = vec2(-rotated.x, rotated.y) + 0.5;  // flip X + uncenter
 
+    // --- TV turn-on effect ---
+    if (turnOn < 1.0) {
+      // Phase 1 (0.0–0.15): black screen
+      if (turnOn < 0.15) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+      }
+      // Phase 2 (0.15–0.3): white line expands from center
+      if (turnOn < 0.3) {
+        float t = (turnOn - 0.15) / 0.15;
+        float halfH = t * 0.5;
+        float dist = abs(uv.y - 0.5);
+        float brightness = smoothstep(halfH, halfH - 0.01, dist);
+        gl_FragColor = vec4(vec3(brightness), 1.0);
+        return;
+      }
+    }
+
+    // --- Normal CRT rendering (turnOn >= 1.0) ---
     // Subtle scanlines
     float scanline = sin(uv.y * 400.0) * 0.01;
 
@@ -72,11 +92,12 @@ function screenUvToWorld(meshUv: { x: number; y: number }, cam: THREE.Orthograph
 }
 
 // TV Model - loads tv.glb and applies game texture to screen
-export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number, number], scale = 1, materialOverrides = [], gameInputRef, npcInRangeRef, gameCamera, autoWalkRef }: { screenTexture: THREE.Texture; position?: [number, number, number]; scale?: number; materialOverrides?: MaterialOverride[]; gameInputRef?: React.MutableRefObject<GameInput>; npcInRangeRef?: React.MutableRefObject<boolean>; gameCamera?: THREE.OrthographicCamera; autoWalkRef?: React.MutableRefObject<number | null> }) {
+export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number, number], scale = 1, materialOverrides = [], gameInputRef, npcInRangeRef, gameCamera, autoWalkRef, turnOnRef }: { screenTexture: THREE.Texture; position?: [number, number, number]; scale?: number; materialOverrides?: MaterialOverride[]; gameInputRef?: React.MutableRefObject<GameInput>; npcInRangeRef?: React.MutableRefObject<boolean>; gameCamera?: THREE.OrthographicCamera; autoWalkRef?: React.MutableRefObject<number | null>; turnOnRef?: React.MutableRefObject<number> }) {
   const gltf = useLoader(GLTFLoader, '/tv.glb');
   const { camera: rootCamera, gl } = useThree();
   const isVisible = useSceneVisible();
   const { isTabletDown } = useViewport();
+  const scroll = useScroll();
   const screenMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const screenMeshRef = useRef<THREE.Mesh | null>(null);
   const lastTapUvRef = useRef<{ x: number; y: number } | null>(null);
@@ -105,6 +126,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
               map: { value: screenTexture },
               time: { value: 0 },
               emissiveIntensity: { value: 1.5 },
+              turnOn: { value: 0 },
             },
             vertexShader: crtVertexShader,
             fragmentShader: crtFragmentShader,
@@ -140,11 +162,22 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     const update = () => {
       if (screenMaterialRef.current) {
         screenMaterialRef.current.uniforms.time.value = performance.now() * 0.001;
+        screenMaterialRef.current.uniforms.turnOn.value = turnOnRef?.current ?? 1;
+      }
+      // Sync cursor when camera scrolls in/out of TV interaction zone
+      const { smoothProgress } = scroll.getState();
+      const camP = Math.min(1, smoothProgress / 0.75);
+      const inZone = camP > 0.15 && camP < 0.9;
+      if (!inZone && isHoveredRef.current) {
+        isHoveredRef.current = false;
+        document.body.style.cursor = '';
+      } else if (inZone && isHoveredRef.current && !gameInputRef?.current.active && document.body.style.cursor === '') {
+        document.body.style.cursor = 'grab';
       }
     };
     ticker.add(update);
     return () => ticker.remove(update);
-  }, [isVisible]);
+  }, [isVisible, turnOnRef, scroll, gameInputRef]);
 
   // Prevent browser from stealing touches on the TV for scrolling.
   // R3F sets pointer-events:none on the canvas when eventSource is used,
@@ -152,7 +185,6 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
   // We listen on that element and preventDefault when the touch hits the TV.
   // Only active when scroll is near the top (hero area visible).
   const { events } = useThree();
-  const scroll = useScroll();
   useEffect(() => {
     if (!isTabletDown || !isVisible) return;
 
@@ -181,6 +213,13 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     target.addEventListener('touchstart', handleTouchStart, { passive: false });
     return () => target.removeEventListener('touchstart', handleTouchStart);
   }, [gl, events, rootCamera, gltf, isTabletDown, isVisible, scroll]);
+
+  // Check if camera is in the TV interaction zone (matches FBO render range)
+  const isTvInteractive = useCallback(() => {
+    const { smoothProgress } = scroll.getState();
+    const camP = Math.min(1, smoothProgress / 0.75);
+    return camP > 0.15 && camP < 0.9;
+  }, [scroll]);
 
   // Game input: click on TV to start drag, tap to interact (Enter)
   const isHoveredRef = useRef(false);
@@ -221,7 +260,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
         return;
       }
       // Hover cursor: check if pointer is over the NPC area on the screen
-      if (isHoveredRef.current) {
+      if (isHoveredRef.current && isTvInteractive()) {
         const uv = raycastScreenUv(e);
         if (uv && isNpcArea(uv)) {
           document.body.style.cursor = 'pointer';
@@ -268,7 +307,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
   }, [gameInputRef, npcInRangeRef, gameCamera, raycastScreenUv, isNpcArea, isVisible]);
 
   const handleTVPointerDown = useCallback((e: any) => {
-    if (!gameInputRef) return;
+    if (!gameInputRef || !isTvInteractive()) return;
     e.stopPropagation();
     gameInputRef.current.active = true;
     gameInputRef.current.startX = e.clientX ?? 0;
@@ -286,10 +325,10 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
 
   const handleTVPointerOver = useCallback(() => {
     isHoveredRef.current = true;
-    if (!gameInputRef?.current.active) {
+    if (!gameInputRef?.current.active && isTvInteractive()) {
       document.body.style.cursor = 'grab';
     }
-  }, [gameInputRef]);
+  }, [gameInputRef, isTvInteractive]);
 
   const handleTVPointerOut = useCallback(() => {
     isHoveredRef.current = false;

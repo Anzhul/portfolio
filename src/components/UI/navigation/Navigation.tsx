@@ -67,9 +67,10 @@ function Navigation() {
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/'
     if (path === '/projects') {
-      return location.pathname === '/projects' || 
+      return location.pathname === '/projects' ||
              ['/rydmboat', '/iiifviewer', '/syrte', '/arcade_ship'].includes(location.pathname)
     }
+    if (path === '/about') return location.pathname === '/about'
     // For art, it matches if we are currently on the last3DRoute
     return location.pathname === last3DRoute && path === last3DRoute
   }
@@ -94,6 +95,10 @@ function Navigation() {
           <a href={last3DRoute} className={`nav-link ${isActive(last3DRoute) ? 'active' : ''}`} onClick={(e) => handleNavClick(e, last3DRoute)}>
             art
             <NavUnderline active={isActive(last3DRoute)} />
+          </a>
+          <a href="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`} onClick={(e) => handleNavClick(e, '/about')}>
+            about
+            <NavUnderline active={isActive('/about')} />
           </a>
         </div>
       </div>

@@ -16,7 +16,7 @@ $primary: #222222;
     position: fixed;
     top: 0;
     width: 100%;
-    height: 3rem;
+    height: 3.5rem;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -103,11 +103,20 @@ $primary: #222222;
 
   .nav-links {
     display: flex;
+    flex-direction: column;
     position: absolute;
     right: $phi-squared * 1rem + 1rem;
-    gap: 2rem;
-    align-items: center;
-    // Responsive adjustments for mobile
+    top: 50%;
+    transform: translateY(-0.6rem);
+    gap: 0.35rem;
+    align-items: flex-end;
+
+    @media screen and (max-width: 1024px) {
+      flex-direction: row;
+      transform: translateY(-50%);
+      gap: 1.5rem;
+    }
+
     @media (max-width: 767px) {
       right: 1rem;
       gap: 1rem;

@@ -61,6 +61,10 @@ export interface ScrollContextType {
 
   // Subscribe to a specific trigger
   subscribeTrigger: (id: string, listener: (state: TriggerState) => void) => () => void
+
+  // Set a scroll region (pixel range) so progress 0→1 maps to that range
+  setScrollRegion: (start: number, end: number) => void
+  clearScrollRegion: () => void
 }
 
 const ScrollContext = createContext<ScrollContextType | undefined>(undefined)
@@ -113,6 +117,9 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
 
   // Previous scroll for velocity calculation
   const prevScrollRef = useRef(0)
+
+  // Optional scroll region for remapping progress to a sub-range
+  const scrollRegionRef = useRef<{ start: number; end: number } | null>(null)
 
   // Throttled notification (100ms like CameraContext)
   const notifyListeners = useMemo(
@@ -214,8 +221,15 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
     if (!container) return
 
     const scrollY = container.scrollTop
-    const scrollHeight = container.scrollHeight - container.clientHeight
-    const progress = scrollHeight > 0 ? scrollY / scrollHeight : 0
+    const region = scrollRegionRef.current
+    let progress: number
+    if (region) {
+      const range = region.end - region.start
+      progress = range > 0 ? Math.max(0, Math.min(1, (scrollY - region.start) / range)) : 0
+    } else {
+      const scrollHeight = container.scrollHeight - container.clientHeight
+      progress = scrollHeight > 0 ? scrollY / scrollHeight : 0
+    }
 
     // Calculate velocity and direction
     const velocity = scrollY - prevScrollRef.current
@@ -310,6 +324,14 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
             listeners.delete(listener)
           }
         }
+      },
+
+      setScrollRegion: (start, end) => {
+        scrollRegionRef.current = { start, end }
+      },
+
+      clearScrollRegion: () => {
+        scrollRegionRef.current = null
       },
     }),
     [handleScroll]

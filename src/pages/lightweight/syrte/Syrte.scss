@@ -26,7 +26,8 @@
 
       @media screen and (max-width: 1440px) {
         width: calc(100% - 16rem);
-        padding: 2rem 4rem 3rem 4rem;
+        padding-left: 1.618034 * 2rem;
+        padding-right: 1.618034 * 2rem;
       }
 
       @media screen and (max-width: 1024px) {

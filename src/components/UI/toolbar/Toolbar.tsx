@@ -79,12 +79,12 @@ function Toolbar({ loaded = false }: ToolbarProps) {
         <div className="toolbar-top-gap" />
         <div className="toolbar-drag" onMouseDown={handleDragStart}>
           <svg xmlns="http://www.w3.org/2000/svg" width="8" height="12" viewBox="0 0 8 12">
-            <circle cx="2" cy="2" r="1" fill="white" />
-            <circle cx="6" cy="2" r="1" fill="white" />
-            <circle cx="2" cy="6" r="1" fill="white" />
-            <circle cx="6" cy="6" r="1" fill="white" />
-            <circle cx="2" cy="10" r="1" fill="white" />
-            <circle cx="6" cy="10" r="1" fill="white" />
+            <circle cx="2" cy="2" r="1" fill="#222222" />
+            <circle cx="6" cy="2" r="1" fill="#222222" />
+            <circle cx="2" cy="6" r="1" fill="#222222" />
+            <circle cx="6" cy="6" r="1" fill="#222222" />
+            <circle cx="2" cy="10" r="1" fill="#222222" />
+            <circle cx="6" cy="10" r="1" fill="#222222" />
           </svg>
         </div>
       </div>
@@ -94,12 +94,12 @@ function Toolbar({ loaded = false }: ToolbarProps) {
         <div className="toolbar-nav">
           <button className="toolbar-button" onClick={onNavigatePrev} aria-label="Previous island">
             <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M31.5932 39.2113C32.9247 40.0586 34.667 39.1022 34.667 37.524V14.4773C34.667 12.8992 32.9247 11.9427 31.5932 12.79L13.4852 24.3133C12.2502 25.0992 12.2502 26.9021 13.4852 27.688L31.5932 39.2113Z" fill="white"/>
+            <path d="M31.5932 39.2113C32.9247 40.0586 34.667 39.1022 34.667 37.524V14.4773C34.667 12.8992 32.9247 11.9427 31.5932 12.79L13.4852 24.3133C12.2502 25.0992 12.2502 26.9021 13.4852 27.688L31.5932 39.2113Z" fill="#222222"/>
             </svg>
           </button>
           <button className="toolbar-button" onClick={onNavigateNext} aria-label="Next island">
             <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20.4068 39.2113C19.0753 40.0586 17.333 39.1022 17.333 37.524V14.4773C17.333 12.8992 19.0753 11.9427 20.4068 12.79L38.5148 24.3133C39.7498 25.0992 39.7498 26.9021 38.5148 27.688L20.4068 39.2113Z" fill="white"/>
+            <path d="M20.4068 39.2113C19.0753 40.0586 17.333 39.1022 17.333 37.524V14.4773C17.333 12.8992 19.0753 11.9427 20.4068 12.79L38.5148 24.3133C39.7498 25.0992 39.7498 26.9021 38.5148 27.688L20.4068 39.2113Z" fill="#222222"/>
             </svg>
           </button>
         </div>
@@ -111,10 +111,10 @@ function Toolbar({ loaded = false }: ToolbarProps) {
           }
         }} aria-label="Toggle Fullscreen">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
-            <path d="M1 5V2C1 1.448 1.448 1 2 1H5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M9 1H12C12.552 1 13 1.448 13 2V5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M13 9V12C13 12.552 12.552 13 12 13H9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M5 13H2C1.448 13 1 12.552 1 12V9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M1 5V2C1 1.448 1.448 1 2 1H5" stroke="#222222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M9 1H12C12.552 1 13 1.448 13 2V5" stroke="#222222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M13 9V12C13 12.552 12.552 13 12 13H9" stroke="#222222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M5 13H2C1.448 13 1 12.552 1 12V9" stroke="#222222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
           </svg>
         </button>
       </div>

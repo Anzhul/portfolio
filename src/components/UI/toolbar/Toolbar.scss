@@ -30,6 +30,8 @@ $border: #222222;
   gap: 0.15rem;
   height: 4.5rem;
   width: 6rem;
+  background-color: white;
+  border: solid 0.1rem #222222;
 
   &.active {
     opacity: 1;
@@ -61,11 +63,10 @@ $border: #222222;
       width: 70%;
       height: 100%;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-      font-size: 0.8rem;
-      font-weight: 400;
+      font-size: 0.85rem;
+      font-weight: 500;
       letter-spacing: 0.04em;
-      color: white;
-      background-color: #222222;
+      color: $primary;
       border: none;
       cursor: pointer;
       padding: 0 0.5rem;
@@ -96,12 +97,12 @@ $border: #222222;
       align-items: center;
       justify-content: center;
       cursor: grab;
-      background-color: #222222;
+      background-color: white;
       border-radius: 0.2rem;
       transition: background-color 0.2s ease;
 
       &:hover {
-        background-color: #333333;
+        //background-color: #333333;
       }
 
       &:active {
@@ -110,7 +111,6 @@ $border: #222222;
 
       svg {
         display: block;
-        opacity: 0.5;
       }
     }
   }
@@ -126,7 +126,7 @@ $border: #222222;
     width: 100%;
     border-radius: 0.2rem;
     bottom: 0;
-    background-color: #222222;
+    background-color: white;
     padding: 0 0.5rem;
   }
 
