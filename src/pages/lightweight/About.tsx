@@ -154,8 +154,10 @@ export const About: React.FC<AboutProps> = ({ isVisible = true }) => {
               <img src="/placeholder-portrait.jpg" alt="Anzhu Ling" />
             </div>
             <div className="about-intro-text">
-              <h1>Hi, I'm Anzhu<span style={{ color: '#222222', fontSize: '2.2rem', fontFamily: 'source-han-sans-cjk-sc, sans-serif', fontWeight: '500', fontStyle: 'normal', display: 'none'}}>安竹</span>— an artist & developer</h1>
-              <p>I was born in Chongqing, China and grew up in Albuquerque, New Mexico. I'm interested in interactive media, 3D graphics, and creative technology.</p>
+              <h1>Hi, I'm Anzhu 安竹<span style={{ color: '#222222', fontSize: '2.2rem', fontFamily: 'source-han-sans-cjk-sc, sans-serif', fontWeight: '500', fontStyle: 'normal', display: 'none'}}>安竹</span>—</h1>
+              <p>I was born in the megacity of Chongqing and immigrated to Albuquerque when I was five. My dad was a graduate student and I spent my childhood growing up in a student family apartment complex west of the Sandia mountains.</p>
+              <br></br>
+              <p>Those formative memories of catching lizards in the shrubland and playing sci-fi video games with my friends constantly diffuse into my personal work and interests. It's also the foundation for my curiosity in art, history, and technology.</p>
             </div>
           </div>
         </div>
@@ -163,8 +165,8 @@ export const About: React.FC<AboutProps> = ({ isVisible = true }) => {
         {/* Second section — additional info below the intro */}
         <div className="about-section-2">
           <div className="about-section-2-content">
-            <h2>What I Do</h2>
-            <p>I build interactive experiences that blend art and technology. My work spans web development, 3D graphics, and creative coding — exploring how digital tools can tell stories and create new ways of seeing.</p>
+            <h2>Philosophy</h2>
+            <p>After attending the University of Michigan my interest has been in the intersection of art and technology, particularly in creating interactive experiences that blend digital and physical spaces.</p>
           </div>
         </div>
 
@@ -196,7 +198,7 @@ export const About: React.FC<AboutProps> = ({ isVisible = true }) => {
         {/* Bottom section — scrolls normally below the 3D canvas */}
         <div className="about-bottom">
           <div className="about-bottom-content">
-            <h2>About</h2>
+            <h2>Contact</h2>
             <p>I was born in Chongqing, China and grew up in Albuquerque, New Mexico. I'm an artist and developer interested in interactive media, 3D graphics, and creative technology.</p>
             <ul className="about-links">
               <li><a href="mailto:anzhul@umich.edu">anzhul@umich.edu</a></li>

@@ -50,9 +50,16 @@
       grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
       gap: clamp(0.5rem, 1vw, 1rem);
 
-      @media screen and (max-width: 767px) {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
+      @media screen and (max-width: 1024px) {
+        display: flex;
+        overflow-x: auto;
+        gap: 0.5rem;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
       }
     }
 
@@ -68,12 +75,26 @@
 
       transition: transform 0.3s ease;
 
-      &:hover {
-        transform: translateY(-0.35rem);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          transform: translateY(-0.35rem);
+        }
       }
 
       &.active {
         display: none;
+      }
+
+      @media screen and (max-width: 1024px) {
+        min-width: 8rem;
+        width: 8rem;
+        height: 8rem;
+      }
+
+      @media screen and (max-width: 767px) {
+        min-width: 7rem;
+        width: 7rem;
+        height: 7rem;
       }
     }
 
@@ -128,8 +149,10 @@
           letter-spacing: -0.02em;
           transition: opacity 0.2s ease;
 
-          &:hover {
-            opacity: 0.6;
+          @media (hover: hover) and (pointer: fine) {
+            &:hover {
+              opacity: 0.6;
+            }
           }
           @media screen and (max-width: 1024px) {
             font-size: 1rem;

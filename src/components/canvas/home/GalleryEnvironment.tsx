@@ -1,9 +1,7 @@
 import { useMemo, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 import { WALL_IMAGE_POSITION } from './HomeScene'
-
-RectAreaLightUniformsLib.init()
+import { FrameModel } from '../game/TVModel'
 
 interface GalleryEnvironmentProps {
   tvPosition: [number, number, number]
@@ -21,8 +19,6 @@ const ROOM_X_OFFSET = 5 // shift room geometry in +x
 const WALL_THICKNESS = 1.25
 const BASEBOARD_HEIGHT = 0.8
 const BASEBOARD_DEPTH = 0.1 // how much it protrudes from the wall
-const IMAGE_FRAME_WIDTH = 20
-const IMAGE_FRAME_HEIGHT = 5
 const DOORWAY_Z = -5           // center of doorway along Z axis
 const DOORWAY_WIDTH_Z = 10    // width of doorway opening along Z
 const DOORWAY_HEIGHT = 15     // height from floor to top of opening
@@ -36,7 +32,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
   const vasePedestalHeight = vasePosition[1] - floorY
 
   const [floorTexture] = useState(() => {
-    const tex = new THREE.TextureLoader().load('/laminate_floor.jpg')
+    const tex = new THREE.TextureLoader().load('/about/laminate_floor.jpg')
     tex.wrapS = THREE.RepeatWrapping
     tex.wrapT = THREE.RepeatWrapping
     tex.repeat.set(0.5, 0.5)
@@ -44,49 +40,27 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
     return tex
   })
 
-  const [floorNormalMap] = useState(() => {
-    const tex = new THREE.TextureLoader().load('/laminate_floor_normal.jpg')
-    tex.wrapS = THREE.RepeatWrapping
-    tex.wrapT = THREE.RepeatWrapping
-    tex.repeat.set(0.5, 0.5)
-    return tex
-  })
-
-  const floorMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+  const floorMaterial = useMemo(() => new THREE.MeshToonMaterial({
     map: floorTexture,
-    normalMap: floorNormalMap,
-    normalScale: new THREE.Vector2(1, 1),
-    emissive: '#cdc7c6',
-    emissiveIntensity: 0.15,
-    roughness: 0.1,
-    metalness: 0.05,
-  }), [floorTexture, floorNormalMap])
-
-  const wallMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#f5f5f5',
-    roughness: 0.95,
-    metalness: 0.0,
-  }), [])
-
-  const baseboardMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    emissive: '#ffffff',
-    emissiveIntensity: 0.15,
-    roughness: 0.8,
-    metalness: 0.0,
-  }), [])
-
-  const pedestalMaterial = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#ffffff',
-    roughness: 0.6,
-    metalness: 0.0,
+    emissive: '#ffdcc6',
+    emissiveIntensity: 0.15,
+  }), [floorTexture])
+
+  const wallMaterial = useMemo(() => new THREE.MeshToonMaterial({
+    color: '#ffffff',
   }), [])
 
-  const exteriorMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+  const baseboardMaterial = useMemo(() => new THREE.MeshToonMaterial({
+    color: '#f5eee2',
+  }), [])
+
+  const pedestalMaterial = useMemo(() => new THREE.MeshToonMaterial({
     color: '#ffffff',
-    emissive: '#ffffff',
-    emissiveIntensity: 0.15,
-    roughness: 1.0,
-    metalness: 0.0,
+  }), [])
+
+  const exteriorMaterial = useMemo(() => new THREE.MeshToonMaterial({
+    color: '#cbd6ff',
   }), [])
 
   // Load image manually with createImageBitmap to resize during decode,
@@ -105,7 +79,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
     const canvas = imageTexture.image as HTMLCanvasElement
     const ctx = canvas.getContext('2d')!
 
-    const imageUrl = '/Dream%20of%20Butterflies.webp'
+    const imageUrl = '/about/Dream%20of%20Butterflies.webp'
 
     const loadWithImage = () =>
       new Promise<void>((resolve, reject) => {
@@ -138,12 +112,6 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
 
     return () => { cancelled = true }
   }, [imageTexture])
-
-  const imageMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    map: imageTexture,
-    roughness: 0.9,
-    metalness: 0.0,
-  }), [imageTexture])
 
   // Per-face materials for boxes: [+x, -x, +y, -y, +z, -z]
   const floorMaterials = useMemo(() => {
@@ -195,8 +163,6 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
   const bbAfterDepth = bbZMax - doorZMax
   const bbAfterZ = doorZMax + bbAfterDepth / 2
 
-  const ceilingY = floorY + WALL_HEIGHT
-
   const groupRef = useRef<THREE.Group>(null)
 
   // Freeze all static meshes — they never move, so skip per-frame matrix recalc
@@ -213,74 +179,38 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
   // Dispose materials and textures on unmount
   useEffect(() => {
     return () => {
-      const materials = [floorMaterial, wallMaterial, baseboardMaterial, pedestalMaterial, exteriorMaterial, imageMaterial]
+      const materials = [floorMaterial, wallMaterial, baseboardMaterial, pedestalMaterial, exteriorMaterial]
       for (const mat of materials) {
         mat.dispose()
       }
       imageTexture.dispose()
       floorTexture.dispose()
-      floorNormalMap.dispose()
     }
-  }, [floorMaterial, wallMaterial, baseboardMaterial, pedestalMaterial, exteriorMaterial, imageMaterial, imageTexture, floorTexture, floorNormalMap])
-
-  // Spotlight targets — Object3Ds that spotlights aim at
-  const tvTarget = useMemo(() => {
-    const obj = new THREE.Object3D()
-    obj.position.set(tvPosition[0], tvPosition[1], tvPosition[2])
-    return obj
-  }, [tvPosition])
-
-  const vaseTarget = useMemo(() => {
-    const obj = new THREE.Object3D()
-    obj.position.set(vasePosition[0], vasePosition[1], vasePosition[2])
-    return obj
-  }, [vasePosition])
-
+  }, [floorMaterial, wallMaterial, baseboardMaterial, pedestalMaterial, exteriorMaterial, imageTexture, floorTexture])
 
   return (
     <group ref={groupRef}>
-      {/* Spotlight targets (must be in scene graph) */}
-      <primitive object={tvTarget} />
-      <primitive object={vaseTarget} />
-
-      {/* Gallery spotlights — pedestal spots */}
-      <spotLight
-        position={[tvPosition[0], ceilingY - 1, tvPosition[2] + 4]}
-        target={tvTarget}
-        intensity={200}
-        angle={0.45}
-        penumbra={0.6}
-        color="#fff3e6"
+      {/* Single directional light for toon shading */}
+      <directionalLight
+        position={[20, 35, 40]}
+        intensity={3.25}
+        color="#fff0f0"
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
+        shadow-camera-near={10}
+        shadow-camera-far={80}
+        shadow-normalBias={0.02}
+        shadow-intensity={0.45}
       />
-      {/* Vase spot — narrow cone on the object */}
-      <spotLight
-        position={[vasePosition[0], ceilingY - 1, vasePosition[2] + 4]}
-        target={vaseTarget}
-        intensity={250}
-        angle={0.35}
-        penumbra={0.6}
-        color="#fff5e6"
-      />
-
-      {/* RectAreaLight for painting — soft rectangular wash at 45° */}
-      <rectAreaLight
-        position={[WALL_IMAGE_POSITION[0], WALL_IMAGE_POSITION[1] + 3.5, WALL_IMAGE_POSITION[2] + 2]}
-        rotation={[-Math.PI / 4, 0, 0]}
-        width={IMAGE_FRAME_WIDTH}
-        height={3}
-        intensity={0.5}
-        color="#ffffff"
-      />
-
-      {/* Subtle ambient fill */}
-      <ambientLight color="#ffffff" intensity={0.75} />
-
-      {/* Soft ceiling fill lights — even general illumination */}
-      <pointLight position={[ROOM_X_OFFSET - 8, ceilingY - 2, -5]} intensity={25} distance={60} decay={1} color="#fff1e2" />
-      <pointLight position={[ROOM_X_OFFSET + FLOOR_WIDTH / 2, ceilingY - 2, -8.75 + FLOOR_DEPTH / 2]} intensity={40} distance={60} decay={1} color="#ffecda" />
 
       {/* Floor */}
       <mesh
+        receiveShadow
         position={[ROOM_X_OFFSET - WALL_THICKNESS / 2, floorY - WALL_THICKNESS / 2, -8.75 - WALL_THICKNESS / 2]}
         material={floorMaterials}
       >
@@ -289,6 +219,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
 
       {/* Back wall */}
       <mesh
+        receiveShadow
         position={[ROOM_X_OFFSET, floorY + WALL_HEIGHT / 2, wallZ - WALL_THICKNESS / 2]}
         material={backWallMaterials}
       >
@@ -298,6 +229,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
       {/* Side wall — split into 3 segments around doorway opening */}
       {/* Segment 1: back portion (before doorway) */}
       <mesh
+        receiveShadow
         position={[sideWallX, floorY + WALL_HEIGHT / 2, beforeDoorZ]}
         material={sideWallMaterials}
       >
@@ -305,6 +237,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
       </mesh>
       {/* Segment 2: front portion (after doorway) */}
       <mesh
+        receiveShadow
         position={[sideWallX, floorY + WALL_HEIGHT / 2, afterDoorZ]}
         material={sideWallMaterials}
       >
@@ -312,6 +245,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
       </mesh>
       {/* Segment 3: lintel above doorway */}
       <mesh
+        receiveShadow
         position={[sideWallX, lintelY, DOORWAY_Z]}
         material={lintelMaterials}
       >
@@ -320,6 +254,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
 
       {/* Baseboard — back wall */}
       <mesh
+        receiveShadow
         position={[ROOM_X_OFFSET, floorY + BASEBOARD_HEIGHT / 2, wallZ + BASEBOARD_DEPTH / 2]}
         material={baseboardMaterial}
       >
@@ -328,12 +263,14 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
 
       {/* Baseboard — side wall (split around doorway) */}
       <mesh
+        receiveShadow
         position={[baseboardX, floorY + BASEBOARD_HEIGHT / 2, bbBeforeZ]}
         material={baseboardMaterial}
       >
         <boxGeometry args={[BASEBOARD_DEPTH, BASEBOARD_HEIGHT, bbBeforeDepth]} />
       </mesh>
       <mesh
+        receiveShadow
         position={[baseboardX, floorY + BASEBOARD_HEIGHT / 2, bbAfterZ]}
         material={baseboardMaterial}
       >
@@ -344,6 +281,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
            extended by BASEBOARD_DEPTH on +x to cover side wall baseboard edge) */}
       {/* Back jamb — protrudes into doorway in +z */}
       <mesh
+        receiveShadow
         position={[sideWallX + BASEBOARD_DEPTH / 2, floorY + BASEBOARD_HEIGHT / 2, doorZMin + BASEBOARD_DEPTH / 2]}
         material={baseboardMaterial}
       >
@@ -351,6 +289,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
       </mesh>
       {/* Front jamb — protrudes into doorway in -z */}
       <mesh
+        receiveShadow
         position={[sideWallX + BASEBOARD_DEPTH / 2, floorY + BASEBOARD_HEIGHT / 2, doorZMax - BASEBOARD_DEPTH / 2]}
         material={baseboardMaterial}
       >
@@ -360,6 +299,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
       {/* Pedestal 1 — TV */}
       {tvPedestalHeight > 0 && (
         <mesh
+          castShadow
           position={[
             tvPosition[0],
             floorY + tvPedestalHeight / 2,
@@ -374,6 +314,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
       {/* Pedestal 2 — Vase */}
       {vasePedestalHeight > 0 && (
         <mesh
+          castShadow
           position={[
             vasePosition[0],
             floorY + vasePedestalHeight / 2,
@@ -385,13 +326,12 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
         </mesh>
       )}
 
-      {/* Placeholder image frame on back wall */}
-      <mesh
+      {/* 3D picture frame on back wall */}
+      <FrameModel
         position={WALL_IMAGE_POSITION}
-        material={imageMaterial}
-      >
-        <planeGeometry args={[IMAGE_FRAME_WIDTH, IMAGE_FRAME_HEIGHT]} />
-      </mesh>
+        scale={2.65}
+        imageTexture={imageTexture}
+      />
     </group>
   )
 }

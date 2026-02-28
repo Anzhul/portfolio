@@ -138,21 +138,21 @@ function PhysicsPlayer({ collisionTiles, collisionPosition, tileSize, pixelSize,
   const isGroundedRef = useRef(false);
 
   // Load player sprites
-  const idleTexture = useLoader(TextureLoader, '/footer-env/Player_sprite.png');
+  const idleTexture = useLoader(TextureLoader, '/about/footer-env/Player_sprite.png');
   const runTextures = useLoader(TextureLoader, [
-    '/footer-env/run/Player_run.png',
-    '/footer-env/run/Player_run1.png',
-    '/footer-env/run/Player_run2.png',
-    '/footer-env/run/Player_run3.png',
-    '/footer-env/run/Player_run4.png',
-    '/footer-env/run/Player_run5.png',
-    '/footer-env/run/Player_run6.png',
-    '/footer-env/run/Player_run7.png',
-    '/footer-env/run/Player_run8.png',
-    '/footer-env/run/Player_run9.png',
-    '/footer-env/run/Player_run10.png',
-    '/footer-env/run/Player_run11.png',
-    '/footer-env/run/Player_run12.png',
+    '/about/footer-env/run/Player_run.png',
+    '/about/footer-env/run/Player_run1.png',
+    '/about/footer-env/run/Player_run2.png',
+    '/about/footer-env/run/Player_run3.png',
+    '/about/footer-env/run/Player_run4.png',
+    '/about/footer-env/run/Player_run5.png',
+    '/about/footer-env/run/Player_run6.png',
+    '/about/footer-env/run/Player_run7.png',
+    '/about/footer-env/run/Player_run8.png',
+    '/about/footer-env/run/Player_run9.png',
+    '/about/footer-env/run/Player_run10.png',
+    '/about/footer-env/run/Player_run11.png',
+    '/about/footer-env/run/Player_run12.png',
   ]);
 
   const [currentTexture, setCurrentTexture] = useState<THREE.Texture>(idleTexture);
@@ -480,7 +480,7 @@ function CameraFollower({ playerPositionRef, gameCamera }: { playerPositionRef: 
 
 export function GameContent({ gameCamera, gameViewportWidth, gameInputRef, npcInRangeRef, autoWalkRef }: { gameCamera: THREE.OrthographicCamera; gameViewportWidth: number; gameInputRef?: React.RefObject<{ active: boolean; startX: number; currentX: number; startY: number; currentY: number; maxDx: number; startTime: number }>; npcInRangeRef?: React.MutableRefObject<boolean>; autoWalkRef?: React.MutableRefObject<number | null> }) {
   // Texture loading once
-  const spritesheetTexture = useLoader(THREE.TextureLoader, "/footer-env/spritesheet.png");
+  const spritesheetTexture = useLoader(THREE.TextureLoader, "/about/footer-env/spritesheet.png");
   useMemo(() => {
     spritesheetTexture.minFilter = THREE.NearestFilter;
     spritesheetTexture.magFilter = THREE.NearestFilter;

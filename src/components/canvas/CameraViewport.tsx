@@ -281,17 +281,24 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
 
     let cachedRect = container.getBoundingClientRect()
 
+    /** Refresh cachedRect, guarding against display:none (zero-size) reads. */
+    const refreshRect = () => {
+      const rect = container.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) {
+        cachedRect = rect
+      }
+    }
+
     let resizeTimeout: number | null = null
     const updateCachedRect = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout)
-      resizeTimeout = window.setTimeout(() => {
-        if (container) cachedRect = container.getBoundingClientRect()
-      }, 100)
+      resizeTimeout = window.setTimeout(refreshRect, 100)
     }
     window.addEventListener('resize', updateCachedRect)
 
     const handleWheel = (e: globalThis.WheelEvent) => {
       e.preventDefault()
+      refreshRect()
 
       if (!e.ctrlKey && !e.metaKey) {
         const delta = e.deltaY * -0.00075
@@ -329,6 +336,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     // ── Touch handlers ──
 
     const handleTouchStart = (e: TouchEvent) => {
+      refreshRect()
       if (e.touches.length === 1) {
         isTouchPanningRef.current = true
         isPinchingRef.current = false
@@ -359,7 +367,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         const deltaY = touch.clientY - lastTouchPosRef.current.y
 
         const zoom = springs.zoom.target
-        const panSpeed = 1.8 / zoom
+        const panSpeed = Math.max(0.25, Math.min(1.6, 1.6 / zoom))
 
         // Pan cancels any active zoom anchor
         zoomAnchorRef.current = null
@@ -404,15 +412,15 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
         const newWorldX = anchorWorldX - (newMidLocalX - vw / 2) / newZoom
         const newWorldY = anchorWorldY - (newMidLocalY - vh / 2) / newZoom
 
-        // Position is set directly (pinch provides smooth input).
-        // Zoom uses springTo for a slight ease/resistance feel.
+        // Direct manipulation: both position and zoom update instantly
+        // for 1:1 tracking with fingers, like native pinch-to-zoom.
         zoomAnchorRef.current = null
         springs.x.resetTo(newWorldX)
         springs.y.resetTo(newWorldY)
-        springs.zoom.springTo(newZoom)
+        springs.zoom.resetTo(newZoom)
 
         lastTouchPosRef.current = { x: midX, y: midY }
-        restartAnimationRef.current?.()
+        applyState(newWorldX, newWorldY, springs.z.value, newZoom)
       }
     }
 

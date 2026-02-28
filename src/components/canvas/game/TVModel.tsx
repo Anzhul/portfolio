@@ -1,7 +1,7 @@
 import { useLoader, useThree } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { ticker } from '../../../utils/AnimationTicker';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { applyMaterialOverrides, type MaterialOverride } from '../home/materialUtils';
@@ -93,7 +93,7 @@ function screenUvToWorld(meshUv: { x: number; y: number }, cam: THREE.Orthograph
 
 // TV Model - loads tv.glb and applies game texture to screen
 export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number, number], scale = 1, materialOverrides = [], gameInputRef, npcInRangeRef, gameCamera, autoWalkRef, turnOnRef }: { screenTexture: THREE.Texture; position?: [number, number, number]; scale?: number; materialOverrides?: MaterialOverride[]; gameInputRef?: React.MutableRefObject<GameInput>; npcInRangeRef?: React.MutableRefObject<boolean>; gameCamera?: THREE.OrthographicCamera; autoWalkRef?: React.MutableRefObject<number | null>; turnOnRef?: React.MutableRefObject<number> }) {
-  const gltf = useLoader(GLTFLoader, '/tv.glb');
+  const gltf = useLoader(GLTFLoader, '/about/tv.glb');
   const { camera: rootCamera, gl } = useThree();
   const isVisible = useSceneVisible();
   const { isTabletDown } = useViewport();
@@ -118,6 +118,7 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
     // Apply screen texture and glass material
     gltf.scene.traverse((child: any) => {
       if (child.isMesh) {
+        child.castShadow = true;
         const meshName = (child.name || '').toLowerCase();
         const matName = (child.material?.name || '').toLowerCase();
         if (meshName.includes('screen') || matName.includes('screen')) {
@@ -352,8 +353,8 @@ export function TVModel({ screenTexture, position = [0, 0, 0] as [number, number
 // Plate Model - loads plate.glb and applies Orange.png to fruit slices
 // Supports grab cursor on hover and drag-to-rotate interaction
 export function PlateModel({ position = [0, 0, 0] as [number, number, number], scale = 1 }: { position?: [number, number, number]; scale?: number }) {
-  const gltf = useLoader(GLTFLoader, '/plate.glb');
-  const orangeTexture = useLoader(TextureLoader, '/Orange.png');
+  const gltf = useLoader(GLTFLoader, '/about/plate.glb');
+  const orangeTexture = useLoader(TextureLoader, '/about/Orange.png');
   const isVisible = useSceneVisible();
   const groupRef = useRef<THREE.Group>(null);
   const isDragging = useRef(false);
@@ -469,12 +470,66 @@ export function PlateModel({ position = [0, 0, 0] as [number, number, number], s
   );
 }
 
+// Frame Model - loads frame.glb manually (no useLoader/Suspense) and applies a texture.
+// Uses MeshToonMaterial to stay consistent with the gallery scene.
+export function FrameModel({ position = [0, 0, 0] as [number, number, number], scale = 1, rotation = [0, 0, 0] as [number, number, number], imageTexture }: { position?: [number, number, number]; scale?: number; rotation?: [number, number, number]; imageTexture?: THREE.Texture }) {
+  const [scene, setScene] = useState<THREE.Group | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loader = new GLTFLoader();
+    loader.load('/about/frame.glb', (gltf) => {
+      if (cancelled) return;
+
+      // glTF UVs expect flipY=false; safe to set on the shared texture since only FrameModel uses it
+      if (imageTexture) {
+        imageTexture.flipY = false;
+        imageTexture.center.set(0.5, 0.5);
+        imageTexture.rotation = Math.PI / 2;
+        imageTexture.needsUpdate = true;
+      }
+
+      gltf.scene.traverse((child: any) => {
+        if (!child.isMesh) return;
+
+        // The image quad has 4 vertices; the frame body has 276.
+        // Use vertex count to reliably identify which mesh gets the texture.
+        const vertexCount = child.geometry?.attributes?.position?.count ?? 0;
+        if (vertexCount <= 4 && imageTexture) {
+          child.material = new THREE.MeshToonMaterial({ map: imageTexture, side: THREE.DoubleSide });
+          // Flat image quad should not cast shadows — it has zero thickness
+          // and produces shadow artifacts
+          child.castShadow = false;
+        } else {
+          child.material = new THREE.MeshToonMaterial({ color: '#ffd47d', side: THREE.DoubleSide });
+          child.castShadow = true;
+        }
+      });
+
+      setScene(gltf.scene);
+    });
+
+    return () => { cancelled = true; };
+  }, [imageTexture]);
+
+  if (!scene) return null;
+
+  return (
+    <primitive
+      object={scene}
+      position={position}
+      scale={scale}
+      rotation={rotation}
+    />
+  );
+}
+
 // Vase Model - loads Vase.glb and applies vase_body.png / vase_foot.png
 // Supports grab cursor on hover and drag-to-rotate interaction
 export function VaseModel({ position = [0, 0, 0] as [number, number, number], scale = 1 }: { position?: [number, number, number]; scale?: number }) {
-  const gltf = useLoader(GLTFLoader, '/Vase.glb');
-  const bodyTexture = useLoader(TextureLoader, '/vase_body.png');
-  const footTexture = useLoader(TextureLoader, '/vase_foot.png');
+  const gltf = useLoader(GLTFLoader, '/about/Vase.glb');
+  const bodyTexture = useLoader(TextureLoader, '/about/vase_body.png');
+  const footTexture = useLoader(TextureLoader, '/about/vase_foot.png');
   const isVisible = useSceneVisible();
   const groupRef = useRef<THREE.Group>(null);
   const isDragging = useRef(false);
@@ -503,44 +558,37 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
     // Single mesh with multi-material: child.material may be an array
     gltf.scene.traverse((child: any) => {
       if (!child.isMesh) return;
+      child.castShadow = true;
 
-      const applyTexture = (mat: THREE.Material) => {
+      const replaceMaterial = (mat: THREE.Material, index?: number) => {
         const name = (mat.name || '').toLowerCase();
-        if (mat instanceof THREE.MeshStandardMaterial) {
-          if (name === 'body') {
-            mat.map = bodyTexture;
-            mat.color.set('#e8e8ff');
-            mat.roughness = 0.1;
-            mat.metalness = 0.05;
-            mat.envMapIntensity = 1;
-            mat.needsUpdate = true;
-          } else if (name === 'foot') {
-            mat.map = footTexture;
-            mat.color.set('#e8e8ff');
-            mat.roughness = 0.15;
-            mat.metalness = 0.05;
-            mat.envMapIntensity = 1.5;
-            mat.needsUpdate = true;
-          } else if (name === 'rim') {
-            mat.color.set('#ddc17b');
-            mat.roughness = 0.1;
-            mat.metalness = 0.1;
-            mat.envMapIntensity = 1.5;
-            mat.needsUpdate = true;
-          } else if (name === 'default') {
-            mat.color.set('#f5f5f0');
-            mat.roughness = 0.15;
-            mat.metalness = 0.05;
-            mat.envMapIntensity = 1.5;
-            mat.needsUpdate = true;
-          }
+        let toonMat: THREE.MeshToonMaterial;
+
+        if (name === 'body') {
+          toonMat = new THREE.MeshToonMaterial({ map: bodyTexture, color: '#e8e8ff' });
+        } else if (name === 'foot') {
+          toonMat = new THREE.MeshToonMaterial({ map: footTexture, color: '#e8e8ff' });
+        } else if (name === 'rim') {
+          toonMat = new THREE.MeshToonMaterial({ color: '#ddc17b' });
+        } else if (name === 'default') {
+          toonMat = new THREE.MeshToonMaterial({ color: '#f5f5f0' });
+        } else {
+          return;
         }
+        toonMat.name = mat.name;
+
+        if (Array.isArray(child.material) && index !== undefined) {
+          child.material[index] = toonMat;
+        } else {
+          child.material = toonMat;
+        }
+        mat.dispose();
       };
 
       if (Array.isArray(child.material)) {
-        child.material.forEach(applyTexture);
+        child.material.forEach((mat: THREE.Material, i: number) => replaceMaterial(mat, i));
       } else {
-        applyTexture(child.material);
+        replaceMaterial(child.material);
       }
     });
   }, [gltf, bodyTexture, footTexture]);

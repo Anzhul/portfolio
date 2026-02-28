@@ -244,30 +244,20 @@ export function applyMaterialOverrides(
             })
             mesh.material = newMaterial
           } else {
-            // Use MeshStandardMaterial for lit materials
-            const newMaterial = new THREE.MeshStandardMaterial({
-              // Start with existing material properties if it's a standard material
-              ...(mesh.material.type === 'MeshStandardMaterial' && {
-                color: (mesh.material as THREE.MeshStandardMaterial).color,
-                roughness: (mesh.material as THREE.MeshStandardMaterial).roughness,
-                metalness: (mesh.material as THREE.MeshStandardMaterial).metalness,
-                map: (mesh.material as THREE.MeshStandardMaterial).map,
-              }),
-              // Apply overrides
+            // Use MeshToonMaterial for toon-shaded materials
+            const newMaterial = new THREE.MeshToonMaterial({
               ...(override.color && { color: new THREE.Color(override.color) }),
               ...(override.emissive && { emissive: new THREE.Color(override.emissive) }),
               ...(override.emissiveIntensity !== undefined && { emissiveIntensity: override.emissiveIntensity }),
-              ...(override.roughness !== undefined && { roughness: override.roughness }),
-              ...(override.metalness !== undefined && { metalness: override.metalness }),
               ...(override.opacity !== undefined && { opacity: override.opacity }),
               ...(override.transparent !== undefined && { transparent: override.transparent }),
             })
             mesh.material = newMaterial
           }
         } else if (mesh.material.type === 'MeshBasicMaterial') {
-          // Convert basic materials to standard for lighting compatibility
+          // Convert basic materials to toon for consistent shading
           const oldMaterial = mesh.material as THREE.MeshBasicMaterial
-          mesh.material = new THREE.MeshStandardMaterial({
+          mesh.material = new THREE.MeshToonMaterial({
             color: oldMaterial.color,
             map: oldMaterial.map,
             transparent: oldMaterial.transparent,

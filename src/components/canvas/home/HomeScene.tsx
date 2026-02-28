@@ -106,14 +106,14 @@ interface CameraKeyframe {
 }
 
 // Image placeholder position on back wall (exported for GalleryEnvironment)
-export const WALL_IMAGE_POSITION: [number, number, number] = [10.0, 3.75, -19.9]
+export const WALL_IMAGE_POSITION: [number, number, number] = [1, 0.25, -19.55]
 
 const KEYFRAMES_WIDE: CameraKeyframe[] = [
   { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
   { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
   { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
-  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
-  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
+  { progress: 0.55, position: [3.5, 3.5, -8],        lookAt: [3.5, 3.5, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.5, -8],        lookAt: [15, 3.5, -20], fov: 25 },
   { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
 ]
 
@@ -170,7 +170,7 @@ const FBO_WIDTH = 768
 const FBO_HEIGHT = 960
 
 const TV_MATERIAL_OVERRIDES: MaterialOverride[] = [
-  { materialName: 'Default', color: '#2a2a2a', roughness: 0.6, metalness: 0.1 },
+  { materialName: 'Default', color: '#3a3535', roughness: 0.6, metalness: 0.1 },
   { materialName: 'Red', color: '#901d06', roughness: 0.4, metalness: 0.1 },
   { materialName: 'White', color: '#e8e8e8', roughness: 0.5, metalness: 0.0 },
   { materialName: 'Yellow', color: '#FDBC65', roughness: 0.3, metalness: 0.2 },
@@ -430,6 +430,7 @@ function HomeScene({
       eventSource={scrollContainer}
       eventPrefix="client"
       frameloop="never"
+      shadows
       camera={{ position: [0, 0, 8], fov: 5, near: 5, far: 1000 }}
       gl={{
         alpha: true,

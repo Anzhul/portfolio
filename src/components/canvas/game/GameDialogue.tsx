@@ -39,7 +39,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 // --- FloatingSprite (unchanged) ---
 export function FloatingSprite({ position }: { position: [number, number, number] }) {
   const isVisible = useSceneVisible()
-  const texture = useLoader(TextureLoader, '/footer-env/Nostalgia.png')
+  const texture = useLoader(TextureLoader, '/about/footer-env/Nostalgia.png')
   const meshRef = useRef<THREE.Mesh>(null!)
 
   useEffect(() => {
@@ -778,7 +778,7 @@ export function NostalgiaDialogue({
         visible={dialogueState === 'greeting'}
         text="Hello Traveler!"
         type="dialogue"
-        faceSprite="/footer-env/Nostalgia.png"
+        faceSprite="/about/footer-env/Nostalgia.png"
         onClose={() => setDialogueState('question')}
         gameCamera={gameCamera}
       />
@@ -787,7 +787,7 @@ export function NostalgiaDialogue({
         visible={dialogueState === 'question'}
         text="Would you like to do battle?"
         type="dialogue"
-        faceSprite="/footer-env/Nostalgia.png"
+        faceSprite="/about/footer-env/Nostalgia.png"
         choices={[
           { label: 'Yes', onSelect: () => setDialogueState('battle') },
           { label: 'No', onSelect: () => setDialogueState('decline') },
@@ -800,7 +800,7 @@ export function NostalgiaDialogue({
         visible={dialogueState === 'decline'}
         text="Perhaps another time..."
         type="dialogue"
-        faceSprite="/footer-env/Nostalgia.png"
+        faceSprite="/about/footer-env/Nostalgia.png"
         onClose={() => setDialogueState('idle')}
         gameCamera={gameCamera}
       />
@@ -818,7 +818,7 @@ export function NostalgiaDialogue({
         visible={dialogueState === 'victory'}
         text="Impressive... You have bested me."
         type="dialogue"
-        faceSprite="/footer-env/Nostalgia.png"
+        faceSprite="/about/footer-env/Nostalgia.png"
         onClose={() => setDialogueState('idle')}
         gameCamera={gameCamera}
       />
@@ -827,7 +827,7 @@ export function NostalgiaDialogue({
         visible={dialogueState === 'defeat'}
         text="You fell... but don't give up."
         type="dialogue"
-        faceSprite="/footer-env/Nostalgia.png"
+        faceSprite="/about/footer-env/Nostalgia.png"
         onClose={() => setDialogueState('idle')}
         gameCamera={gameCamera}
       />
