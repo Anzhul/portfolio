@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { WALL_IMAGE_POSITION } from './HomeScene'
 import { FrameModel } from '../game/TVModel'
 
+
 interface GalleryEnvironmentProps {
   tvPosition: [number, number, number]
   vasePosition: [number, number, number]
@@ -43,7 +44,7 @@ export function GalleryEnvironment({ tvPosition, vasePosition }: GalleryEnvironm
   const floorMaterial = useMemo(() => new THREE.MeshToonMaterial({
     map: floorTexture,
     color: '#ffffff',
-    emissive: '#ffdcc6',
+    emissive: '#ffd0b2',
     emissiveIntensity: 0.15,
   }), [floorTexture])
 

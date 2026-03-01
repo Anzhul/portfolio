@@ -35,12 +35,15 @@
   }
 
   .home-grid-item {
-    position: relative;
-    aspect-ratio: 16 / 10;
-    overflow: hidden;
     cursor: pointer;
     text-decoration: none;
     display: block;
+  }
+
+  .home-grid-media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
   }
 
   .home-grid-image {
@@ -60,5 +63,13 @@
     height: calc(100% + 2px);
     object-fit: cover;
     display: block;
+  }
+
+  .home-grid-caption {
+    font-size: 0.75rem;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+    color: #222222;
+    margin-top: 0.4rem;
   }
 }

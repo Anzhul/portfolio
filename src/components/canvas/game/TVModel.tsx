@@ -427,6 +427,13 @@ export function PlateModel({ position = [0, 0, 0] as [number, number, number], s
     isDragging.current = true;
     prevX.current = e.clientX ?? 0;
     document.body.style.cursor = 'grabbing';
+
+    // Capture pointer so the browser doesn't hijack touch events for scrolling
+    // and all subsequent move events are delivered even if finger leaves the mesh
+    const ne = e.nativeEvent as PointerEvent | undefined;
+    if (ne?.pointerId !== undefined && ne.target instanceof Element) {
+      try { ne.target.setPointerCapture(ne.pointerId); } catch (_) {}
+    }
   }, []);
 
   // Window-level listeners for drag tracking (user may drag outside mesh)
@@ -449,9 +456,11 @@ export function PlateModel({ position = [0, 0, 0] as [number, number, number], s
 
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
       document.body.style.cursor = '';
     };
   }, [isVisible]);
@@ -612,6 +621,13 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
     isDragging.current = true;
     prevX.current = e.clientX ?? 0;
     document.body.style.cursor = 'grabbing';
+
+    // Capture pointer so the browser doesn't hijack touch events for scrolling
+    // and all subsequent move events are delivered even if finger leaves the mesh
+    const ne = e.nativeEvent as PointerEvent | undefined;
+    if (ne?.pointerId !== undefined && ne.target instanceof Element) {
+      try { ne.target.setPointerCapture(ne.pointerId); } catch (_) {}
+    }
   }, []);
 
   // Window-level listeners for drag tracking (user may drag outside mesh)
@@ -634,9 +650,11 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
 
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
       document.body.style.cursor = '';
     };
   }, [isVisible]);

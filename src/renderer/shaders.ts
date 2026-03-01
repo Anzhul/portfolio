@@ -19,7 +19,9 @@ export const fragmentShaderSource = `
   varying vec2 v_texCoord;
 
   void main() {
-    vec4 texColor = texture2D(u_texture, v_texCoord);
+    // Negative LOD bias (-0.5) selects a higher-resolution mipmap level
+    // for sharper texture rendering
+    vec4 texColor = texture2D(u_texture, v_texCoord, -0.5);
     // Texture is premultiplied, so just scale by opacity
     gl_FragColor = texColor * u_opacity;
   }

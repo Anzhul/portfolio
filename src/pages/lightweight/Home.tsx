@@ -28,22 +28,25 @@ export const Home: React.FC<HomeProps> = () => {
                 className="home-grid-item"
                 onClick={(e) => handleClick(e, project.href)}
               >
-                {isVideo ? (
-                  <video
-                    className="home-grid-video"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                  >
-                    <source src={project.image} type="video/webm" />
-                  </video>
-                ) : (
-                  <div
-                    className="home-grid-image"
-                    style={{ backgroundImage: `url('${project.image}')` }}
-                  />
-                )}
+                <div className="home-grid-media">
+                  {isVideo ? (
+                    <video
+                      className="home-grid-video"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    >
+                      <source src={project.image} type="video/webm" />
+                    </video>
+                  ) : (
+                    <div
+                      className="home-grid-image"
+                      style={{ backgroundImage: `url('${project.image}')` }}
+                    />
+                  )}
+                </div>
+                <span className="home-grid-caption">{project.title}</span>
               </a>
             );
           })}

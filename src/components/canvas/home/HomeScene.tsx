@@ -153,8 +153,9 @@ function smoothstep(t: number) {
   return t * t * (3 - 2 * t)
 }
 
-// Reusable vector for lookAt target (avoids allocation per frame)
+// Reusable vectors (avoid allocation per frame)
 const _lookAtTarget = new THREE.Vector3()
+const _drawSize = new THREE.Vector2()
 
 /**
  * ReadyNotifier - Signals that models inside Suspense have mounted
@@ -166,8 +167,9 @@ function ReadyNotifier({ onReady }: { onReady?: () => void }) {
   return null
 }
 
-const FBO_WIDTH = 768
-const FBO_HEIGHT = 960
+// Game world dimensions (constant, independent of render resolution)
+const GAME_WIDTH = 768
+const GAME_HEIGHT = 960
 
 const TV_MATERIAL_OVERRIDES: MaterialOverride[] = [
   { materialName: 'Default', color: '#3a3535', roughness: 0.6, metalness: 0.1 },
@@ -227,10 +229,11 @@ function Scene({
     return s
   }, [])
 
+  // Game camera uses constant world-space dimensions (independent of FBO resolution)
   const gameCamera = useMemo(() => {
     const cam = new THREE.OrthographicCamera(
-      FBO_WIDTH / -2, FBO_WIDTH / 2,
-      FBO_HEIGHT / 2, FBO_HEIGHT / -2,
+      GAME_WIDTH / -2, GAME_WIDTH / 2,
+      GAME_HEIGHT / 2, GAME_HEIGHT / -2,
       0.1, 1000
     )
     cam.zoom = 20
@@ -239,16 +242,110 @@ function Scene({
     return cam
   }, [])
 
-  const gameViewportWidth = FBO_HEIGHT / 8
+  const gameViewportWidth = GAME_HEIGHT / 8
+
+  // FBO render resolution scales down on mobile/tablet — pixel art with NearestFilter
+  // looks identical at lower resolution on smaller screens
+  const [fboWidth, fboHeight] = useMemo((): [number, number] => {
+    if (breakpoint === 'mobile') return [384, 480]
+    if (breakpoint === 'tablet') return [512, 640]
+    return [GAME_WIDTH, GAME_HEIGHT]
+  }, [breakpoint])
 
   const fbo = useMemo(() => {
-    return new THREE.WebGLRenderTarget(FBO_WIDTH, FBO_HEIGHT, {
+    return new THREE.WebGLRenderTarget(fboWidth, fboHeight, {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
     })
-  }, [])
+  }, [fboWidth, fboHeight])
 
   useEffect(() => () => fbo.dispose(), [fbo])
+
+  // Scene render target with depth texture for screen-space edge detection
+  const sceneTarget = useMemo(() => {
+    const dt = new THREE.DepthTexture(1, 1)
+    dt.type = THREE.UnsignedIntType
+    return new THREE.WebGLRenderTarget(1, 1, { depthTexture: dt })
+  }, [])
+
+  useEffect(() => () => {
+    sceneTarget.depthTexture?.dispose()
+    sceneTarget.dispose()
+  }, [sceneTarget])
+
+  // Edge detection shader — Roberts cross on linearized depth buffer
+  const edgeMaterial = useMemo(() => new THREE.ShaderMaterial({
+    uniforms: {
+      tDiffuse: { value: null },
+      tDepth: { value: null },
+      resolution: { value: new THREE.Vector2() },
+      cameraNear: { value: 4.5 },
+      cameraFar: { value: 1000.0 },
+      edgeColor: { value: new THREE.Color('#ff4304') },
+      edgeOpacity: { value: 1.0 },
+      edgeThreshold: { value: 0.0175 },
+      lineWidth: { value: 0 },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform sampler2D tDepth;
+      uniform vec2 resolution;
+      uniform float cameraNear;
+      uniform float cameraFar;
+      uniform vec3 edgeColor;
+      uniform float edgeOpacity;
+      uniform float edgeThreshold;
+      uniform float lineWidth;
+
+      varying vec2 vUv;
+
+      float getLinearDepth(vec2 uv) {
+        float d = texture2D(tDepth, uv).r;
+        float z = d * 2.0 - 1.0;
+        return (2.0 * cameraNear * cameraFar) / (cameraFar + cameraNear - z * (cameraFar - cameraNear));
+      }
+
+      void main() {
+        vec2 texel = lineWidth / resolution;
+
+        float d0 = getLinearDepth(vUv);
+        float d1 = getLinearDepth(vUv + vec2(texel.x, 0.0));
+        float d2 = getLinearDepth(vUv + vec2(0.0, texel.y));
+        float d3 = getLinearDepth(vUv + vec2(texel.x, texel.y));
+
+        // Roberts cross on linearized depth, normalized by distance
+        float edge = sqrt(pow(d0 - d3, 2.0) + pow(d1 - d2, 2.0)) / d0;
+
+        vec4 color = texture2D(tDiffuse, vUv);
+        float edgeFactor = smoothstep(edgeThreshold * 0.5, edgeThreshold, edge);
+
+        gl_FragColor = mix(color, vec4(edgeColor, color.a), edgeFactor * edgeOpacity);
+
+        // Manual linear → sRGB encoding (scene FBO stores linear values)
+        gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0 / 2.2));
+      }
+    `,
+    depthTest: false,
+    depthWrite: false,
+    toneMapped: false,
+  }), [])
+
+  // Full-screen quad for edge detection compositing
+  const { edgeQuadScene, edgeQuadCamera } = useMemo(() => {
+    const s = new THREE.Scene()
+    const c = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+    s.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edgeMaterial))
+    return { edgeQuadScene: s, edgeQuadCamera: c }
+  }, [edgeMaterial])
+
+  useEffect(() => () => edgeMaterial.dispose(), [edgeMaterial])
 
   // Monitor WebGL context loss
   useEffect(() => {
@@ -328,15 +425,39 @@ function Scene({
         gl.render(gameScene, gameCamera)
       }
 
-      // Pass 2: Render TV scene to screen
-      gl.setRenderTarget(null)
+      // Pass 2: Render main scene to FBO with depth (linear color space)
+      const savedColorSpace = gl.outputColorSpace
+      gl.outputColorSpace = THREE.LinearSRGBColorSpace
+
+      gl.getDrawingBufferSize(_drawSize)
+      if (sceneTarget.width !== _drawSize.x || sceneTarget.height !== _drawSize.y) {
+        sceneTarget.setSize(_drawSize.x, _drawSize.y)
+      }
+
+      gl.setRenderTarget(sceneTarget)
       gl.setClearColor(0x000000, 0)
       gl.clear()
       gl.render(scene, camera)
+
+      gl.outputColorSpace = savedColorSpace
+
+      // Pass 3: Edge detection + compositing to screen (manual sRGB in shader)
+      edgeMaterial.uniforms.tDiffuse.value = sceneTarget.texture
+      edgeMaterial.uniforms.tDepth.value = sceneTarget.depthTexture
+      edgeMaterial.uniforms.resolution.value.copy(_drawSize)
+      if (camera instanceof THREE.PerspectiveCamera) {
+        edgeMaterial.uniforms.cameraNear.value = camera.near
+        edgeMaterial.uniforms.cameraFar.value = camera.far
+      }
+
+      gl.setRenderTarget(null)
+      gl.setClearColor(0x000000, 0)
+      gl.clear()
+      gl.render(edgeQuadScene, edgeQuadCamera)
     }
     ticker.add(render)
     return () => ticker.remove(render)
-  }, [gl, scene, camera, gameScene, gameCamera, fbo, isVisible, scroll, keyframes])
+  }, [gl, scene, camera, gameScene, gameCamera, fbo, isVisible, scroll, keyframes, sceneTarget, edgeMaterial, edgeQuadScene, edgeQuadCamera])
 
   return (
     <SceneVisibilityContext.Provider value={isVisible}>

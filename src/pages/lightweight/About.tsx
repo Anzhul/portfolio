@@ -1,4 +1,5 @@
 import React, { lazy, useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import './About.scss';
 import { Lazy3DObject } from '../../components/lazy/Lazy3DObject';
 import { usePageTransition } from '../../context/PageTransitionContext';
@@ -81,6 +82,40 @@ export const About: React.FC<AboutProps> = ({ isVisible = true }) => {
   const { breakpoint } = useViewport();
   const internalRef = useRef<HTMLDivElement>(null);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
+  const hoverVideoRef = useRef<HTMLVideoElement>(null);
+  const hoverPopupRef = useRef<HTMLDivElement>(null);
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
+
+  const initialPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const makeVideoHover = useCallback((src: string) => (e: React.MouseEvent) => {
+    initialPosRef.current = { x: e.clientX, y: e.clientY };
+    setActiveVideo(src);
+  }, []);
+
+  // Play video after the portal mounts
+  useEffect(() => {
+    if (!activeVideo) return;
+    const el = hoverPopupRef.current;
+    const pos = initialPosRef.current;
+    if (el && pos) {
+      el.style.left = `${pos.x}px`;
+      el.style.top = `${pos.y}px`;
+    }
+    hoverVideoRef.current?.play();
+  }, [activeVideo]);
+
+  const handleVideoMove = useCallback((e: React.MouseEvent) => {
+    if (hoverPopupRef.current) {
+      hoverPopupRef.current.style.left = `${e.clientX}px`;
+      hoverPopupRef.current.style.top = `${e.clientY}px`;
+    }
+  }, []);
+
+  const handleVideoLeave = useCallback(() => {
+    setActiveVideo(null);
+    hoverVideoRef.current?.pause();
+  }, []);
 
   // Breakpoint-specific TV position and scale
   const { tvPosition, tvScale, vasePosition, vaseScale } = useMemo(() => {
@@ -154,10 +189,15 @@ export const About: React.FC<AboutProps> = ({ isVisible = true }) => {
               <img src="/placeholder-portrait.jpg" alt="Anzhu Ling" />
             </div>
             <div className="about-intro-text">
-              <h1>Hi, I'm Anzhu 安竹<span style={{ color: '#222222', fontSize: '2.2rem', fontFamily: 'source-han-sans-cjk-sc, sans-serif', fontWeight: '500', fontStyle: 'normal', display: 'none'}}>安竹</span>—</h1>
-              <p>I was born in the megacity of Chongqing and immigrated to Albuquerque when I was five. My dad was a graduate student and I spent my childhood growing up in a student family apartment complex west of the Sandia mountains.</p>
-              <br></br>
-              <p>Those formative memories of catching lizards in the shrubland and playing sci-fi video games with my friends constantly diffuse into my personal work and interests. It's also the foundation for my curiosity in art, history, and technology.</p>
+              <h1 className="about-intro-name">Hi, I'm Anzhu <span>安竹</span>—</h1>
+              <p className="about-p1">I was born in the megacity of <span className="hover-video-trigger" onMouseEnter={makeVideoHover('/chongqing.mp4')} onMouseMove={handleVideoMove} onMouseLeave={handleVideoLeave}>Chongqing</span> and immigrated to <span className="hover-video-trigger" onMouseEnter={makeVideoHover('/abq.mp4')} onMouseMove={handleVideoMove} onMouseLeave={handleVideoLeave}>Albuquerque</span> when I was five. My dad was a graduate student and I spent my childhood growing up in a student family apartment complex west of the Sandia mountains.</p>
+              {activeVideo && createPortal(
+                <div ref={hoverPopupRef} className="hover-video-popup">
+                  <video ref={hoverVideoRef} src={activeVideo} width="325" height="578" muted playsInline loop />
+                </div>,
+                document.body
+              )}
+              <p className="about-p2">The formative memories I made there often diffuse into my current work. The quick adaptation of technology I witnessed from other student families is something that I emulate to this day.</p>
             </div>
           </div>
         </div>
@@ -165,8 +205,15 @@ export const About: React.FC<AboutProps> = ({ isVisible = true }) => {
         {/* Second section — additional info below the intro */}
         <div className="about-section-2">
           <div className="about-section-2-content">
-            <h2>Philosophy</h2>
-            <p>After attending the University of Michigan my interest has been in the intersection of art and technology, particularly in creating interactive experiences that blend digital and physical spaces.</p>
+            <div className="about-section-2-text">
+              <h2>Philosophy</h2>
+              <p>During my time at the University of Michigan I had the fortune of taking an eclectic set of courses on east asian history and anthropology. These helped further my ability to contextualize the Chinese American experience.</p>
+              <br></br>
+              <p>From a historical standpoint I'm interested in making connections from Chinese tradition and dynastic periods to what influences have survived and are currently intermixing in the confluence of American culture. I like to combine these explorations with fine art and interactive media.</p>
+            </div>
+            <div className="about-section-2-image">
+              <img src="/placeholder-philosophy.jpg" alt="Philosophy" />
+            </div>
           </div>
         </div>
 
