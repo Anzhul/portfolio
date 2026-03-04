@@ -43,6 +43,7 @@ public/*.exr
 public/*.glb
 public/*.gltf
 public/*.gltf2
+public/*.mp4
 public/footer-env
 public/syrte
 public/syrtewebp

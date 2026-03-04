@@ -47,7 +47,7 @@
   .scroll-caption {
     position: absolute;
     text-align: center;
-    bottom: 3.5rem;
+    bottom: 8%;
     max-width: 600px;
     padding: 0 2rem;
     opacity: 0;
@@ -60,18 +60,18 @@
       color: #222222;
     }
 
-    @media screen and (max-width: 767px) {
+    @media screen and (max-width: 768px) {
       max-width: 100%;
       padding: 0 1.5rem;
 
       p {
-        font-size: 1.1rem;
+        font-size: 1.6rem;
       }
     }
   }
 
   // Top section — scrolls normally, sits above the 3D canvas area
-  .about-top {
+  .about-section-1 {
     position: relative;
     z-index: 2;
     margin: 0 auto;
@@ -79,9 +79,8 @@
     flex-direction: column;
     justify-content: center;
     width: clamp(40rem, calc(100% - 20rem), 1600px);
-    height: 45rem;
     margin-top: clamp(5rem, 30vh, 15rem);
-    margin-bottom: clamp(5rem, 30vh, 15rem);
+    margin-bottom: clamp(5rem, 10vh, 15rem);
     padding-left: 1.618034 * 2rem;
     padding-right: 1.618034 * 2rem;
     text-align: left;
@@ -90,57 +89,46 @@
       padding-left: 1.618034 * 1rem;
       padding-right: 1.618034 * 1rem;
       margin-top: clamp(2rem, 20vh, 15rem);
-      margin-bottom: clamp(2rem, 20vh, 15rem);
+      margin-bottom: clamp(2rem, 2vh, 5rem);
       width: calc(100% - 16rem);
-      height: 35rem
     }
 
     @media screen and (max-width: 1024px) {
-      padding-left: 1.618034 * 1rem;
-      padding-right: 1.618034 * 1rem;
+      padding-left: 1.618034 * 2rem;
+      padding-right: 1.618034 * 2rem;
       margin-top: clamp(2rem, 20vh, 15rem);
-      margin-bottom: clamp(2rem, 20vh, 15rem);
-      width: calc(100% - 2rem);
-      height: 35rem;
+      margin-bottom: clamp(2rem, 2vh, 5rem);
+      width: 100%;
     }
 
     @media screen and (max-width: 768px) {
-      width: calc(100% - 2rem);
-      padding: 0;
-      padding-bottom: 2rem;
-      height: auto;
+      width: 100%;
+      padding-left: 1.618034 * 1rem;
+      padding-right: 1.618034 * 1rem;
+      padding-bottom: 0rem;
     }
   }
 
   .about-intro {
     display: flex;
+    align-items: stretch;
     gap: 3rem;
-    height: 100%;
 
     @media screen and (max-width: 1440px) {
-      gap: 1rem;
+      gap: 2rem;
     }
 
-    @media screen and (max-width: 767px) {
+    @media screen and (max-width: 768px) {
       flex-direction: column;
       gap: 2rem;
     }
   }
 
   .about-portrait {
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 0;
-    flex-shrink: 0;
-    align-self: flex-start;
-    height: 40rem;
-    aspect-ratio: 4 / 5;
+    flex: 1 1 50%;
+    min-width: 0;
     overflow: hidden;
-
-    @media screen and (max-width: 1440px) {
-      height: 30rem;
-    }
+    background-color: blue;
 
     img {
       width: 100%;
@@ -148,50 +136,32 @@
       object-fit: cover;
     }
 
-    @media screen and (max-width: 1023px) {
-      height: 30rem;
-    }
-
-    @media screen and (max-width: 767px) {
-      top: 0;
-      margin-top: 1rem;
-      transform: none;
+    @media screen and (max-width: 768px) {
       width: 100%;
-      height: auto;
       aspect-ratio: 1 / 1;
     }
   }
 
   .about-intro-text {
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 0;
-    height: 80%;
-    flex: 1 1 45%;
+    flex: 1 1 50%;
     min-width: 0;
     overflow-wrap: break-word;
     display: flex;
     flex-direction: column;
-    gap: 2.5rem;
-    padding: 2rem;
+    gap: 3rem;
 
     @media screen and (max-width: 1440px) {
-      gap: 1.5rem;
-      padding-top: 0;
+      gap: 2rem;
     }
 
-    @media screen and (max-width: 1023px) {
-      width: 100%;
-      padding: 1rem;
-      padding-top: 0;
-      gap: 0.75rem;
+    @media screen and (max-width: 1024px) {
+      flex-direction: column;
+      gap: 2rem;
     }
 
-    @media screen and (max-width: 767px) {
-      top: 0;
-      transform: none;
-      height: auto;
+    @media screen and (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
     }
 
     h1 {
@@ -202,17 +172,23 @@
       margin-bottom: 0.5rem;
       min-width: 36rem;
 
+
+      @media screen and (max-width: 1660px) {
+        font-size: 2.65rem;
+        min-width: 20rem;
+      }
+
       @media screen and (max-width: 1440px) {
         font-size: 2.25rem;
         min-width: 20rem;
       }
 
-      @media screen and (max-width: 1023px) {
+      @media screen and (max-width: 1024px) {
         font-size: 2rem;
         min-width: 20rem;
       }
 
-      @media screen and (max-width: 767px) {
+      @media screen and (max-width: 768px) {
         font-size: 2rem;
       }
     }
@@ -222,21 +198,17 @@
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 400;
       line-height: 1.8;
-      min-width: 30rem;
       color: #222222;
 
       @media screen and (max-width: 1440px) {
         font-size: 1.05rem;
-        min-width: 20rem;
       }
 
-      @media screen and (max-width: 1023px) {
-        min-width: 18rem;
+      @media screen and (max-width: 1024px) {
         font-size: 1rem;
       }
 
-      @media screen and (max-width: 767px) {
-        min-width: 0;
+      @media screen and (max-width: 768px) {
         font-size: 1rem;
       }
     }
@@ -249,101 +221,98 @@
     text-underline-offset: 0.5rem;
   }
 
-  // Second section — additional content below the intro
-  .about-section-2 {
+  // Methods section — holistic approach, leads into the 3D scene
+  .about-methods {
     position: relative;
     z-index: 2;
     margin: 0 auto;
     width: clamp(40rem, calc(100% - 20rem), 1600px);
     padding-left: 1.618034 * 2rem;
     padding-right: 1.618034 * 2rem;
-    padding-bottom: 5rem;
+    padding-bottom: 0rem;
+    margin-bottom: clamp(3rem, 10vh, 8rem);
     text-align: left;
 
     @media screen and (max-width: 1440px) {
+      padding-left: 1.618034 * 1rem;
+      padding-right: 1.618034 * 1rem;
       width: calc(100% - 16rem);
     }
 
     @media screen and (max-width: 1024px) {
-      width: calc(100% - 2rem);
+      padding-left: 1.618034 * 2rem;
+      padding-right: 1.618034 * 2rem;
+      margin-bottom: -10rem;
+      width: 100%;
     }
 
-    // Tablet and below
-    @media screen and (max-width: 1023px) {
-      padding: 2rem 4rem 3rem 4rem;
-    }
-
-    // Mobile
-    @media screen and (max-width: 767px) {
-      padding: 1.5rem 1rem 2rem 1rem;
+    @media screen and (max-width: 768px) {
+      width: 100%;
+      padding-left: 1.618034 * 1rem;
+      padding-right: 1.618034 * 1rem;
+      padding-bottom: 2rem;
     }
   }
 
-  .about-section-2-content {
-    position: relative;
-    margin-top: 5rem;
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 3rem;
+  .about-methods h2 {
+    font-size: 2.5rem;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin: 0;
+
+    @media screen and (max-width: 1440px) {
+      font-size: 2.25rem;
+    }
 
     @media screen and (max-width: 1024px) {
-      margin-top: 2rem;
+      font-size: 2rem;
     }
 
-    @media screen and (max-width: 767px) {
-      margin-top: 2rem;
+    @media screen and (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+
+  .about-methods p {
+    font-size: 1.25rem;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+    line-height: 1.8;
+    margin: 0;
+    flex: 1;
+    color: #222222;
+
+    @media screen and (max-width: 1440px) {
+      font-size: 1.05rem;
+    }
+
+    @media screen and (max-width: 1024px) {
+      font-size: 1rem;
+    }
+
+    @media screen and (max-width: 768px) {
+      font-size: 1rem;
+    }
+  }
+
+  .about-methods-columns {
+    display: flex;
+    gap: 3rem;
+    margin-top: 1.5rem;
+
+    @media screen and (max-width: 1440px) {
+      gap: 2rem;
+    }
+
+    @media screen and (max-width: 1024px) {
       flex-direction: column;
+      gap: 2rem;
     }
 
-    .about-section-2-text {
-      flex: 1 1 45%;
-
-      h2 {
-        font-size: 2.5rem;
-        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-        font-weight: 500;
-        letter-spacing: -0.02em;
-        margin: 0;
-
-        @media screen and (max-width: 767px) {
-          font-size: 2rem;
-        }
-      }
-
-      p {
-        font-size: 1.25rem;
-        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-        font-weight: 400;
-        line-height: 1.6;
-        margin: 1rem 0 0;
-        max-width: 700px;
-        opacity: 1;
-        color: #222222;
-
-        @media screen and (max-width: 767px) {
-          font-size: 1rem;
-        }
-      }
-    }
-
-    .about-section-2-image {
-      flex: 1 1 55%;
-      min-height: 400px;
-      overflow: hidden;
-      background-color: red;
-
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      @media screen and (max-width: 767px) {
-        flex: none;
-        width: 100%;
-        min-height: 250px;
-      }
+    @media screen and (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
     }
   }
 
@@ -353,95 +322,152 @@
     pointer-events: none;
   }
 
-  // Bottom section — scrolls normally, sits below the 3D canvas area
-  .about-bottom {
+  // Influences section — below 3D canvas
+  .about-influences {
     position: relative;
     z-index: 2;
-    width: 100%;
-    min-height: 100vh;
-    background: white;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: clamp(5rem, 15vh, 15rem);
-    padding-bottom: 10rem;
-  }
-
-  .about-bottom-content {
+    margin: 0 auto;
     width: clamp(40rem, calc(100% - 20rem), 1600px);
-    padding-left: 1.618034 * 2rem;
-    padding-right: 1.618034 * 2rem;
+    padding: clamp(3rem, 10vh, 8rem) 1.618034 * 2rem;
+    text-align: left;
 
     @media screen and (max-width: 1440px) {
+      padding-left: 1.618034 * 1rem;
+      padding-right: 1.618034 * 1rem;
       width: calc(100% - 16rem);
     }
 
     @media screen and (max-width: 1024px) {
-      width: calc(100% - 2rem);
+      padding-left: 1.618034 * 2rem;
+      padding-right: 1.618034 * 2rem;
+      margin-top: -15rem;
+      width: 100%;
     }
 
-    @media screen and (max-width: 767px) {
-      width: calc(100% - 2rem);
+    @media screen and (max-width: 768px) {
+      margin-top: -15rem;
+      width: 100%;
+      padding: 2rem 0;
       padding-left: 1.618034 * 1rem;
       padding-right: 1.618034 * 1rem;
     }
 
     h2 {
-      font-size: 4.5rem;
-      margin: 0 0 2rem;
+      font-size: 2.5rem;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 500;
       letter-spacing: -0.02em;
+      margin: 0;
 
-      @media screen and (max-width: 1023px) {
-        font-size: 3rem;
+      @media screen and (max-width: 1440px) {
+        font-size: 2.25rem;
       }
 
-      @media screen and (max-width: 767px) {
-        font-size: 2.5rem;
+      @media screen and (max-width: 1024px) {
+        font-size: 2rem;
+      }
+
+      @media screen and (max-width: 768px) {
+        font-size: 2rem;
       }
     }
 
     p {
       font-size: 1.25rem;
-      margin: 0 0 2rem;
-      max-width: 600px;
-      line-height: 1.6;
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 400;
+      line-height: 1.8;
+      margin: 1.5rem 0 0;
+      max-width: 700px;
+      color: #222222;
 
-      @media screen and (max-width: 767px) {
+      @media screen and (max-width: 1440px) {
+        font-size: 1.05rem;
+      }
+
+      @media screen and (max-width: 1024px) {
+        font-size: 1rem;
+      }
+
+      @media screen and (max-width: 768px) {
         font-size: 1rem;
       }
     }
 
-    .about-links {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    h3 {
+      font-size: 1.25rem;
+      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500;
+      margin: 0 0 1.5rem;
+      color: #222222;
+
+      @media screen and (max-width: 1440px) {
+        font-size: 1.1rem;
+      }
+
+      @media screen and (max-width: 768px) {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+    }
+
+    .influences-columns {
+      display: flex;
+      gap: 3rem;
+      margin-bottom: 0rem;
+
+      @media screen and (max-width: 1440px) {
+        margin-bottom: -2rem;
+        gap: 2rem;
+      }
+
+      @media screen and (max-width: 1024px) {
+        flex-direction: column;
+        margin-bottom: -2.5rem;
+        gap: 2rem;
+      }
+      @media screen and (max-width: 768px) {
+        flex-direction: column;
+        margin-bottom: 0;
+        gap: 1rem;
+      }
+    }
+
+    .influences-text {
+      flex: 1 1 50%;
+      min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.5rem;
 
-      li a {
-        color: #222222;
-        text-decoration: none;
-        font-size: 1.25rem;
-        font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-        font-weight: 400;
-        letter-spacing: -0.02em;
-        transition: opacity 0.2s ease;
+      @media screen and (max-width: 1024px) {
+        flex-direction: column;
+        margin-bottom: 1rem;
+        gap: 1rem;
+      }
+      @media screen and (max-width: 768px) {
+        flex-direction: column;
+        gap: 0rem;
+      }
+    }
 
-        &:hover {
-          opacity: 0.6;
-        }
+    .influences-playlist {
+      flex: 1 1 50%;
+      min-width: 0;
+      display: flex;
 
-        @media screen and (max-width: 767px) {
-          font-size: 1rem;
+      iframe {
+        border-radius: 0.5rem;
+        flex: 1;
+
+        @media screen and (max-width: 1024px) {
+          height: 352px;
+          flex: none;
         }
       }
     }
   }
+
 }
 
 // Portaled to document.body — must be top-level
@@ -452,7 +478,20 @@
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
   pointer-events: none;
-  transform: translate(2rem, -25%) scale(0.85);
+  transform: translate(0rem, -25%) scale(0.85);
+
+  @media screen and (max-width: 1440px) {
+    transform: translate(-1rem, -25%) scale(0.8);
+  }
+
+  @media screen and (max-width: 1080px) {
+    transform: translate(-98%, -25%) scale(0.8);
+  }
+
+  @media screen and (max-width: 768px) {
+    transform: translate(-50%, -25%) scale(0.75);
+  }
+
 
   video {
     display: block;

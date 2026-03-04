@@ -515,6 +515,10 @@ function renderFrame() {
     renderer.renderMeshes(sortedMeshes)
   }
 
+  // Flush GL commands so the compositor picks up this frame at the next
+  // vsync, keeping the OffscreenCanvas in sync with the main thread's CSS.
+  renderer.flush()
+
   // If there's still work in the queues, schedule another frame
   if (uploadQueue.length > 0 || mipmapQueue.length > 0) {
     scheduleRender()

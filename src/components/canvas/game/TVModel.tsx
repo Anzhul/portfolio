@@ -540,10 +540,13 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
   const bodyTexture = useLoader(TextureLoader, '/about/vase_body.png');
   const footTexture = useLoader(TextureLoader, '/about/vase_foot.png');
   const isVisible = useSceneVisible();
+  const { gl, camera: rootCamera, events } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   const isDragging = useRef(false);
   const isHovered = useRef(false);
   const prevX = useRef(0);
+  const raycaster = useRef(new THREE.Raycaster());
+  const pointerVec2 = useRef(new THREE.Vector2());
 
   // Compute bounding box center so rotation is around the visual center
   const centerOffset = useMemo(() => {
@@ -622,13 +625,39 @@ export function VaseModel({ position = [0, 0, 0] as [number, number, number], sc
     prevX.current = e.clientX ?? 0;
     document.body.style.cursor = 'grabbing';
 
-    // Capture pointer so the browser doesn't hijack touch events for scrolling
-    // and all subsequent move events are delivered even if finger leaves the mesh
+    // Capture pointer so move events are delivered even if finger leaves the mesh
     const ne = e.nativeEvent as PointerEvent | undefined;
     if (ne?.pointerId !== undefined && ne.target instanceof Element) {
       try { ne.target.setPointerCapture(ne.pointerId); } catch (_) {}
     }
   }, []);
+
+  // Prevent browser from stealing touches on the vase for scrolling.
+  // Without this, touchstart triggers scroll which fires pointercancel,
+  // killing the drag after a small increment.
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const target = events.connected as HTMLElement | undefined;
+    if (!target) return;
+    const canvas = gl.domElement;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch || !groupRef.current) return;
+      const rect = canvas.getBoundingClientRect();
+      pointerVec2.current.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerVec2.current.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.current.setFromCamera(pointerVec2.current, rootCamera);
+      const hits = raycaster.current.intersectObject(groupRef.current, true);
+      if (hits.length > 0) {
+        e.preventDefault();
+      }
+    };
+
+    target.addEventListener('touchstart', handleTouchStart, { passive: false });
+    return () => target.removeEventListener('touchstart', handleTouchStart);
+  }, [gl, events, rootCamera, isVisible]);
 
   // Window-level listeners for drag tracking (user may drag outside mesh)
   useEffect(() => {

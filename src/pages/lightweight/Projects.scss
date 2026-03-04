@@ -12,7 +12,7 @@
     min-height: 250vh;
   }
 
-  @media (max-width: 767px) {
+  @media (max-width: 768px) {
     min-height: 150vh;
   }
 
@@ -56,11 +56,11 @@
       font-weight: 500;
       letter-spacing: -0.02em;
 
-      @media screen and (max-width: 1023px) {
+      @media screen and (max-width: 1024px) {
         font-size: 3rem;
       }
 
-      @media screen and (max-width: 767px) {
+      @media screen and (max-width: 768px) {
         font-size: 2.5rem;
       }
     }
@@ -72,11 +72,11 @@
       font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
       font-weight: 400;
 
-      @media screen and (max-width: 1023px) {
+      @media screen and (max-width: 1024px) {
         font-size: 1.3rem;
       }
 
-      @media screen and (max-width: 767px) {
+      @media screen and (max-width: 768px) {
         font-size: 1rem;
         max-width: 300px;
       }
@@ -190,7 +190,7 @@
        width: calc(100% - 2rem);
     }
 
-    @media screen and (max-width: 767px) {
+    @media screen and (max-width: 768px) {
        width: calc(100% - 2rem);
        padding-left: 1rem;
        padding-right: 1rem;
@@ -216,7 +216,7 @@
       }
 
       // Tablet - break into 4 columns
-      @media screen and (max-width: 1023px) {
+      @media screen and (max-width: 1024px) {
         grid-template-columns: repeat(4, 1fr);
         // Keep rows proportional to the 4x4 aspect so cells remain square
         grid-auto-rows: calc(100% / 4);
@@ -225,7 +225,7 @@
       }
 
       // Mobile - stack vertically
-      @media screen and (max-width: 767px) {
+      @media screen and (max-width: 768px) {
         display: flex;
         flex-direction: column;
         gap: 1.5rem;

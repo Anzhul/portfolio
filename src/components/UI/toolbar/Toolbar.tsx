@@ -15,16 +15,15 @@ function Toolbar({ loaded = false }: ToolbarProps) {
   const isDraggingRef = useRef(false)
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, elXPct: 0, elYPct: 0 })
 
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
+  const startDrag = useCallback((clientX: number, clientY: number) => {
     const toolbar = toolbarRef.current
     if (!toolbar) return
 
     const rect = toolbar.getBoundingClientRect()
     isDraggingRef.current = true
     dragStartRef.current = {
-      mouseX: e.clientX,
-      mouseY: e.clientY,
+      mouseX: clientX,
+      mouseY: clientY,
       elXPct: rect.left / window.innerWidth,
       elYPct: rect.top / window.innerHeight,
     }
@@ -32,28 +31,49 @@ function Toolbar({ loaded = false }: ToolbarProps) {
     toolbar.classList.add('dragging')
   }, [])
 
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    startDrag(e.clientX, e.clientY)
+  }, [startDrag])
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    startDrag(touch.clientX, touch.clientY)
+  }, [startDrag])
+
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMove = (clientX: number, clientY: number) => {
       if (!isDraggingRef.current) return
-      const dx = e.clientX - dragStartRef.current.mouseX
-      const dy = e.clientY - dragStartRef.current.mouseY
+      const dx = clientX - dragStartRef.current.mouseX
+      const dy = clientY - dragStartRef.current.mouseY
       setPosition({
         xPct: dragStartRef.current.elXPct + dx / window.innerWidth,
         yPct: dragStartRef.current.elYPct + dy / window.innerHeight,
       })
     }
 
-    const handleMouseUp = () => {
+    const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY)
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDraggingRef.current) return
+      e.preventDefault()
+      handleMove(e.touches[0].clientX, e.touches[0].clientY)
+    }
+
+    const handleEnd = () => {
       if (!isDraggingRef.current) return
       isDraggingRef.current = false
       toolbarRef.current?.classList.remove('dragging')
     }
 
     window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('mouseup', handleEnd)
+    window.addEventListener('touchmove', handleTouchMove, { passive: false })
+    window.addEventListener('touchend', handleEnd)
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('mouseup', handleEnd)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('touchend', handleEnd)
     }
   }, [])
 
@@ -77,7 +97,7 @@ function Toolbar({ loaded = false }: ToolbarProps) {
           work
         </button>
         <div className="toolbar-top-gap" />
-        <div className="toolbar-drag" onMouseDown={handleDragStart}>
+        <div className="toolbar-drag" onMouseDown={handleDragStart} onTouchStart={handleTouchStart}>
           <svg xmlns="http://www.w3.org/2000/svg" width="8" height="12" viewBox="0 0 8 12">
             <circle cx="2" cy="2" r="1" fill="#222222" />
             <circle cx="6" cy="2" r="1" fill="#222222" />

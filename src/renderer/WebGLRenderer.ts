@@ -457,6 +457,13 @@ export class WebGLRenderer {
   }
 
   /**
+   * Flush GL commands so the compositor picks up this frame promptly.
+   */
+  flush(): void {
+    this.gl.flush()
+  }
+
+  /**
    * Resize the viewport.
    */
   resize(width: number, height: number): void {

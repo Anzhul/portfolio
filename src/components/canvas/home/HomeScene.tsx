@@ -52,10 +52,18 @@ export interface HomeSceneProps {
  * Scroll events don't bubble, so we listen on window and proxy
  * a synthetic event to document.documentElement for ScrollContext.
  */
-function ScrollAttacher() {
+function ScrollAttacher({ isVisible }: { isVisible: boolean }) {
   const scroll = useScroll()
 
   useEffect(() => {
+    // Detach when hidden to prevent scroll events from other pages
+    // from corrupting scroll progress while the About page is offscreen.
+    if (!isVisible) {
+      scroll.clearScrollRegion()
+      scroll.detach()
+      return
+    }
+
     const el = document.documentElement
     scroll.attach(el)
     scroll.setSmoothingFactor(0.08)
@@ -89,7 +97,7 @@ function ScrollAttacher() {
       scroll.clearScrollRegion()
       scroll.detach()
     }
-  }, [scroll])
+  }, [scroll, isVisible])
 
   return null
 }
@@ -109,39 +117,39 @@ interface CameraKeyframe {
 export const WALL_IMAGE_POSITION: [number, number, number] = [1, 0.25, -19.55]
 
 const KEYFRAMES_WIDE: CameraKeyframe[] = [
-  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
-  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
-  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
+  { progress: 0,    position: [100, 70, 80],            lookAt: [5, 0, -10], fov: 20 },
+  { progress: 0.22, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.35, position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
   { progress: 0.55, position: [3.5, 3.5, -8],        lookAt: [3.5, 3.5, -20], fov: 25 },
   { progress: 0.75, position: [15, 3.5, -8],        lookAt: [15, 3.5, -20], fov: 25 },
-  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
+  { progress: 1.0,  position: [2.55, 5, 80],         lookAt: [2.5, 5, -20], fov: 25 },
 ]
 
 const KEYFRAMES_DESKTOP: CameraKeyframe[] = [
-  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
-  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
-  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
-  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
-  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
-  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
+  { progress: 0,    position: [100, 70, 80],            lookAt: [5, 0, -10], fov: 20 },
+  { progress: 0.22, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.35, position: [-5, 5, 20],           lookAt: [7.25, 0, -14], fov: 20 },
+  { progress: 0.55, position: [3.5, 3.5, -8],        lookAt: [3.5, 3.5, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.5, -8],        lookAt: [15, 3.5, -20], fov: 25 },
+  { progress: 1.0,  position: [2.55, 5, 80],         lookAt: [2.5, 5, -20], fov: 25 },
 ]
 
 const KEYFRAMES_TABLET: CameraKeyframe[] = [
-  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
-  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
-  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
-  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
-  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
-  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
+  { progress: 0,    position: [160, 120, 120],            lookAt: [5, 0, -10], fov: 20 },
+  { progress: 0.22, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.35, position: [-5, 5, 20],           lookAt: [7.25, 0, -14], fov: 20 },
+  { progress: 0.55, position: [3.5, 3.5, -8],        lookAt: [3.5, 3.5, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.5, -8],        lookAt: [15, 3.5, -20], fov: 25 },
+  { progress: 1.0,  position: [4, 0, 150],         lookAt: [4, 0, -20], fov: 25 },
 ]
 
 const KEYFRAMES_MOBILE: CameraKeyframe[] = [
-  { progress: 0,    position: [250, 350, 600],       lookAt: [0, 5, -20], fov: 5 },
-  { progress: 0.15, position: [-5,  8, 80],          lookAt: [-5, 2, -17], fov: 5 },
-  { progress: 0.3,  position: [-5, 5, 20],           lookAt: [8.5, 0, -14], fov: 20 },
-  { progress: 0.55, position: [3.5, 3.0, -8],        lookAt: [3.5, 3.0, -20], fov: 25 },
-  { progress: 0.75, position: [15, 3.0, -8],        lookAt: [15, 3.0, -20], fov: 25 },
-  { progress: 1.0,  position: [50, 70, 120],         lookAt: [0, 5, -20], fov: 25 },
+  { progress: 0,    position: [160, 200, 200],            lookAt: [5, 0, -10], fov: 20 },
+  { progress: 0.22, position: [-5,  8, 120],          lookAt: [-5, 2, -17], fov: 5 },
+  { progress: 0.35, position: [-5.5, 5, 30],           lookAt: [6.85, 0, -14], fov: 20 },
+  { progress: 0.55, position: [3.5, 3.5, -8],        lookAt: [3.5, 3.5, -20], fov: 25 },
+  { progress: 0.75, position: [15, 3.5, -8],        lookAt: [16, 3.5, -20], fov: 25 },
+  { progress: 1.0,  position: [4.5, 0, 200],         lookAt: [4.5, 0, 0], fov: 25 },
 ]
 
 function lerp(a: number, b: number, t: number) {
@@ -364,6 +372,18 @@ function Scene({
   useEffect(() => {
     if (!isVisible) return
 
+    // After becoming visible, the canvas may have had 0x0 size while hidden
+    // via display:none. Force the renderer to pick up the restored dimensions.
+    const canvas = gl.domElement
+    const rect = canvas.getBoundingClientRect()
+    if (rect.width > 0 && rect.height > 0) {
+      gl.setSize(rect.width, rect.height, false)
+      if (camera instanceof THREE.PerspectiveCamera) {
+        camera.aspect = rect.width / rect.height
+        camera.updateProjectionMatrix()
+      }
+    }
+
     const render = () => {
       const { smoothProgress } = scroll.getState()
 
@@ -409,7 +429,7 @@ function Scene({
 
       // Only render game FBO when camera is close enough to see the TV.
       // Starts at ~0.085 so the turn-on animation plays as the first caption fades in.
-      const tvVisible = cameraProgress > 0.085 && cameraProgress < 0.9
+      const tvVisible = cameraProgress > 0.14 && cameraProgress < 0.9
       if (tvVisible) {
         // Start turn-on timer on first visibility
         if (tvTurnOnTimeRef.current === null) {
@@ -559,7 +579,7 @@ function HomeScene({
         outputColorSpace: 'srgb',
       }}
     >
-      <ScrollAttacher />
+      <ScrollAttacher isVisible={isVisible} />
       <JsonPointerCompute />
       <Scene
         isVisible={isVisible}

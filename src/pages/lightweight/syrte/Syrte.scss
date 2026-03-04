@@ -21,8 +21,6 @@
     padding-right: 1.618034 * 2rem;
     padding-bottom: 5rem;
     text-align: left;
-    //background-color: red;
-
 
       @media screen and (max-width: 1440px) {
         width: calc(100% - 16rem);
@@ -188,7 +186,6 @@
       border-radius: 8px;
       overflow: hidden;
       z-index: 20;
-      //background-color: red;
       border: dashed 2px #22222267;
 
       @media screen and (max-width: 1024px) {
@@ -197,7 +194,8 @@
 
       // Mobile
       @media screen and (max-width: 767px) {
-        margin-top: -2rem;
+        margin-top: -1rem;
+        margin-bottom: -1rem;
       }
 
       .zoom-hint{

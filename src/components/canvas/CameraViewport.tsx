@@ -78,6 +78,21 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     screenX: number; screenY: number
   } | null>(null)
 
+  // Defer CSS transform by one frame so it paints in the same vsync as the
+  // worker's WebGL render. The worker receives camera messages via postMessage
+  // (async) and renders on its thread, so its frame is always ~1 frame behind.
+  // Deferring CSS by exactly one RAF keeps both layers in sync.
+  const pendingRAFRef = useRef<number | null>(null)
+  const deferCSS = useCallback((transform: string) => {
+    if (pendingRAFRef.current !== null) cancelAnimationFrame(pendingRAFRef.current)
+    pendingRAFRef.current = requestAnimationFrame(() => {
+      pendingRAFRef.current = null
+      if (contentRef.current) {
+        contentRef.current.style.transform = transform
+      }
+    })
+  }, [])
+
   // Spring-based animation state (replaces target/current refs + trailing lerp)
   const initialZoom = isMobileOnly ? 0.3 : 0.45
   const springsRef = useRef<null | { x: Spring; y: Spring; z: Spring; zoom: Spring }>(null)
@@ -100,14 +115,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     camera.setState({ worldPosition: [wx, wy, wz], zoom })
     worldRenderer.updateCamera(trueX, trueY, zoom, camera.getState().fov, vw, vh)
 
-    // Defer CSS to next macrotask so it paints in the same vsync as the
-    // worker's WebGL render (which processes the camera message between frames).
-    const transform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
-    setTimeout(() => {
-      if (contentRef.current) {
-        contentRef.current.style.transform = transform
-      }
-    }, 0)
+    deferCSS(`translate(${cssX}px, ${cssY}px) scale(${zoom})`)
   }
 
   /**
@@ -526,13 +534,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       const [trueX, trueY] = worldToWebGL(wx, wy, currentZoom)
       worldRenderer.updateCamera(trueX, trueY, currentZoom, newFov, newVW, newVH)
 
-      // Defer CSS to next macrotask to stay in sync with WebGL worker
-      const transform = `translate(${cssX}px, ${cssY}px) scale(${currentZoom})`
-      setTimeout(() => {
-        if (contentRef.current) {
-          contentRef.current.style.transform = transform
-        }
-      }, 0)
+      deferCSS(`translate(${cssX}px, ${cssY}px) scale(${currentZoom})`)
     }
 
     window.addEventListener('resize', handleResize)
@@ -591,16 +593,10 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       camera.setState({ worldPosition: [wx, wy, wz], zoom })
       worldRenderer.updateCamera(trueX, trueY, zoom, camera.getState().fov, vw, vh)
 
-      // Defer CSS to next macrotask so it paints in the same vsync as the
-      // worker's WebGL render (which processes the camera message between frames).
       const newTransform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
       if (newTransform !== lastTransform) {
         lastTransform = newTransform
-        setTimeout(() => {
-          if (contentRef.current) {
-            contentRef.current.style.transform = newTransform
-          }
-        }, 0)
+        deferCSS(newTransform)
       }
 
       // Remove from ticker when all springs are at rest

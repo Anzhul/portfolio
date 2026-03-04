@@ -21,8 +21,8 @@ export function TheHillIsland() {
     >
       {/* Moon */}
       <ImagePlane
-        position={[0, -1350, -800]}
-        mobilePosition={[0, -800, -300]}
+        position={[450, -1350, -800]}
+        mobilePosition={[300, -1000, -500]}
         height={350}
         width={350}
         mobileHeight={250}
@@ -35,12 +35,12 @@ export function TheHillIsland() {
       />
 
       <ImagePlane
-        position={[1200, 950, -300]}
-        mobilePosition={[0, -800, -300]}
+        position={[1700, 950, -300]}
+        mobilePosition={[800, 500, -200]}
         height={400}
         width={1600}
         mobileHeight={250}
-        mobileWidth={250}
+        mobileWidth={1000}
         imageUrl="/Range.png"
         transparent={true}
         opacity={1}
@@ -49,12 +49,12 @@ export function TheHillIsland() {
       />
 
       <ImagePlane
-        position={[-3000, 350, -200]}
-        mobilePosition={[0, -800, -300]}
+        position={[-2500, 350, -200]}
+        mobilePosition={[-1200, 250, -150]}
         height={750}
         width={3000}
-        mobileHeight={250}
-        mobileWidth={250}
+        mobileHeight={500}
+        mobileWidth={2000}
         imageUrl="/mountains.png"
         transparent={true}
         opacity={1}
@@ -64,12 +64,12 @@ export function TheHillIsland() {
 
       {/* Spaceship */}
       <ImagePlane
-        position={[-475, 625, 0]}
-        mobilePosition={[-500, 500, 0]}
+        position={[25, 625, 0]}
+        mobilePosition={[60, 440, -50]}
         height={1450}
         width={2900}
-        mobileHeight={1000}
-        mobileWidth={2000}
+        mobileHeight={900}
+        mobileWidth={1800}
         imageUrl="/spaceship.png"
         transparent={true}
         opacity={1}
@@ -79,12 +79,12 @@ export function TheHillIsland() {
 
       {/* Me */}
       <ImagePlane
-        position={[-1080, 450, 40]}
-        mobilePosition={[-800, 300, 60]}
+        position={[-580, 450, 40]}
+        mobilePosition={[-100, 360, 60]}
         height={360}
         width={180}
-        mobileHeight={300}
-        mobileWidth={150}
+        mobileHeight={200}
+        mobileWidth={100}
         imageUrl="/me.png"
         transparent={true}
         opacity={1}
@@ -94,8 +94,8 @@ export function TheHillIsland() {
 
       {/* Tree */}
       <ImagePlane
-        position={[-1450, -225, 50]}
-        mobilePosition={[-1000, -200, 80]}
+        position={[-950, -225, 50]}
+        mobilePosition={[-400, -100, 100]}
         width={2800}
         height={2800}
         mobileWidth={1800}
@@ -108,12 +108,12 @@ export function TheHillIsland() {
       />
 
       <ImagePlane
-        position={[-1650, 1000, 300]}
-        mobilePosition={[-1000, -200, 80]}
+        position={[-1150, 1000, 300]}
+        mobilePosition={[-200, 800, 350]}
         width={3200}
         height={1600}
-        mobileWidth={1800}
-        mobileHeight={1800}
+        mobileWidth={2200}
+        mobileHeight={1100}
         imageUrl="/Hill.png"
         transparent={true}
         opacity={1}

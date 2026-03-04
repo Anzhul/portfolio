@@ -128,7 +128,7 @@ export const Projects: React.FC = () => {
     <div className={`projects ${isActive ? 'active' : ''}`}>
         <header className="projects-header">
           <div className="projects-description">
-            <h1>Projects</h1>
+            <h1>Projects—</h1>
           </div>
           <div className="projects-sort" ref={dropdownRef}>
             <button
