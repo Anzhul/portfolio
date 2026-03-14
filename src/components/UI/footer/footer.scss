@@ -100,6 +100,18 @@
     }
   }
 
+  // Projects page — footer shows only links, no project cards
+  &--projects-page {
+
+    .footer{
+      //background-color: red;
+    }
+    .footer-links {
+      padding-top: 0;
+      //background-color: red;
+    }
+  }
+
   .footer-links {
     display: flex;
     align-items: center;

@@ -10,9 +10,9 @@ $phi-inverse: 0.618034;
 $phi-inverse-squared: 0.381966;
 $phi-inverse-cubed: 0.236068;
 
-$background: #222222;
-$primary: white;
-$border: #555555;
+$background: white;
+$primary: #222222;
+$border: #222222;
 
 .map-container {
   position: fixed;
@@ -40,7 +40,7 @@ $border: #555555;
     background: $background;
     border-radius: 0.25rem;
     padding: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: solid 0.1rem $border;
     width: 20rem;
     height: 12rem;
     transition: cubic-bezier(0.65, 0.05, 0.28, 0.91) 0.35s;  
@@ -56,42 +56,21 @@ $border: #555555;
     }
   }
 
-  .map-subGroup {
-    width: 8rem;
-    height: 100%;
-    border-radius: 0.25rem;
+  .map-islands {
+    display: flex;
+    flex-direction: column;
     gap: 0.45rem;
     padding: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    //background-color: rgb(240, 240, 240);
+    transform: translate(0, 50%);
+    opacity: 0;
+    transition: cubic-bezier(0.65, 0.05, 0.28, 0.91) 0.35s;
 
-    h3{
-      font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
-      font-size: 1.05rem;
-      font-weight: 500;
-      margin-left: 0.25rem;
-      margin-bottom: 0.25rem;
-      color: $primary;
+    &.visible {
+      transition: cubic-bezier(0.645, 0.045, 0.355, 1) 0.35s;
+      transform: translate(0, 0);
+      transition-delay: 0.35s;
+      opacity: 1;
     }
-  }
-
-  .map-vertical-line {
-    position: absolute;
-    left: 1rem;
-    top: 2.25rem;
-    bottom: 0.5rem;
-    width: 1px;
-    color: $border;
-    pointer-events: none;
-  }
-
-  .map-islands-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-    position: relative;
   }
 
   .map-island-item {
@@ -101,39 +80,20 @@ $border: #555555;
     gap: 0.5rem;
   }
 
-  .map-about {
-    transform: translate(0, 50%);
-    opacity: 0;
-    transition: cubic-bezier(0.65, 0.05, 0.28, 0.91) 0.35s;
-    //background-color:rgb(238, 237, 244);
-
-    &.visible {
-      transition: cubic-bezier(0.645, 0.045, 0.355, 1) 0.35s;
-      transform: translate(0, 0);
-      transition-delay: 0.35s;
-      opacity: 1;
-    }
-    .map-island-button {
-      color: $primary;
-      &:hover {
-        color: rgb(214, 37, 194);
-      }
-     }
-    .map-active-indicator {
-      position: absolute;
-      left: 0.35rem;
-      width: 0.25rem;
-      height: 0.25rem;
-      border-radius: 0.1rem;
-      background-color: transparent;
-      transition: 0s ease-in-out;
-      flex-shrink: 0;
+  .map-active-indicator {
+    position: absolute;
+    left: 0.35rem;
+    width: 0.25rem;
+    height: 0.25rem;
+    border-radius: 0.1rem;
+    background-color: transparent;
+    transition: 0s ease-in-out;
+    flex-shrink: 0;
 
     &.active {
       background-color: rgb(214, 37, 194);
       transition: 0s ease-in-out;
     }
-  }
   }
 
   .map-island-button {
@@ -144,7 +104,8 @@ $border: #555555;
     border-radius: 0.25rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.8rem;
+    font-family: "national-park", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.95rem;
     font-weight: 500;
     color: $primary;
     border: 0;
@@ -152,7 +113,7 @@ $border: #555555;
     text-align: left;
 
     &:hover {
-      color: #cccccc;
+      color: #666666;
     }
 
     .island-icon {

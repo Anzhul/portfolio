@@ -86,25 +86,20 @@ export function Map({ cameraViewportRef, isVisible = false }: MapProps) {
       }}
     >
       <div className={`map-inner ${isVisible ? 'visible' : ''} ${isDragging ? 'dragging' : ''}`}>
-          {Array.from(new Set(Object.values(ISLAND_REGISTRY).map(item => item.subGroup))).filter((subGroup): subGroup is string => subGroup !== undefined).map(subGroup => (
-            <div key={subGroup} className={`map-subGroup map-${subGroup} ${isVisible ? 'visible' : ''}`}>
-              <h3>{subGroup.charAt(0).toUpperCase() + subGroup.slice(1)}</h3>
-              <div className="map-islands-wrapper">
-                {Object.entries(ISLAND_REGISTRY).filter(([_, config]) => config.subGroup === subGroup).map(([id, config]) => (
-                  <div key={id} className="map-island-item">
-                    <div className={`map-active-indicator ${activeIsland === id ? 'active' : ''}`} />
-                    <button
-                    className={`map-island-button ${activeIsland === id ? 'active' : ''}`}
-                    onClick={() => handleIslandClick(id)}
-                    title={`Navigate to ${config.name}`}
-                    >
-                      <span className="island-name">{config.name}</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
+        <div className={`map-islands ${isVisible ? 'visible' : ''}`}>
+          {Object.entries(ISLAND_REGISTRY).map(([id, config]) => (
+            <div key={id} className="map-island-item">
+              <div className={`map-active-indicator ${activeIsland === id ? 'active' : ''}`} />
+              <button
+                className={`map-island-button ${activeIsland === id ? 'active' : ''}`}
+                onClick={() => handleIslandClick(id)}
+                title={`Navigate to ${config.name}`}
+              >
+                <span className="island-name">{config.name}</span>
+              </button>
             </div>
           ))}
+        </div>
       </div>
     </div>
   )

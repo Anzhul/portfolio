@@ -78,19 +78,12 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     screenX: number; screenY: number
   } | null>(null)
 
-  // Defer CSS transform by one frame so it paints in the same vsync as the
-  // worker's WebGL render. The worker receives camera messages via postMessage
-  // (async) and renders on its thread, so its frame is always ~1 frame behind.
-  // Deferring CSS by exactly one RAF keeps both layers in sync.
-  const pendingRAFRef = useRef<number | null>(null)
-  const deferCSS = useCallback((transform: string) => {
-    if (pendingRAFRef.current !== null) cancelAnimationFrame(pendingRAFRef.current)
-    pendingRAFRef.current = requestAnimationFrame(() => {
-      pendingRAFRef.current = null
-      if (contentRef.current) {
-        contentRef.current.style.transform = transform
-      }
-    })
+  // Apply CSS transform synchronously in the same frame as the WebGL
+  // camera update. Both updates happen together in each animation frame.
+  const applyCSS = useCallback((transform: string) => {
+    if (contentRef.current) {
+      contentRef.current.style.transform = transform
+    }
   }, [])
 
   // Spring-based animation state (replaces target/current refs + trailing lerp)
@@ -115,7 +108,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
     camera.setState({ worldPosition: [wx, wy, wz], zoom })
     worldRenderer.updateCamera(trueX, trueY, zoom, camera.getState().fov, vw, vh)
 
-    deferCSS(`translate(${cssX}px, ${cssY}px) scale(${zoom})`)
+    applyCSS(`translate(${cssX}px, ${cssY}px) scale(${zoom})`)
   }
 
   /**
@@ -534,7 +527,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       const [trueX, trueY] = worldToWebGL(wx, wy, currentZoom)
       worldRenderer.updateCamera(trueX, trueY, currentZoom, newFov, newVW, newVH)
 
-      deferCSS(`translate(${cssX}px, ${cssY}px) scale(${currentZoom})`)
+      applyCSS(`translate(${cssX}px, ${cssY}px) scale(${currentZoom})`)
     }
 
     window.addEventListener('resize', handleResize)
@@ -596,7 +589,7 @@ export const CameraViewport = forwardRef<CameraViewportHandle, CameraViewportPro
       const newTransform = `translate(${cssX}px, ${cssY}px) scale(${zoom})`
       if (newTransform !== lastTransform) {
         lastTransform = newTransform
-        deferCSS(newTransform)
+        applyCSS(newTransform)
       }
 
       // Remove from ticker when all springs are at rest

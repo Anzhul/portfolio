@@ -19,7 +19,7 @@ export const Footer: React.FC<FooterProps> = ({ showProjects = false }) => {
   };
 
   return (
-    <footer className="footer">
+    <footer className={`footer${isProjectsPage ? ' footer--projects-page' : ''}`}>
       {showProjects && !isProjectsPage && (
         <div className="footer-projects">
           <div className="footer-projects-grid">

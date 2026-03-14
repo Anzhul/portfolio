@@ -16,12 +16,10 @@ export interface IslandConfig {
 // so the lazy loading overhead (network latency + Suspense re-render)
 // costs more than just bundling them
 import { TheHillIsland } from '../island/home/the_hill'
-import { TheStudioIsland } from '../island/about/the_studio'
 import { InTheDesertIsland } from '../island/desert/in_the_desert'
 
 // Skeleton components (lightweight placeholders)
 import { TheHillIslandSkeleton } from '../island/home/TheHillIslandSkeleton'
-import { TheStudioIslandSkeleton } from '../island/about/TheStudioIslandSkeleton'
 import { InTheDesertIslandSkeleton } from '../island/desert/InTheDesertIslandSkeleton'
 
 export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
@@ -35,21 +33,8 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
     },
     component: TheHillIsland,
     skeleton: TheHillIslandSkeleton,
-    subGroup: 'about'
+    subGroup: 'about',
     // loadImmediately: true,  // Disabled - home island now lazy loads like others
-  },
-
-  the_studio: {
-    id: 'the_studio',
-    position: [4000, 4000, 0],
-    name: 'the studio',
-    boundaries: {
-      loadRadius: 3000,
-      activeRadius: 1600,
-    },
-    component: TheStudioIsland,
-    skeleton: TheStudioIslandSkeleton,
-    subGroup: 'about'
   },
 
   in_the_desert: {
@@ -57,10 +42,11 @@ export const ISLAND_REGISTRY: Record<string, IslandConfig> = {
     position: [8000, 0, 0],
     name: 'in the desert',
     boundaries: {
-      loadRadius: 5000,
-      activeRadius: 3400,
+      loadRadius: 12000,
+      activeRadius: 9000,
     },
     component: InTheDesertIsland,
     skeleton: InTheDesertIslandSkeleton,
+    subGroup: 'work'
   },
 }

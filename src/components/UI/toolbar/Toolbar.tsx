@@ -2,6 +2,52 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import './Toolbar.scss'
 import { useToolbar } from '../../../context/ToolbarContext'
 
+const ToolbarUnderline = ({ active }: { active: boolean }) => {
+  const innerRef = useRef<HTMLDivElement | null>(null)
+  const firstRender = useRef(true)
+  const [initial, setInitial] = useState(true)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setInitial(false))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+
+    const el = innerRef.current
+    if (!el) return
+
+    if (active) {
+      el.classList.remove('exiting')
+      el.classList.add('pre-enter')
+      void el.offsetWidth
+      el.classList.add('active')
+      el.classList.remove('pre-enter')
+    } else {
+      el.classList.remove('active')
+      const onAnimEnd = () => {
+        el.classList.remove('exiting')
+        el.removeEventListener('animationend', onAnimEnd)
+      }
+      el.addEventListener('animationend', onAnimEnd)
+      el.classList.add('exiting')
+    }
+  }, [active])
+
+  return (
+    <span className="toolbar-underline">
+      <span
+        ref={innerRef}
+        className={`toolbar-underline-inner ${initial ? 'initial' : ''} ${active ? 'active' : ''}`}
+      />
+    </span>
+  )
+}
+
 interface ToolbarProps {
   loaded?: boolean
 }
@@ -95,6 +141,7 @@ function Toolbar({ loaded = false }: ToolbarProps) {
           aria-label="Toggle Map"
         >
           work
+          <ToolbarUnderline active={isMapVisible} />
         </button>
         <div className="toolbar-top-gap" />
         <div className="toolbar-drag" onMouseDown={handleDragStart} onTouchStart={handleTouchStart}>

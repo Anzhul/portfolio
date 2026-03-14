@@ -34,21 +34,21 @@ function DesertLabel({ imageX, imageY, mobileX, mobileY, title, desc }: {
   )
 }
 
-// Summary plate positioned to the left of the image grid
+// Summary plate positioned at the center of the island
 function DesertSummary() {
   const { isMobileOnly } = useViewport()
 
   const style: React.CSSProperties = isMobileOnly
     ? {
         position: 'absolute',
-        left: '-1700px',
-        top: '-100px',
+        left: '-150px',
+        top: '-150px',
         width: '300px',
       }
     : {
         position: 'absolute',
-        left: '-3500px',
-        top: '-100px',
+        left: '-175px',
+        top: '-150px',
         width: '350px',
       }
 
@@ -64,8 +64,8 @@ function DesertSummary() {
   )
 }
 
-// Desktop: 1800px center-to-center spacing, 1200×1440 images, labels to the left
-// Mobile: 880px center-to-center spacing, 780x936 images in two rows, labels below
+// Desktop: Summary at center, images in a horizontal row to the right (1500px spacing)
+// Mobile: Same layout, tighter spacing (880px)
 
 export function InTheDesertIsland() {
   return (
@@ -74,24 +74,24 @@ export function InTheDesertIsland() {
       position={[8000, 0, 0]}
       name="in the desert"
       boundaries={{
-        loadRadius: 5000,
-        activeRadius: 3400,
+        loadRadius: 12000,
+        activeRadius: 9000,
       }}
     >
       <DesertSummary />
 
-      {/* Row 1: Three images */}
+      {/* Images in a horizontal row to the right of the summary */}
 
       {/* #0 - Cloaked figure */}
       <IIIFImagePlane
         infoUrl="/iiif/in_the_desert/0/info.json"
-        position={[-1800, -900, -1]}
-        mobilePosition={[-880, -540, -1]}
+        position={[2200, 0, -1]}
+        mobilePosition={[1200, 0, -1]}
         width={1200} height={1440}
         mobileWidth={780} mobileHeight={936}
       />
       <DesertLabel
-        imageX={-1800} imageY={-900} mobileX={-880} mobileY={-540}
+        imageX={2200} imageY={0} mobileX={1200} mobileY={0}
         title="The Wanderer"
         desc="A cloaked figure traverses the vast desert, searching for something only they understand."
       />
@@ -99,13 +99,13 @@ export function InTheDesertIsland() {
       {/* #1 - Couple in desert town */}
       <IIIFImagePlane
         infoUrl="/iiif/in_the_desert/1/info.json"
-        position={[0, -900, -1]}
-        mobilePosition={[0, -540, -1]}
+        position={[4400, 0, -1]}
+        mobilePosition={[2400, 0, -1]}
         width={1200} height={1440}
         mobileWidth={780} mobileHeight={936}
       />
       <DesertLabel
-        imageX={0} imageY={-900} mobileX={0} mobileY={-540}
+        imageX={4400} imageY={0} mobileX={2400} mobileY={0}
         title="The Settlement"
         desc="Two figures find shelter in an ancient town, where the walls hold stories of those who came before."
       />
@@ -113,29 +113,27 @@ export function InTheDesertIsland() {
       {/* #2 - Pool scene */}
       <IIIFImagePlane
         infoUrl="/iiif/in_the_desert/2/info.json"
-        position={[1800, -900, -1]}
-        mobilePosition={[880, -540, -1]}
+        position={[6600, 0, -1]}
+        mobilePosition={[3600, 0, -1]}
         width={1200} height={1440}
         mobileWidth={780} mobileHeight={936}
       />
       <DesertLabel
-        imageX={1800} imageY={-900} mobileX={880} mobileY={-540}
+        imageX={6600} imageY={0} mobileX={3600} mobileY={0}
         title="Still Waters"
         desc="A moment of rest by the pool — the only calm in an otherwise relentless landscape."
       />
 
-      {/* Row 2: Two images */}
-
       {/* #3 - Girl on rooftop */}
       <IIIFImagePlane
         infoUrl="/iiif/in_the_desert/3/info.json"
-        position={[-1800, 840, -1]}
-        mobilePosition={[-880, 540, -1]}
+        position={[8800, 0, -1]}
+        mobilePosition={[4800, 0, -1]}
         width={1200} height={1440}
         mobileWidth={780} mobileHeight={936}
       />
       <DesertLabel
-        imageX={-1800} imageY={840} mobileX={-880} mobileY={540}
+        imageX={8800} imageY={0} mobileX={4800} mobileY={0}
         title="Above It All"
         desc="Perched on a rooftop at dusk, watching the town below settle into evening."
       />
@@ -143,13 +141,13 @@ export function InTheDesertIsland() {
       {/* #4 - Night scene */}
       <IIIFImagePlane
         infoUrl="/iiif/in_the_desert/4/info.json"
-        position={[0, 840, -1]}
-        mobilePosition={[0, 540, -1]}
+        position={[11000, 0, -1]}
+        mobilePosition={[6000, 0, -1]}
         width={1200} height={1440}
         mobileWidth={780} mobileHeight={936}
       />
       <DesertLabel
-        imageX={0} imageY={840} mobileX={0} mobileY={540}
+        imageX={11000} imageY={0} mobileX={6000} mobileY={0}
         title="Desert Night"
         desc="Under a sky full of stars, the desert reveals its quieter side."
       />

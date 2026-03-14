@@ -109,8 +109,10 @@ self.onmessage = (e: MessageEvent<MainToWorkerMessage>) => {
       camFov = msg.fov
       camViewW = msg.viewportWidth
       camViewH = msg.viewportHeight
-      // Render immediately so WebGL draws with the exact same camera state
-      // the main thread just applied to CSS — eliminates 1-frame lag.
+      // Render immediately — the postMessage from the main thread's RAF
+      // arrives during the same frame. Rendering now + flush() ensures
+      // the OffscreenCanvas back-buffer is ready for the compositor at
+      // the next vsync, matching the CSS paint from the same RAF.
       renderFrame()
       break
     }

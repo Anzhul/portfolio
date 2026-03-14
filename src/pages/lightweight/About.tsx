@@ -212,7 +212,7 @@ export const About: React.FC<AboutProps> = ({ isVisible = true }) => {
         <div className="about-section-1">
           <div className="about-intro">
             <div className="about-portrait">
-              <img src="/placeholder-portrait.jpg" alt="Anzhu Ling" />
+              <img src="about/anzhu.jpg" alt="Anzhu Ling" />
             </div>
             <div className="about-intro-text">
               <h1 className="about-intro-name">Hi, I'm Anzhu <span>安竹</span>—</h1>

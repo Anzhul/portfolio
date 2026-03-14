@@ -127,9 +127,6 @@ export const Projects: React.FC = () => {
   return (
     <div className={`projects ${isActive ? 'active' : ''}`}>
         <header className="projects-header">
-          <div className="projects-description">
-            <h1>Projects—</h1>
-          </div>
           <div className="projects-sort" ref={dropdownRef}>
             <button
               className="sort-dropdown-trigger"
